@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "925529316912",
+    "project_id": "snaptrack-expense",
+    "storage_bucket": "snaptrack-expense.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925529316912:android:a9701abee558e46d6d57f5",
+        "android_client_info": {
+          "package_name": "com.snaptrack.mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925529316912-a9sruocj84bbk5jec36s2dnktq601hhd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTM2frM2xd1cu0n_7B5GmDX7mpCYR5b48"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925529316912-a9sruocj84bbk5jec36s2dnktq601hhd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "925529316912-rgmp4c8ah10vig4at93a62kl0seipdgm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.snaptrack.mobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
