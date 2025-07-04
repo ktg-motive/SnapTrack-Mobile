@@ -14,6 +14,8 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -96,6 +98,7 @@ export default function ReviewScreen() {
   });
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -850,23 +853,7 @@ export default function ReviewScreen() {
         <View style={styles.compactImageContainer}>
           <TouchableOpacity 
             style={styles.imagePreviewButton}
-            onPress={() => {
-              // Navigate to full image view or open modal
-              Alert.alert(
-                'Receipt Image',
-                'View full receipt image?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { 
-                    text: 'View', 
-                    onPress: () => {
-                      // Could navigate to full image screen or open modal
-                      console.log('View full image:', imageUri);
-                    }
-                  }
-                ]
-              );
-            }}
+            onPress={() => setShowImageModal(true)}
           >
             <Image 
               source={{ uri: imageUri }} 
@@ -997,6 +984,42 @@ export default function ReviewScreen() {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Image Preview Modal */}
+      <Modal
+        visible={showImageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowImageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setShowImageModal(false)}>
+            <View style={styles.modalBackground} />
+          </TouchableWithoutFeedback>
+          
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Receipt Image</Text>
+              <TouchableOpacity 
+                onPress={() => setShowImageModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            
+            <Image 
+              source={{ uri: imageUri }} 
+              style={styles.fullImage}
+              resizeMode="contain"
+            />
+            
+            <Text style={styles.modalCaption}>
+              From {source === 'camera' ? 'Camera' : 'Gallery'}
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1156,7 +1179,8 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: 200,
+    height: '50%',
+    maxHeight: 400,
     borderRadius: borderRadius.md,
     marginBottom: spacing.lg,
   },
@@ -1325,5 +1349,57 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: '600',
+  },
+  
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    margin: spacing.md,
+    maxHeight: '90%',
+    maxWidth: '95%',
+    minWidth: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surface,
+  },
+  modalTitle: {
+    ...typography.title3,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  closeButton: {
+    padding: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.surface,
+  },
+  fullImage: {
+    width: '100%',
+    height: Dimensions.get('window').height * 0.6,
+    borderRadius: borderRadius.md,
+  },
+  modalCaption: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    padding: spacing.md,
   },
 });
