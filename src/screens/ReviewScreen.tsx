@@ -77,9 +77,19 @@ export default function ReviewScreen() {
   const route = useRoute();
   const { imageUri, source, mockData } = route.params as RouteParams;
   
-  // Debug image URLs
-  console.log('🖼️ Review Screen - imageUri:', imageUri);
-  console.log('🖼️ Review Screen - uploadedReceipt?.receipt_url:', uploadedReceipt?.receipt_url);
+  // Get the best available image URL
+  const getImageUrl = () => {
+    // Priority: database image_url > receipt_url > original imageUri
+    const dbImageUrl = uploadedReceipt?.expense?.image_url || uploadedReceipt?.image_url || uploadedReceipt?.receipt_url;
+    console.log('🖼️ Available image URLs:', {
+      imageUri,
+      'expense.image_url': uploadedReceipt?.expense?.image_url,
+      'image_url': uploadedReceipt?.image_url,
+      'receipt_url': uploadedReceipt?.receipt_url,
+      'selected': dbImageUrl || imageUri
+    });
+    return dbImageUrl || imageUri;
+  };
 
   const [isProcessing, setIsProcessing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -708,7 +718,7 @@ export default function ReviewScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.processingContainer}>
           <Image 
-            source={{ uri: uploadedReceipt?.receipt_url || imageUri }} 
+            source={{ uri: getImageUrl() }} 
             style={styles.previewImage}
             resizeMode="contain"
             onError={(error) => {
@@ -867,7 +877,7 @@ export default function ReviewScreen() {
             onPress={() => setShowImageModal(true)}
           >
             <Image 
-              source={{ uri: uploadedReceipt?.receipt_url || imageUri }} 
+              source={{ uri: getImageUrl() }} 
               style={styles.thumbnailImage}
               resizeMode="cover"
               onError={(error) => {
@@ -1023,7 +1033,7 @@ export default function ReviewScreen() {
             </View>
             
             <Image 
-              source={{ uri: uploadedReceipt?.receipt_url || imageUri }} 
+              source={{ uri: getImageUrl() }} 
               style={styles.fullImage}
               resizeMode="contain"
               onError={(error) => {
