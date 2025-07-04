@@ -76,6 +76,10 @@ export default function ReviewScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { imageUri, source, mockData } = route.params as RouteParams;
+  
+  // Debug image URLs
+  console.log('🖼️ Review Screen - imageUri:', imageUri);
+  console.log('🖼️ Review Screen - uploadedReceipt?.receipt_url:', uploadedReceipt?.receipt_url);
 
   const [isProcessing, setIsProcessing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -703,7 +707,14 @@ export default function ReviewScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.processingContainer}>
-          <Image source={{ uri: imageUri }} style={styles.previewImage} />
+          <Image 
+            source={{ uri: uploadedReceipt?.receipt_url || imageUri }} 
+            style={styles.previewImage}
+            resizeMode="contain"
+            onError={(error) => {
+              console.log('🖼️ Processing image load failed:', error);
+            }}
+          />
           <View style={styles.processingContent}>
             {processingState.stage === 'error' ? (
               <Ionicons name="alert-circle" size={60} color={colors.error} />
@@ -856,9 +867,12 @@ export default function ReviewScreen() {
             onPress={() => setShowImageModal(true)}
           >
             <Image 
-              source={{ uri: imageUri }} 
+              source={{ uri: uploadedReceipt?.receipt_url || imageUri }} 
               style={styles.thumbnailImage}
               resizeMode="cover"
+              onError={(error) => {
+                console.log('🖼️ Thumbnail image load failed:', error);
+              }}
             />
             <View style={styles.previewTextContainer}>
               <Text style={styles.imagePreviewText}>View Receipt</Text>
@@ -1009,9 +1023,12 @@ export default function ReviewScreen() {
             </View>
             
             <Image 
-              source={{ uri: imageUri }} 
+              source={{ uri: uploadedReceipt?.receipt_url || imageUri }} 
               style={styles.fullImage}
               resizeMode="contain"
+              onError={(error) => {
+                console.log('🖼️ Full image load failed:', error);
+              }}
             />
             
             <Text style={styles.modalCaption}>
