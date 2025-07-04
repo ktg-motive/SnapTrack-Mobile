@@ -79,16 +79,21 @@ export default function ReviewScreen() {
   
   // Get the best available image URL
   const getImageUrl = () => {
-    // Priority: database image_url > receipt_url > original imageUri
+    // Priority for PRODUCTION: local imageUri first (faster, no network)
+    // Fallback to database URL for simulator or if local file unavailable
     const dbImageUrl = uploadedReceipt?.expense?.image_url || uploadedReceipt?.image_url || uploadedReceipt?.receipt_url;
+    const selectedUrl = imageUri || dbImageUrl;
+    
     console.log('🖼️ Available image URLs:', {
-      imageUri,
-      'expense.image_url': uploadedReceipt?.expense?.image_url,
-      'image_url': uploadedReceipt?.image_url,
-      'receipt_url': uploadedReceipt?.receipt_url,
-      'selected': dbImageUrl || imageUri
+      imageUri: imageUri ? 'Available (LOCAL - FAST)' : 'Not available',
+      'expense.image_url': uploadedReceipt?.expense?.image_url ? 'Available (REMOTE)' : 'Not available',
+      'image_url': uploadedReceipt?.image_url ? 'Available (REMOTE)' : 'Not available', 
+      'receipt_url': uploadedReceipt?.receipt_url ? 'Available (REMOTE)' : 'Not available',
+      'selected': selectedUrl,
+      'source': imageUri ? 'LOCAL (production-optimized)' : 'REMOTE (fallback)'
     });
-    return dbImageUrl || imageUri;
+    
+    return selectedUrl;
   };
 
   const [isProcessing, setIsProcessing] = useState(true);
