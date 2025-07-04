@@ -180,6 +180,8 @@ class SnapTrackApiClient {
     }
     
     if (response.success === false) {
+      console.error('❌ Upload failed with error:', response.error);
+      console.error('❌ Full error response:', JSON.stringify(response, null, 2));
       throw new ApiError(response.error || 'Failed to upload receipt');
     }
 
@@ -295,6 +297,10 @@ class SnapTrackApiClient {
    * Update receipt details
    */
   async updateReceipt(id: string, updates: Partial<Receipt>): Promise<Receipt> {
+    console.log('🔍 updateReceipt called with:', { id, updates });
+    console.log('🔍 Current auth token exists:', !!this.token);
+    console.log('🔍 API endpoint will be:', `/api/expenses/${id}`);
+    
     const response = await this.makeRequest<ApiResponse<Receipt>>(
       `/api/expenses/${id}`,
       {
@@ -303,7 +309,10 @@ class SnapTrackApiClient {
       }
     );
 
+    console.log('🔍 updateReceipt response:', response);
+
     if (!response.success) {
+      console.error('❌ updateReceipt failed:', response.error);
       throw new ApiError(response.error || 'Failed to update receipt');
     }
 

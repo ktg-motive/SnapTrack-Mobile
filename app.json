@@ -54,6 +54,12 @@
         {
           "photosPermission": "Allow SnapTrack to access your photos to select receipt images."
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.925529316912-rgmp4c8ah10vig4at93a62kl0seipdgm"
+        }
       ]
     ]
   }

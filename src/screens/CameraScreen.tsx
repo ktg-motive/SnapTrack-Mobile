@@ -73,16 +73,13 @@ export default function CameraScreen() {
               {
                 text: 'OK',
                 onPress: () => {
+                  // Use a real receipt image for testing
+                  const realReceiptImage = 'https://philip.greenspun.com/blog/wp-content/uploads/2024/04/2024-04-08-20.26.03-scaled.jpg';
+                  
                   navigation.navigate('Review' as never, { 
-                    imageUri: 'https://via.placeholder.com/400x600/f0f0f0/666666?text=Mock+Receipt',
-                    source: 'camera',
-                    mockData: {
-                      vendor: 'Starbucks Coffee',
-                      amount: 12.45,
-                      date: new Date().toISOString().split('T')[0],
-                      tags: 'coffee, food',
-                      confidence_score: 0.95
-                    }
+                    imageUri: realReceiptImage,
+                    source: 'camera'
+                    // Removed mockData to force real API calls in simulator
                   } as never);
                 }
               }
@@ -121,16 +118,13 @@ export default function CameraScreen() {
           {
             text: 'OK',
             onPress: () => {
+              // Use a real receipt image for testing
+              const realReceiptImage = 'https://philip.greenspun.com/blog/wp-content/uploads/2024/04/2024-04-08-20.26.03-scaled.jpg';
+              
               navigation.navigate('Review' as never, { 
-                imageUri: 'https://via.placeholder.com/400x600/f8f8f8/333333?text=Mock+Restaurant+Receipt',
-                source: 'library',
-                mockData: {
-                  vendor: 'The Italian Bistro',
-                  amount: 28.75,
-                  date: new Date().toISOString().split('T')[0],
-                  tags: 'dinner, business',
-                  confidence_score: 0.88
-                }
+                imageUri: realReceiptImage,
+                source: 'library'
+                // Removed mockData to force real API calls in simulator
               } as never);
             }
           }
