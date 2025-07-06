@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,20 +14,20 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  Modal,
-  Dimensions,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors, typography, shadows, spacing, borderRadius } from '../styles/theme';
 import { apiClient, ApiError } from '../services/apiClient';
-import { UploadedReceipt, Entity } from '../types';
+import { UploadedReceipt, Entity, Receipt } from '../types';
 import NetInfo from '@react-native-community/netinfo';
 import { offlineStorage } from '../services/offlineStorage';
 import { errorReporting } from '../services/errorReporting';
+import { ReceiptPreviewModal } from '../components/ReceiptPreviewModal';
+import { authService } from '../services/authService';
 
 interface RouteParams {
   imageUri: string;
@@ -96,6 +96,26 @@ export default function ReviewScreen() {
     return selectedUrl;
   };
 
+  // Create a Receipt object for the preview modal
+  const createPreviewReceipt = (): Receipt => {
+    return {
+      id: uploadedReceipt?.id || 'preview',
+      vendor: expenseData.vendor,
+      amount: parseFloat(expenseData.amount) || 0,
+      date: expenseData.date,
+      entity: expenseData.entity,
+      category: '',
+      tags: normalizeTagsToArray(expenseData.tags),
+      notes: expenseData.notes,
+      confidence_score: expenseData.confidence_score || 0,
+      receipt_url: getImageUrl(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: '',
+      tenant_id: '',
+    };
+  };
+
   const [isProcessing, setIsProcessing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [processingState, setProcessingState] = useState<ProcessingState>({
@@ -125,6 +145,19 @@ export default function ReviewScreen() {
     loadEntities();
     processReceiptWithAPI();
   }, []);
+
+  // Verify authentication when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const user = authService.getCurrentUser();
+      if (!user) {
+        console.log('🔐 No authenticated user found on ReviewScreen focus, redirecting to Auth...');
+        navigation.navigate('Auth' as never);
+      } else {
+        console.log('🔐 User authenticated on ReviewScreen focus:', user.email);
+      }
+    }, [navigation])
+  );
 
   const loadEntities = async () => {
     try {
@@ -170,14 +203,25 @@ export default function ReviewScreen() {
   };
 
   const selectTag = (tag: string) => {
-    const allTags = normalizeTagsToArray(expenseData.tags);
-    // Remove the last (incomplete) tag and replace with selected tag
-    const completeTags = allTags.slice(0, -1).filter(t => t);
+    console.log('🏷️ Tag selected:', tag);
+    console.log('🏷️ Current tags:', expenseData.tags);
     
+    const allTags = normalizeTagsToArray(expenseData.tags);
+    const currentInput = (expenseData.tags || '').split(',').map(t => t.trim());
+    
+    // Remove the last (incomplete) tag and replace with selected tag
+    const completeTags = currentInput.slice(0, -1).filter(t => t);
+    
+    // Only add tag if it's not already present
     if (!completeTags.includes(tag)) {
-      const newTags = [...completeTags, tag].join(', ');
-      setExpenseData(prev => ({ ...prev, tags: newTags }));
+      const newTags = [...completeTags, tag];
+      const newTagsString = newTags.join(', ');
+      console.log('🏷️ Setting new tags:', newTagsString);
+      setExpenseData(prev => ({ ...prev, tags: newTagsString }));
+    } else {
+      console.log('🏷️ Tag already exists, not adding');
     }
+    
     setShowTagSuggestions(false);
   };
 
@@ -445,7 +489,7 @@ export default function ReviewScreen() {
           [
             {
               text: 'OK',
-              onPress: () => navigation.navigate('Home' as never),
+              onPress: () => navigation.navigate('Main' as never),
             },
           ]
         );
@@ -495,7 +539,7 @@ export default function ReviewScreen() {
           Alert.alert(
             'Mock Expense Saved!',
             `Your mock expense has been saved locally.\n\nVendor: ${expenseData.vendor}\nAmount: $${expenseData.amount}`,
-            [{ text: 'OK', onPress: () => navigation.navigate('Home' as never) }]
+            [{ text: 'OK', onPress: () => navigation.navigate('Main' as never) }]
           );
           return;
         } catch (offlineError) {
@@ -533,7 +577,7 @@ export default function ReviewScreen() {
           Alert.alert(
             'Receipt Saved Offline!',
             `Your expense has been saved locally and will sync when connection improves.\n\nVendor: ${expenseData.vendor}\nAmount: $${expenseData.amount}`,
-            [{ text: 'OK', onPress: () => navigation.navigate('Home' as never) }]
+            [{ text: 'OK', onPress: () => navigation.navigate('Main' as never) }]
           );
           return;
         } catch (offlineError) {
@@ -571,7 +615,7 @@ export default function ReviewScreen() {
         [
           {
             text: 'OK',
-            onPress: () => navigation.navigate('Home' as never),
+            onPress: () => navigation.navigate('Main' as never),
           },
         ]
       );
@@ -656,7 +700,7 @@ export default function ReviewScreen() {
         }}
         onBlur={() => {
           // Delay hiding suggestions to allow selection
-          setTimeout(() => setShowTagSuggestions(false), 200);
+          setTimeout(() => setShowTagSuggestions(false), 300);
         }}
       />
       {showTagSuggestions && tagSuggestions.length > 0 && (
@@ -667,10 +711,11 @@ export default function ReviewScreen() {
                 key={index}
                 style={styles.tagSuggestion}
                 onPress={() => {
+                  console.log('🏷️ Tag suggestion pressed:', tag);
                   selectTag(tag);
-                  setShowTagSuggestions(false);
                 }}
                 activeOpacity={0.7}
+                delayPressIn={0}
               >
                 <Text style={styles.tagSuggestionText}>{tag}</Text>
               </TouchableOpacity>
@@ -1014,44 +1059,12 @@ export default function ReviewScreen() {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
-      {/* Image Preview Modal */}
-      <Modal
-        visible={showImageModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowImageModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={() => setShowImageModal(false)}>
-            <View style={styles.modalBackground} />
-          </TouchableWithoutFeedback>
-          
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Receipt Image</Text>
-              <TouchableOpacity 
-                onPress={() => setShowImageModal(false)}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-            
-            <Image 
-              source={{ uri: getImageUrl() }} 
-              style={styles.fullImage}
-              resizeMode="contain"
-              onError={(error) => {
-                console.log('🖼️ Full image load failed:', error);
-              }}
-            />
-            
-            <Text style={styles.modalCaption}>
-              From {source === 'camera' ? 'Camera' : 'Gallery'}
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      {/* Receipt Preview Modal */}
+      <ReceiptPreviewModal
+        receipt={createPreviewReceipt()}
+        isVisible={showImageModal}
+        onClose={() => setShowImageModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -1387,57 +1400,5 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
     fontSize: 16,
-  },
-  
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    margin: spacing.md,
-    maxHeight: '90%',
-    maxWidth: '95%',
-    minWidth: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
-  },
-  modalTitle: {
-    ...typography.title3,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  closeButton: {
-    padding: spacing.xs,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.surface,
-  },
-  fullImage: {
-    width: '100%',
-    height: Dimensions.get('window').height * 0.6,
-    borderRadius: borderRadius.md,
-  },
-  modalCaption: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    padding: spacing.md,
   },
 });

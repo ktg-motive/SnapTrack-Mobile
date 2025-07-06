@@ -66,7 +66,8 @@ export default function PrivacyPolicyScreen() {
 
         <Text style={styles.subsectionTitle}>Contact for Privacy Concerns</Text>
         <Text style={styles.paragraph}>
-          Email: privacy@snaptrack.bot{'\n'}
+          Use the Contact Support feature in Settings{'\n'}
+          Select "Privacy Questions" for data-related concerns{'\n'}
           Response time: Within 48 hours
         </Text>
 
@@ -113,11 +114,10 @@ export default function PrivacyPolicyScreen() {
         <Text style={styles.paragraph}>
           Company: Motive Development, Inc.{'\n'}
           Division: Motive AI{'\n'}
-          Email: privacy@snaptrack.bot{'\n'}
           Website: https://motiveai.ai
         </Text>
         <Text style={styles.paragraph}>
-          For immediate privacy concerns, use the in-app contact form or email privacy@snaptrack.bot.
+          For immediate privacy concerns, use the Contact Support feature in Settings and select "Privacy Questions" for fastest response.
         </Text>
       </View>
     </ScrollView>

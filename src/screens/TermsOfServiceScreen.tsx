@@ -127,11 +127,10 @@ export default function TermsOfServiceScreen() {
         <Text style={styles.paragraph}>
           Company: Motive Development, Inc.{'\n'}
           Division: Motive AI{'\n'}
-          Email: legal@snaptrack.bot{'\n'}
           Website: https://motiveai.ai
         </Text>
         <Text style={styles.paragraph}>
-          For questions about these terms, contact legal@snaptrack.bot.
+          For questions about these terms, use the Contact Support feature in Settings.
         </Text>
       </View>
     </ScrollView>

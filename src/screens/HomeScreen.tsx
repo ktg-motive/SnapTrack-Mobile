@@ -19,12 +19,14 @@ import SnapTrackLogo from '../components/SnapTrackLogo';
 import WelcomeMessage from '../components/WelcomeMessage';
 import QuickStats from '../components/QuickStats';
 import RecentReceipts from '../components/RecentReceipts';
-import UserAvatar from '../components/UserAvatar';
 import { apiClient, ApiError } from '../services/apiClient';
 import { authService } from '../services/authService';
 import { QuickStats as QuickStatsType, Receipt } from '../types';
 import NetInfo from '@react-native-community/netinfo';
 import { offlineStorage } from '../services/offlineStorage';
+import { ReceiptEditModal } from '../components/ReceiptEditModal';
+import { ReceiptPreviewModal } from '../components/ReceiptPreviewModal';
+import { HomeScreenFooter, ReceiptsState } from '../components/HomeScreenFooter';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -35,6 +37,16 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [queuedUploads, setQueuedUploads] = useState(0);
+  
+  // Modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+
+  // Infinite scroll state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreReceipts, setHasMoreReceipts] = useState(true);
 
   useEffect(() => {
     initializeData();
@@ -96,12 +108,12 @@ export default function HomeScreen() {
     }
   };
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (resetData = true) => {
     try {
       // Load data in parallel
       const [statsPromise, receiptsPromise] = await Promise.allSettled([
         apiClient.getQuickStats(),
-        apiClient.getReceipts({ limit: 5 }) // Get 5 most recent receipts
+        apiClient.getReceipts({ limit: 3, page: resetData ? 1 : currentPage }) // Get 3 receipts per page
       ]);
 
       if (statsPromise.status === 'fulfilled') {
@@ -113,12 +125,26 @@ export default function HomeScreen() {
       if (receiptsPromise.status === 'fulfilled') {
         const fullResponse = receiptsPromise.value;
         const receiptsData = fullResponse.data || [];
+        const totalPages = fullResponse.pages || 1;
+        const currentPageNum = fullResponse.page || 1;
+        
         console.log('📝 Full receipts response:', JSON.stringify(fullResponse, null, 2));
         console.log('📝 Loaded receipts:', receiptsData.length, 'receipts');
-        setRecentReceipts(receiptsData);
+        console.log('📝 Page:', currentPageNum, 'of', totalPages);
+        
+        if (resetData) {
+          setRecentReceipts(receiptsData);
+          setCurrentPage(1);
+        } else {
+          setRecentReceipts(prev => [...prev, ...receiptsData]);
+        }
+        
+        setHasMoreReceipts(currentPageNum < totalPages);
       } else {
         console.error('❌ Failed to load recent receipts:', receiptsPromise.reason);
-        setRecentReceipts([]); // Set empty array as fallback
+        if (resetData) {
+          setRecentReceipts([]); // Set empty array as fallback
+        }
       }
     } catch (error) {
       console.error('❌ Failed to load dashboard data:', error);
@@ -127,48 +153,59 @@ export default function HomeScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadDashboardData();
+    await loadDashboardData(true); // Reset data on refresh
     setRefreshing(false);
+  };
+
+  // Handle infinite scroll load more
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMoreReceipts) return;
+    
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    try {
+      const receiptsResponse = await apiClient.getReceipts({ limit: 3, page: nextPage });
+      const receiptsData = receiptsResponse.data || [];
+      const totalPages = receiptsResponse.pages || 1;
+      const currentPageNum = receiptsResponse.page || nextPage;
+      
+      console.log('📝 Loaded more receipts:', receiptsData.length, 'receipts');
+      console.log('📝 Page:', currentPageNum, 'of', totalPages);
+      
+      setRecentReceipts(prev => [...prev, ...receiptsData]);
+      setHasMoreReceipts(currentPageNum < totalPages);
+    } catch (error) {
+      console.error('❌ Failed to load more receipts:', error);
+      // Reset page on error
+      setCurrentPage(currentPage);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   const handleCapturePress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('Camera' as never);
+    navigation.navigate('CaptureTab' as never);
   };
 
-  const handleProfilePress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    // For now, show user info and sign out option
-    const currentUser = authService.getCurrentUser();
-    
-    if (currentUser) {
-      // Show user profile alert with options
-      Alert.alert(
-        'User Profile',
-        `Signed in as: ${currentUser.displayName || currentUser.email}`,
-        [
-          {
-            text: 'Sign Out',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await authService.signOut();
-                navigation.navigate('Auth' as never);
-              } catch (error) {
-                Alert.alert('Error', 'Failed to sign out. Please try again.');
-              }
-            }
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          }
-        ]
-      );
-    } else {
-      navigation.navigate('Auth' as never);
+
+  // Determine the footer state based on current app state
+  const getReceiptsState = (): ReceiptsState => {
+    if (recentReceipts.length === 0) {
+      return ReceiptsState.empty;
     }
+    
+    if (isLoadingMore) {
+      return ReceiptsState.loading;
+    }
+    
+    if (hasMoreReceipts) {
+      return ReceiptsState.hasMore;
+    }
+    
+    return ReceiptsState.endOfList;
   };
 
   return (
@@ -176,92 +213,153 @@ export default function HomeScreen() {
       {/* Header with Logo */}
       <View style={styles.header}>
         <SnapTrackLogo width={180} height={60} />
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('Settings' as never)}>
-            <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton} onPress={handleProfilePress}>
-            <UserAvatar name={userName} size={32} />
-          </TouchableOpacity>
-        </View>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-            title="Pull to refresh"
-            titleColor={colors.textSecondary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Offline/Sync Status Indicator */}
-        {(!isConnected || queuedUploads > 0) && (
-          <View style={styles.statusIndicator}>
-            <View style={styles.statusContent}>
-              {!isConnected ? (
-                <>
-                  <Ionicons name="wifi-outline" size={16} color={colors.warning} />
-                  <Text style={styles.statusText}>Offline Mode</Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="sync-outline" size={16} color={colors.primary} />
-                  <Text style={styles.statusTextConnected}>Online</Text>
-                </>
-              )}
-              
-              {queuedUploads > 0 && (
-                <View style={styles.queueIndicator}>
-                  <Text style={styles.queueText}>
-                    {queuedUploads} receipt{queuedUploads !== 1 ? 's' : ''} queued
-                  </Text>
-                </View>
-              )}
-            </View>
+      {/* Offline/Sync Status Indicator - Fixed */}
+      {(!isConnected || queuedUploads > 0) && (
+        <View style={styles.statusIndicator}>
+          <View style={styles.statusContent}>
+            {!isConnected ? (
+              <>
+                <Ionicons name="wifi-outline" size={16} color={colors.warning} />
+                <Text style={styles.statusText}>Offline Mode</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="sync-outline" size={16} color={colors.primary} />
+                <Text style={styles.statusTextConnected}>Online</Text>
+              </>
+            )}
+            
+            {queuedUploads > 0 && (
+              <View style={styles.queueIndicator}>
+                <Text style={styles.queueText}>
+                  <Text style={styles.queueNumber}>{queuedUploads}</Text> receipt{queuedUploads !== 1 ? 's' : ''} queued
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-
-        {/* Main Capture Button - Moved to top */}
-        <View style={styles.captureSection}>
-          <TouchableOpacity 
-            style={styles.captureContainer}
-            onPress={handleCapturePress}
-            activeOpacity={0.9}
-          >
-            <LinearGradient
-              colors={[colors.primary, colors.secondary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.captureButton}
-            >
-              <Ionicons name="camera" size={48} color="white" />
-              <Text style={styles.captureText}>Capture Receipt</Text>
-            </LinearGradient>
-          </TouchableOpacity>
         </View>
+      )}
 
-        {/* Recent Receipts - Moved to middle */}
+      {/* Quick Stats - Fixed */}
+      <QuickStats 
+        stats={quickStats}
+        isLoading={isLoading}
+      />
+
+      {/* Main Capture Button - Fixed */}
+      <View style={styles.captureSection}>
+        <TouchableOpacity 
+          style={styles.captureContainer}
+          onPress={handleCapturePress}
+          activeOpacity={0.9}
+        >
+          <LinearGradient
+            colors={[colors.primary, colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.captureButton}
+          >
+            <Ionicons name="camera" size={48} color="white" />
+            <Text style={styles.captureText}>Capture Receipt</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      {/* Scrollable Receipts Section */}
+      <View style={styles.receiptsContainer}>
         <RecentReceipts 
           receipts={recentReceipts}
           isLoading={isLoading}
+          onUpdateReceipt={(updatedReceipt) => {
+            setRecentReceipts(prev => 
+              prev.map(receipt => 
+                receipt.id === updatedReceipt.id ? updatedReceipt : receipt
+              )
+            );
+          }}
+          onDeleteReceipt={(receiptId) => {
+            setRecentReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+          }}
+          onEditReceipt={(receipt) => {
+            console.log('Edit receipt:', receipt.id);
+            setSelectedReceipt(receipt);
+            setEditModalVisible(true);
+          }}
+          onPreviewReceipt={(receipt) => {
+            console.log('Preview receipt:', receipt.id);
+            setSelectedReceipt(receipt);
+            setPreviewModalVisible(true);
+          }}
+          onLoadMore={handleLoadMore}
+          isLoadingMore={isLoadingMore}
+          hasMoreReceipts={hasMoreReceipts}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+              title="Pull to refresh"
+              titleColor={colors.textSecondary}
+            />
+          }
         />
+      </View>
 
-        {/* Quick Stats - Moved directly under receipts */}
-        <QuickStats 
-          stats={quickStats}
-          isLoading={isLoading}
-        />
+      {/* Fixed Footer */}
+      <HomeScreenFooter
+        receiptsState={getReceiptsState()}
+        receiptCount={recentReceipts.length}
+        onViewAllTapped={() => navigation.navigate('Receipts' as never)}
+        onEmptyStateTapped={() => {
+          // In a real implementation, we'd scroll to the capture button
+          // For now, provide haptic feedback to acknowledge the interaction
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }}
+      />
 
-        {/* Welcome Message - Moved to bottom */}
-        <WelcomeMessage userName={userName} />
-      </ScrollView>
+      {/* Modals */}
+      <ReceiptEditModal
+        receipt={selectedReceipt}
+        isVisible={editModalVisible}
+        onClose={() => {
+          setEditModalVisible(false);
+          setSelectedReceipt(null);
+        }}
+        onSave={async (receiptId, updates) => {
+          try {
+            const updatedReceipt = await apiClient.updateReceipt(receiptId, updates);
+            setRecentReceipts(prev => 
+              prev.map(receipt => 
+                receipt.id === receiptId ? updatedReceipt : receipt
+              )
+            );
+          } catch (error) {
+            console.error('Failed to update receipt:', error);
+            throw error;
+          }
+        }}
+        onDelete={async (receiptId) => {
+          try {
+            await apiClient.deleteReceipt(receiptId);
+            setRecentReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+          } catch (error) {
+            console.error('Failed to delete receipt:', error);
+            throw error;
+          }
+        }}
+      />
+
+      <ReceiptPreviewModal
+        receipt={selectedReceipt}
+        isVisible={previewModalVisible}
+        onClose={() => {
+          setPreviewModalVisible(false);
+          setSelectedReceipt(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -272,50 +370,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 20,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.xl,
+  receiptsContainer: {
+    flex: 1, // Takes remaining space between fixed elements
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 12, // Reduced from 20 to 12
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingsButton: {
-    padding: 8,
-    marginRight: spacing.sm,
-  },
-  profileButton: {
-    padding: 8,
+    paddingTop: 8, // Reduced from 20 to 8 for tighter layout
+    paddingBottom: 8, // Reduced from 12 to 8
   },
   captureSection: {
-    paddingHorizontal: 20, // Add horizontal padding to create margins from edges
-    marginTop: 16, // Reduced top margin to eliminate excessive whitespace
-    marginBottom: 24, // Moderate bottom margin for separation
+    paddingHorizontal: 16, // Slightly reduced for more width
+    marginTop: 8, // Reduced from 24 to 8 for tighter spacing with stats
+    marginBottom: 16, // Reduced for tighter overall layout
   },
   captureContainer: {
     // Remove margin since it's now in captureSection
   },
   captureButton: {
-    height: 120, // Much taller - increased from 64 to 120
-    borderRadius: 20, // Slightly larger radius for the bigger button
+    height: 140, // Even taller - increased from 120 to 140 for more prominence
+    borderRadius: 24, // Larger radius for premium feel
     flexDirection: 'column', // Stack icon and text vertically
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.button,
-    // Add extra shadow for prominence
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    // Enhanced shadow for maximum prominence
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+    // Add subtle border for definition
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   captureText: {
     ...typography.title2, // Larger text - upgraded from title3 to title2
@@ -325,10 +411,10 @@ const styles = StyleSheet.create({
   },
   statusIndicator: {
     marginHorizontal: 20,
-    marginVertical: 8,
+    marginVertical: 4, // Reduced from 8 to 4
     backgroundColor: colors.card,
     borderRadius: 8,
-    padding: 12,
+    padding: 10, // Reduced from 12 to 10
     ...shadows.card,
   },
   statusContent: {
@@ -359,5 +445,10 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
+  },
+  queueNumber: {
+    ...typography.number,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
 });

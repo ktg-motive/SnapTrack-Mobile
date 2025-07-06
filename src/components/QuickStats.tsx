@@ -44,17 +44,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     marginTop: 4, // Reduced margin when positioned under receipts
-    marginBottom: 16, // Keep some bottom margin for spacing
+    marginBottom: 8, // Reduced bottom margin for tighter spacing
     gap: 12,
     backgroundColor: colors.surface, // Solid background to distinguish from receipts
     paddingHorizontal: 16, // Add horizontal padding
-    paddingVertical: 12, // Add vertical padding
+    paddingVertical: 8, // Reduced vertical padding for thinner overall height
     borderRadius: 12, // Rounded corners for clean appearance
   },
   statCard: {
     flex: 1,
     backgroundColor: colors.primary, // Solid color background instead of white
-    padding: 20,
+    paddingVertical: 12, // Reduced from 20 to 12 for thinner boxes
+    paddingHorizontal: 16,
     borderRadius: 12,
     alignItems: 'center',
     ...shadows.card,

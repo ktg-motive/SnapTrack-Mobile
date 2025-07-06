@@ -1,41 +1,122 @@
-import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, shadows, spacing } from '../styles/theme';
 import { Receipt } from '../types';
+import { SleekReceiptCard } from './SleekReceiptCard';
 
 interface RecentReceiptsProps {
   receipts?: Receipt[];
   isLoading: boolean;
+  onUpdateReceipt?: (updatedReceipt: Receipt) => void;
+  onDeleteReceipt?: (receiptId: string) => void;
+  onEditReceipt?: (receipt: Receipt) => void;
+  onPreviewReceipt?: (receipt: Receipt) => void;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  hasMoreReceipts?: boolean;
+  refreshControl?: React.ReactElement;
 }
 
-export default function RecentReceipts({ receipts = [], isLoading }: RecentReceiptsProps) {
-  const renderReceiptItem = ({ item }: { item: Receipt }) => (
-    <View style={styles.receiptItem}>
-      <View style={styles.receiptIcon}>
-        <Ionicons name="receipt-outline" size={20} color={colors.primary} />
-      </View>
-      
-      <View style={styles.receiptDetails}>
-        <Text style={styles.vendorText}>{item.vendor}</Text>
-        <Text style={styles.categoryText}>
-          {item.tags && item.tags.length > 0 
-            ? Array.isArray(item.tags) 
-              ? item.tags.join(', ') 
-              : item.tags
-            : item.entity || 'No category'
-          }
-        </Text>
-      </View>
-      
-      <View style={styles.receiptAmount}>
-        <Text style={styles.amountText}>${(item.amount || 0).toFixed(2)}</Text>
-        <Text style={styles.dateText}>{new Date(item.date).toLocaleDateString()}</Text>
-      </View>
-    </View>
+export default function RecentReceipts({ 
+  receipts = [], 
+  isLoading,
+  onUpdateReceipt,
+  onDeleteReceipt,
+  onEditReceipt,
+  onPreviewReceipt,
+  onLoadMore,
+  isLoadingMore = false,
+  hasMoreReceipts = true,
+  refreshControl
+}: RecentReceiptsProps) {
+  const [localReceipts, setLocalReceipts] = useState<Receipt[]>(receipts);
+
+  // Update local state when receipts prop changes
+  React.useEffect(() => {
+    setLocalReceipts(receipts);
+  }, [receipts]);
+
+  // Handle receipt updates
+  const handleUpdateReceipt = (updatedReceipt: Receipt) => {
+    setLocalReceipts(prev => 
+      prev.map(receipt => 
+        receipt.id === updatedReceipt.id ? updatedReceipt : receipt
+      )
+    );
+    onUpdateReceipt?.(updatedReceipt);
+  };
+
+  // Handle receipt deletion
+  const handleDeleteReceipt = (receiptId: string) => {
+    setLocalReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+    onDeleteReceipt?.(receiptId);
+  };
+
+  // Handle edit action - this will trigger inline editing in the ReceiptCard
+  const handleEditReceipt = (receipt: Receipt) => {
+    // The SwipeableReceiptCard handles this internally via the ReceiptCard
+    // But we can still notify parent component if needed
+    onEditReceipt?.(receipt);
+  };
+
+  // Handle preview action
+  const handlePreviewReceipt = (receipt: Receipt) => {
+    onPreviewReceipt?.(receipt);
+  };
+
+  // Handle infinite scroll
+  const handleEndReached = () => {
+    if (!isLoadingMore && hasMoreReceipts && onLoadMore) {
+      onLoadMore();
+    }
+  };
+
+  // Render receipt card
+  const renderReceiptCard = ({ item }: { item: Receipt }) => (
+    <SleekReceiptCard
+      receipt={item}
+      onDelete={handleDeleteReceipt}
+      onEdit={handleEditReceipt}
+      onPreview={handlePreviewReceipt}
+    />
   );
 
-  if (isLoading && receipts.length === 0) {
+  // Render scroll boundary footer
+  const renderFooter = () => {
+    // Show loading state
+    if (isLoadingMore) {
+      return (
+        <View style={styles.scrollFooter}>
+          <Text style={styles.footerNavText}>📄 View All Receipts</Text>
+          <View style={styles.footerStatus}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.footerStatusText}>Loading...</Text>
+          </View>
+        </View>
+      );
+    }
+
+    // Show end state or scroll hint
+    if (localReceipts.length === 0) {
+      return (
+        <View style={styles.scrollFooter}>
+          <Text style={styles.footerNavText}>📄 Capture your first receipt above</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.scrollFooter}>
+        <Text style={styles.footerNavText}>📄 View All Receipts</Text>
+        <Text style={styles.footerStatusText}>
+          {hasMoreReceipts ? 'Swipe up for more' : "That's everything!"}
+        </Text>
+      </View>
+    );
+  };
+
+  if (isLoading && localReceipts.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -49,7 +130,7 @@ export default function RecentReceipts({ receipts = [], isLoading }: RecentRecei
     );
   }
 
-  if (receipts.length === 0) {
+  if (localReceipts.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -70,13 +151,21 @@ export default function RecentReceipts({ receipts = [], isLoading }: RecentRecei
         <Text style={styles.title}>Recent Receipts</Text>
       </View>
       
-      <View style={styles.list}>
-        {receipts.map((item) => (
-          <View key={item.id}>
-            {renderReceiptItem({ item })}
-          </View>
-        ))}
-      </View>
+      <FlatList
+        data={localReceipts}
+        renderItem={renderReceiptCard}
+        keyExtractor={(item) => item.id}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={null}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.flatListContent}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        windowSize={10}
+        initialNumToRender={3}
+        refreshControl={refreshControl}
+      />
     </View>
   );
 }
@@ -92,53 +181,32 @@ const styles = StyleSheet.create({
     ...typography.title3,
     color: colors.textPrimary,
   },
-  list: {
-    // Remove flex: 1 since we're not using FlatList anymore
+  flatListContent: {
+    paddingBottom: spacing.sm, // Reduced since footer provides visual boundary
   },
-  receiptItem: {
+  scrollFooter: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+    gap: spacing.xs,
+  },
+  footerNavText: {
+    ...typography.body2,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  footerStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-    ...shadows.card,
+    gap: spacing.xs,
   },
-  receiptIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  receiptDetails: {
-    flex: 1,
-  },
-  vendorText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  categoryText: {
+  footerStatusText: {
     ...typography.caption,
     color: colors.textSecondary,
-  },
-  receiptAmount: {
-    alignItems: 'flex-end',
-  },
-  amountText: {
-    ...typography.money,
-    color: colors.textPrimary,
-    fontSize: 16,
-    marginBottom: 2,
-  },
-  dateText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontSize: 12,
+    fontStyle: 'italic',
   },
   loadingContainer: {
     flex: 1,

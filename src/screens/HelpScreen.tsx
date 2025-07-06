@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing } from '../styles/theme';
 
 interface FAQItem {
@@ -12,6 +13,7 @@ interface FAQItem {
 }
 
 export default function HelpScreen() {
+  const navigation = useNavigation();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -85,7 +87,7 @@ export default function HelpScreen() {
     {
       category: 'security',
       question: 'Can I delete my account and data?',
-      answer: 'Yes, you have complete control over your data. Contact support@snaptrack.bot to delete your account. All data will be permanently removed within 30 days. You can export your data before deletion.',
+      answer: 'Yes, you have complete control over your data. Use the Contact Support feature in Settings to request account deletion. All data will be permanently removed within 30 days. You can export your data before deletion.',
       tags: ['delete', 'account', 'data-control'],
       helpful_count: 12,
     },
@@ -106,6 +108,10 @@ export default function HelpScreen() {
 
   const submitFeedback = (index: number, isHelpful: boolean) => {
     setFeedbackSubmitted(prev => new Set(prev).add(index));
+  };
+
+  const handleContactSupport = () => {
+    navigation.navigate('Contact' as never);
   };
 
   const renderFAQItem = (item: FAQItem, index: number) => (
@@ -236,7 +242,7 @@ export default function HelpScreen() {
         <Text style={styles.footerText}>
           Contact our support team for personalized assistance with your SnapTrack account.
         </Text>
-        <TouchableOpacity style={styles.contactButton}>
+        <TouchableOpacity style={styles.contactButton} onPress={handleContactSupport}>
           <Ionicons name="mail" size={20} color="white" />
           <Text style={styles.contactButtonText}>Contact Support</Text>
         </TouchableOpacity>

@@ -6,15 +6,16 @@ import {
 import { 
   getAuth, 
   initializeAuth,
-  getReactNativePersistence,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged, 
   signInWithCredential,
   GoogleAuthProvider,
+  OAuthProvider,
   User as FirebaseUser,
-  Auth
+  Auth,
+  updateProfile
 } from 'firebase/auth';
 // Conditional import for Google Sign-In (not available in Expo Go)
 let GoogleSignin: any = null;
@@ -22,6 +23,14 @@ try {
   GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
 } catch (error) {
   console.log('Google Sign-In not available in this environment');
+}
+
+// Conditional import for Apple Sign-In (only available on iOS devices)
+let AppleAuthentication: any = null;
+try {
+  AppleAuthentication = require('expo-apple-authentication');
+} catch (error) {
+  console.log('Apple Authentication not available in this environment');
 }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -39,10 +48,10 @@ class AuthService {
       ? initializeApp(CONFIG.FIREBASE_CONFIG)
       : getApp();
     
-    // Initialize Auth with AsyncStorage persistence
+    // Initialize Auth - Firebase v9+ handles React Native persistence automatically
     this.auth = getApps().length === 0 
       ? initializeAuth(app, {
-          persistence: getReactNativePersistence(AsyncStorage)
+          // AsyncStorage persistence is automatic in React Native
         })
       : getAuth(app);
     
@@ -233,6 +242,93 @@ class AuthService {
   }
 
   /**
+   * Sign in with Apple
+   */
+  async signInWithApple(): Promise<AuthUser> {
+    if (!AppleAuthentication) {
+      throw new Error('Apple Sign-In is not available in this environment. Please use email/password authentication or try in a development build.');
+    }
+
+    try {
+      console.log('🔐 Attempting Apple sign in');
+      
+      // Check if Apple Sign-In is available on this device
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('Apple Sign-In is not available on this device');
+      }
+      
+      // Get Apple credential
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      
+      if (!credential.identityToken) {
+        throw new Error('No identity token received from Apple');
+      }
+      
+      // Create Firebase credential
+      const provider = new OAuthProvider('apple.com');
+      const firebaseCredential = provider.credential({
+        idToken: credential.identityToken,
+        rawNonce: credential.realUserStatus,
+      });
+      
+      // Sign in to Firebase with Apple credential
+      const userCredential = await signInWithCredential(this.auth, firebaseCredential);
+      const firebaseUser = userCredential.user;
+      
+      // Get Firebase auth token
+      const token = await firebaseUser.getIdToken();
+      
+      await this.storeAuthToken(token);
+      apiClient.setAuthToken(token);
+
+      // Construct display name from Apple credential if available
+      let displayName = firebaseUser.displayName;
+      if (!displayName && credential.fullName) {
+        const { givenName, familyName } = credential.fullName;
+        if (givenName || familyName) {
+          displayName = [givenName, familyName].filter(Boolean).join(' ');
+        }
+      }
+
+      const authUser: AuthUser = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email!,
+        displayName: displayName || undefined,
+        photoURL: firebaseUser.photoURL || undefined,
+        emailVerified: firebaseUser.emailVerified,
+      };
+
+      this.currentUser = authUser;
+      console.log('✅ Apple sign in successful');
+      
+      return authUser;
+    } catch (error: any) {
+      console.error('❌ Apple sign in failed:', error.message);
+      
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        throw new Error('Sign in was cancelled');
+      } else if (error.code === 'ERR_INVALID_RESPONSE') {
+        throw new Error('Invalid response from Apple');
+      }
+      
+      throw new Error('Apple sign in failed. Please try again.');
+    }
+  }
+
+  /**
+   * Check if Apple Sign-In is available
+   */
+  isAppleSignInAvailable(): boolean {
+    return AppleAuthentication !== null;
+  }
+
+  /**
    * Sign out current user
    */
   async signOut(): Promise<void> {
@@ -272,6 +368,35 @@ class AuthService {
    */
   isAuthenticated(): boolean {
     return this.currentUser !== null;
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(updates: Partial<Pick<AuthUser, 'displayName' | 'photoURL'>>): Promise<void> {
+    if (!this.auth.currentUser) {
+      throw new Error('No authenticated user found');
+    }
+
+    try {
+      console.log('🔐 Updating user profile:', updates);
+      
+      // Update Firebase profile
+      await updateProfile(this.auth.currentUser, updates);
+      
+      // Update local currentUser state
+      if (this.currentUser) {
+        this.currentUser = {
+          ...this.currentUser,
+          ...updates,
+        };
+      }
+      
+      console.log('✅ Profile update successful');
+    } catch (error: any) {
+      console.error('❌ Profile update failed:', error.message);
+      throw new Error('Failed to update profile. Please try again.');
+    }
   }
 
   /**

@@ -25,6 +25,12 @@ export const colors = {
   // Status
   error: '#dc3545',
   warning: '#ffc107',
+  
+  // Additional missing colors
+  accent: '#2457d9',          // Alias for secondary
+  border: '#dee2e6',          // Border color
+  outline: '#adb5bd',         // Outline color
+  primaryContainer: '#009f8620', // Primary with opacity
 };
 
 export const typography = {
@@ -61,6 +67,18 @@ export const typography = {
     lineHeight: 22,
     letterSpacing: 0.5,
     fontFamily: 'Menlo',
+  },
+  number: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    lineHeight: 20,
+    letterSpacing: 0.3,
+    fontFamily: 'Menlo',
+  },
+  body2: {
+    fontSize: 14,
+    fontWeight: '400' as const,
+    lineHeight: 18,
   }
 };
 
@@ -96,4 +114,31 @@ export const borderRadius = {
   lg: 16,
   xl: 20,
   full: 9999,
+};
+
+// Create a theme object for components that expect theme.colors, theme.spacing, etc.
+export const theme = {
+  colors: {
+    ...colors,
+    // Additional colors that components might expect
+    surface: colors.surface,
+    onSurface: colors.textPrimary,
+    onSurfaceVariant: colors.textSecondary,
+    outline: colors.textMuted,
+    outlineVariant: colors.textMuted,
+    primaryContainer: colors.primary + '20', // 20% opacity
+    onPrimaryContainer: colors.primary,
+    secondaryContainer: colors.secondary + '20',
+    onSecondaryContainer: colors.secondary,
+    onPrimary: '#ffffff',
+    placeholder: colors.textMuted,
+    shadow: colors.textPrimary,
+  },
+  spacing: {
+    ...spacing,
+    xxs: 2, // Add missing xxs
+  },
+  borderRadius,
+  typography,
+  shadows,
 };

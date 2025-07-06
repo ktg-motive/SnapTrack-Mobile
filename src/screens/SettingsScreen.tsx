@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing } from '../styles/theme';
+import { FeedbackType } from '../types/feedback';
 
 interface SettingItem {
   title: string;
@@ -16,6 +17,37 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
 
   const settingsItems: SettingItem[] = [
+    // Feedback & Support Section
+    {
+      title: 'Send Feedback',
+      subtitle: 'Share your overall experience',
+      icon: 'star-outline',
+      onPress: () => navigation.navigate('Feedback' as never, { 
+        initialType: FeedbackType.GENERAL_RATING,
+        initialContext: 'Settings menu - General feedback'
+      }),
+      showArrow: true,
+    },
+    {
+      title: 'Report Problem',
+      subtitle: 'Found a bug or issue?',
+      icon: 'bug-outline',
+      onPress: () => navigation.navigate('Feedback' as never, { 
+        initialType: FeedbackType.PROBLEM_REPORT,
+        initialContext: 'Settings menu - Problem report'
+      }),
+      showArrow: true,
+    },
+    {
+      title: 'Request Feature',
+      subtitle: 'Suggest new features or improvements',
+      icon: 'bulb-outline',
+      onPress: () => navigation.navigate('Feedback' as never, { 
+        initialType: FeedbackType.FEATURE_REQUEST,
+        initialContext: 'Settings menu - Feature request'
+      }),
+      showArrow: true,
+    },
     {
       title: 'Help & Support',
       subtitle: 'Get help using SnapTrack',
@@ -25,8 +57,8 @@ export default function SettingsScreen() {
     },
     {
       title: 'Contact Support',
-      subtitle: 'Get in touch with our team',
-      icon: 'mail-outline',
+      subtitle: 'Submit feedback and support requests',
+      icon: 'chatbubbles-outline',
       onPress: () => navigation.navigate('Contact' as never),
       showArrow: true,
     },
@@ -87,18 +119,28 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Management</Text>
+        {settingsItems.slice(0, 1).map(renderSettingItem)}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Feedback & Support</Text>
+        {settingsItems.slice(1, 4).map(renderSettingItem)}
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Support</Text>
-        {settingsItems.slice(0, 2).map(renderSettingItem)}
+        {settingsItems.slice(4, 6).map(renderSettingItem)}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Legal</Text>
-        {settingsItems.slice(2, 4).map(renderSettingItem)}
+        {settingsItems.slice(6, 8).map(renderSettingItem)}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>About</Text>
-        {settingsItems.slice(4).map(renderSettingItem)}
+        {settingsItems.slice(8).map(renderSettingItem)}
       </View>
     </ScrollView>
   );

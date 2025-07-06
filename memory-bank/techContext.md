@@ -1,319 +1,312 @@
 # Technical Context
 
-**Last Updated:** 2025-07-03 14:55:00  
-**Technology Stack:** React Native + Expo + TypeScript + Firebase  
-**Deployment Target:** iOS TestFlight → App Store (Android future)  
-**Backend Integration:** SnapTrack API (Python Flask + Supabase)
+**Last Updated:** 2025-07-06 20:30:00 - Production Enhancement Session - Impacts: [Authentication, Apple Integration, UX]
 
-## Core Technology Architecture
+## Technical Architecture
 
-### Frontend Stack (React Native)
+### Core Technology Stack
+- **React Native 0.79.5** with Expo SDK 53 for cross-platform mobile development
+- **TypeScript** with strict type checking for enhanced code quality and developer experience
+- **React Navigation 7.x** with bottom tabs and stack navigation
+- **Firebase Authentication** with Google OAuth, Apple Sign-In, and email/password support
+- **expo-apple-authentication** for native iOS Apple Sign-In integration
+- **AsyncStorage** for offline data persistence and queue management
+
+### Backend Integration
+- **SnapTrack API** for receipt processing and OCR functionality
+- **Multipart Form Data** uploads for receipt images with progress tracking
+- **RESTful API Client** with comprehensive error handling and retry logic
+- **Offline-First Architecture** with automatic sync when network restored
+
+## Project Structure
+
+### Directory Organization
+```
+SnapTrackMobile/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── HomeScreenFooter.tsx     # Smart footer with 4 states
+│   │   ├── QuickStats.tsx           # Financial summary cards
+│   │   ├── SleekReceiptCard.tsx     # Receipt list items
+│   │   └── ReceiptPreviewModal.tsx  # Full-screen image preview
+│   ├── screens/             # Screen components
+│   │   ├── HomeScreen.tsx           # Main dashboard with fixed layout
+│   │   ├── CameraScreen.tsx         # Receipt capture interface
+│   │   ├── ReviewScreen.tsx         # Expense review and editing
+│   │   └── AuthScreen.tsx           # Authentication flow
+│   ├── services/            # Business logic and API clients
+│   │   ├── api.ts                   # Backend API integration
+│   │   ├── auth.ts                  # Firebase authentication
+│   │   └── storage.ts               # Offline storage management
+│   ├── styles/              # Design system and theming
+│   │   └── theme.ts                 # Colors, typography, spacing
+│   └── types/               # TypeScript type definitions
+│       └── index.ts                 # Receipt, User, API types
+├── assets/                  # Static assets and images
+├── app.json                 # Expo configuration
+└── package.json             # Dependencies and scripts
+```
+
+### Key Components Architecture
+
+#### HomeScreen Layout Pattern
 ```typescript
-// Core Technologies
-React Native: 0.73.x          // Cross-platform mobile framework
-Expo SDK: 53.x                // Development and build tools
-TypeScript: 5.x               // Type safety and development experience
-React Navigation: 7.x         // Navigation and routing
-
-// UI and Styling
-react-native-vector-icons     // Icon library (Ionicons)
-expo-linear-gradient          // Gradient components
-Custom theme system           // Colors, typography, spacing, shadows
-
-// Device Integration
-expo-camera                   // Camera access and photo capture
-expo-image-picker            // Photo library access
-expo-haptics                 // Tactile feedback
-expo-auth-session            // OAuth flows
+// Fixed elements that don't scroll
+<SafeAreaView>
+  <Header />
+  <QuickStats />                    // Fixed at top
+  <CaptureSection />               // Fixed in middle
+  
+  // Scrollable content area
+  <FlatList data={receipts}>       // Only receipts scroll
+    <SleekReceiptCard />
+    <HomeScreenFooter />           // Smart footer with states
+  </FlatList>
+</SafeAreaView>
 ```
 
-### Authentication Architecture
+#### Smart Footer State Management
 ```typescript
-// Firebase Integration
-Firebase Auth: 10.x           // User authentication
-@react-native-google-signin   // Google OAuth (conditional import)
-@react-native-async-storage   // Token persistence
-Firebase Admin SDK            // Backend token validation
-
-// Authentication Flow
-Frontend: Firebase Auth → Backend: Token validation → API access
-Session persistence via AsyncStorage with automatic refresh
-Google Sign-In available in development builds (not Expo Go)
-```
-
-### State Management & Data Flow
-```typescript
-// State Architecture
-React Hooks: useState, useEffect, useCallback
-Context API: User authentication state
-Local State: Component-specific UI state
-Offline Storage: AsyncStorage for queued receipts
-
-// API Integration
-Custom apiClient class with error handling
-Network state detection via @react-native-netinfo
-Offline queue system with automatic retry
-Real-time sync when network restored
-```
-
-### File Structure & Organization
-```
-src/
-├── components/              # Reusable UI components
-│   ├── SnapTrackLogo.tsx   # Brand logo component
-│   ├── UserAvatar.tsx      # User initials avatar
-│   ├── QuickStats.tsx      # Dashboard statistics
-│   ├── RecentReceipts.tsx  # Receipt list component
-│   └── WelcomeMessage.tsx  # Dashboard welcome
-├── screens/                # Screen components
-│   ├── AuthScreen.tsx      # Login/signup flow
-│   ├── HomeScreen.tsx      # Main dashboard
-│   ├── CameraScreen.tsx    # Receipt capture
-│   └── ReviewScreen.tsx    # Receipt review/edit
-├── services/               # Business logic
-│   ├── apiClient.ts        # Backend API integration
-│   ├── authService.ts      # Authentication service
-│   ├── offlineStorage.ts   # Offline queue management
-│   └── errorReporting.ts   # Error handling
-├── styles/                 # Design system
-│   └── theme.ts           # Colors, typography, spacing
-├── types/                  # TypeScript definitions
-│   └── index.ts           # API and component types
-└── config/                # Configuration
-    └── index.ts           # Firebase and API config
-```
-
-## Backend Integration
-
-### SnapTrack API Integration
-```typescript
-// API Client Configuration
-Base URL: https://snaptrack-receipts-6b4ae7a14b3e.herokuapp.com
-Authentication: Bearer token (Firebase JWT)
-Content-Type: multipart/form-data (file uploads)
-Response Format: JSON with error handling
-
-// Core API Endpoints
-POST /api/parse              // Receipt upload and OCR processing
-GET  /api/expenses           // List user expenses
-POST /api/expenses           // Create new expense
-PUT  /api/expenses/:id       // Update existing expense
-GET  /api/entities           // List user entities
-GET  /api/tags/search        // Tag autocomplete search
-```
-
-### Data Models & Types
-```typescript
-// Core Types
-interface UploadedReceipt {
-  id: string;
-  receipt_url: string;
-  extracted_data?: {
-    vendor?: string;
-    amount?: number;
-    date?: string;
-    tags?: string;
-    confidence_score?: number;
-  };
-  status: 'processing' | 'completed' | 'failed';
+export enum ReceiptsState {
+  hasMore = 'hasMore',     // More receipts available
+  loading = 'loading',     // Loading new receipts
+  endOfList = 'endOfList', // All receipts loaded
+  empty = 'empty',         // No receipts exist
 }
-
-interface Expense {
-  id: string;
-  vendor: string;
-  amount: number;
-  date: string;
-  entity: string;
-  tags: string[];
-  notes?: string;
-  receipt_url?: string;
-}
-
-interface Entity {
-  id: string;
-  name: string;
-  email_identifier: string;
-  created_at: string;
-  updated_at: string;
-}
-```
-
-### Error Handling & Resilience
-```typescript
-// Error Handling Strategy
-API Error Classes: ApiError with status codes and messages
-Network Detection: @react-native-netinfo for connection monitoring
-Offline Queue: AsyncStorage-based receipt queue with retry logic
-User Feedback: Alert dialogs with clear error messages and recovery options
-
-// Fallback Mechanisms
-Missing Receipt ID: Direct expense creation fallback
-API Response Variations: Multiple data extraction patterns
-Network Failures: Offline storage with automatic sync
-Processing Failures: Retry mechanisms with user notification
 ```
 
 ## Development Environment
 
-### Setup and Configuration
-```bash
-# Development Prerequisites
-Node.js: 18.x or higher        # JavaScript runtime
-Expo CLI: Latest               # Development tools
-iOS Simulator: Xcode 15+       # iOS testing
-Firebase Project: Configured   # Authentication backend
+### Setup Requirements
+- **Node.js 18+** for JavaScript runtime and package management
+- **Expo CLI 6+** for development tooling and build management
+- **iOS Simulator** (Xcode 15+) for development and testing
+- **Firebase Project** with authentication and storage configured
 
-# Environment Variables
-EXPO_PUBLIC_FIREBASE_API_KEY=xxx
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=xxx
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=xxx
-EXPO_PUBLIC_API_BASE_URL=https://snaptrack-receipts-6b4ae7a14b3e.herokuapp.com
+### Installation Commands
+```bash
+npm install -g @expo/cli
+npm install
+npx expo prebuild --clean
+npm run ios
 ```
 
-### Build and Deployment Configuration
+### Development Scripts
 ```json
-// app.json Configuration
+{
+  "start": "expo start",
+  "ios": "expo run:ios",
+  "android": "expo run:android",
+  "prebuild": "expo prebuild --clean",
+  "build:ios": "eas build --platform ios"
+}
+```
+
+## Authentication Flow
+
+### Firebase Configuration
+- **GoogleService-Info.plist** configured for iOS authentication
+- **Google OAuth** for seamless sign-in experience
+- **Email/Password** fallback authentication method
+- **AsyncStorage Persistence** for session management across app launches
+
+### User Management
+```typescript
+interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  initials: string;     // Generated for avatar display
+  colorIndex: number;   // For avatar background color
+}
+```
+
+## API Integration
+
+### SnapTrack Backend Integration
+- **Base URL:** Production SnapTrack API endpoint
+- **Authentication:** Bearer token with automatic refresh
+- **Upload Endpoint:** `/api/receipts/upload` with multipart form data
+- **OCR Processing:** Real-time status polling with confidence scoring
+
+### Request/Response Patterns
+```typescript
+// Receipt upload with progress tracking
+interface ReceiptUploadResponse {
+  id: string;
+  status: 'processing' | 'completed' | 'failed';
+  extracted_data?: {
+    vendor?: string;
+    amount?: number;
+    date?: string;
+    confidence?: number;
+  };
+}
+```
+
+### Error Handling Strategy
+- **Network Errors:** Automatic retry with exponential backoff
+- **API Errors:** User-friendly error messages with recovery actions
+- **Offline Mode:** Queue operations and sync when network restored
+- **Validation Errors:** Real-time form validation with clear feedback
+
+## Offline Architecture
+
+### Storage Strategy
+```typescript
+// AsyncStorage keys for offline data
+const STORAGE_KEYS = {
+  PENDING_RECEIPTS: '@pending_receipts',
+  USER_SESSION: '@user_session',
+  CACHED_ENTITIES: '@cached_entities',
+  CACHED_TAGS: '@cached_tags',
+};
+```
+
+### Sync Management
+- **Queue System:** Store failed operations locally with timestamps
+- **Background Sync:** Automatic retry when network connectivity restored
+- **Conflict Resolution:** Last-write-wins strategy for simplicity
+- **Progress Feedback:** Visual indicators for sync status and queue length
+
+## Design System
+
+### Typography Hierarchy
+```typescript
+export const typography = {
+  title1: { fontSize: 28, fontWeight: '700', lineHeight: 34 },
+  title2: { fontSize: 22, fontWeight: '600', lineHeight: 28 },
+  title3: { fontSize: 20, fontWeight: '600', lineHeight: 25 },
+  body: { fontSize: 16, fontWeight: '400', lineHeight: 24 },
+  money: { fontSize: 16, fontWeight: '600', fontFamily: 'Menlo' },
+};
+```
+
+### Color Palette
+```typescript
+export const colors = {
+  primary: '#1C65C9',      // Primary blue for CTAs
+  secondary: '#019C89',    // Secondary teal for accents
+  success: '#10B981',      // Green for success states
+  warning: '#F59E0B',      // Orange for warnings
+  error: '#EF4444',        // Red for errors
+  textPrimary: '#1F2937',  // Dark gray for primary text
+  textSecondary: '#6B7280', // Medium gray for secondary text
+};
+```
+
+### Spacing System
+```typescript
+export const spacing = {
+  xs: 4,    // Extra small spacing
+  sm: 8,    // Small spacing
+  md: 16,   // Medium spacing (base unit)
+  lg: 24,   // Large spacing
+  xl: 32,   // Extra large spacing
+};
+```
+
+## Build and Deployment
+
+### iOS Configuration
+```json
+// app.json key sections
 {
   "expo": {
     "name": "SnapTrack",
     "slug": "snaptrack-mobile",
+    "platforms": ["ios"],
     "version": "1.0.0",
-    "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": { "image": "./assets/splash.png" },
     "ios": {
-      "bundleIdentifier": "com.snaptrack.mobile",
-      "buildNumber": "1.0.0"
-    },
-    "android": {
-      "package": "com.snaptrack.mobile",
-      "versionCode": 1
+      "bundleIdentifier": "com.motive.snaptrack",
+      "buildNumber": "1"
     }
   }
 }
 ```
 
-### Development Commands
+### EAS Build Configuration
+```json
+// eas.json
+{
+  "build": {
+    "preview": {
+      "ios": { "simulator": true }
+    },
+    "production": {
+      "ios": { "distribution": "store" }
+    }
+  }
+}
+```
+
+### Deployment Commands
 ```bash
-# Development Workflow
-npm install                    # Install dependencies
-npx expo start                # Start development server
-npx expo run:ios              # Run on iOS simulator
-npx expo run:android          # Run on Android emulator
+# Development build for testing
+eas build --platform ios --profile preview
 
-# Build and Deployment
-npx expo prebuild --clean     # Generate native projects
-eas build --platform ios     # Build for TestFlight
-eas build --platform all     # Build for both platforms
-eas submit --platform ios    # Submit to App Store Connect
+# Production build for App Store
+eas build --platform ios --profile production
+
+# Submit to TestFlight
+eas submit --platform ios
 ```
 
-## Performance and Optimization
+## Performance Optimization
 
-### Mobile Performance Considerations
-```typescript
-// Performance Optimizations
-Image Handling: Optimized file sizes and compression
-Lazy Loading: Component-based code splitting
-Memory Management: Proper cleanup in useEffect hooks
-Navigation: Stack navigation with header optimization
-Offline Storage: Efficient AsyncStorage usage patterns
+### React Native Optimizations
+- **FlatList** with proper `getItemLayout` for consistent performance
+- **Image Optimization** with appropriate `resizeMode` and caching
+- **Memory Management** with proper component cleanup and useEffect dependencies
+- **Bundle Splitting** with dynamic imports for non-critical features
 
-// Bundle Size Management
-Tree Shaking: Import only used components/functions
-Asset Optimization: Proper image formats and sizes
-Dependency Auditing: Regular cleanup of unused packages
-Code Splitting: Screen-based bundle organization
-```
+### Network Optimization
+- **Request Batching** for multiple API calls
+- **Image Compression** before upload to reduce bandwidth
+- **Caching Strategy** for frequently accessed data (entities, tags)
+- **Progress Indicators** for all long-running operations
 
-### Error Monitoring and Analytics
-```typescript
-// Monitoring Strategy (Future)
-Crash Reporting: Integration with Sentry or Crashlytics
-Performance Monitoring: React Native performance metrics
-User Analytics: Usage patterns and workflow optimization
-API Monitoring: Response times and error rates
-```
-
-## Security and Privacy
+## Security Considerations
 
 ### Data Protection
-```typescript
-// Security Measures
-Authentication: Firebase Auth with JWT tokens
-API Security: Bearer token authentication with backend validation
-Local Storage: AsyncStorage encryption for sensitive data
-Network: HTTPS-only communication with certificate pinning
-Permissions: Minimal required permissions (camera, photo library)
+- **HTTPS Only** for all API communications
+- **Token Security** with secure storage using Expo SecureStore
+- **Image Security** with proper URI validation and sanitization
+- **User Privacy** with minimal data collection and clear permissions
 
-// Privacy Considerations
-Data Retention: Receipts processed on secure backend
-User Consent: Clear permission requests for camera/photos
-Data Export: User-controlled data export and deletion
-Analytics: No personal data in analytics tracking
-```
+### Authentication Security
+- **Firebase Security Rules** configured for user data isolation
+- **Token Expiration** with automatic refresh handling
+- **OAuth Security** following Google's best practices for mobile apps
+- **Session Management** with proper cleanup on sign-out
 
-### Compliance and Standards
-```typescript
-// Mobile Platform Compliance
-iOS: App Store guidelines compliance
-Android: Google Play Store guidelines (future)
-Privacy: GDPR-compliant data handling
-Security: OWASP mobile security best practices
-Accessibility: iOS accessibility guidelines support
-```
+## Testing Strategy
 
-## Integration Points
+### Development Testing
+- **iOS Simulator Testing** for all core functionality
+- **Real Device Testing** for camera and performance validation
+- **Network Condition Testing** including offline scenarios
+- **Error Scenario Testing** for all failure modes
 
-### SnapTrack Backend Dependencies
-```python
-# Backend API Requirements
-Flask Application: Python 3.x with OCR processing
-Google Vision API: Receipt text extraction
-Supabase Database: Multi-tenant expense storage
-Firebase Admin: Token validation and user management
-SendGrid (future): Email receipt processing
-```
+### Automated Testing Considerations
+- **Unit Tests** for business logic and utility functions
+- **Integration Tests** for API client and authentication flows
+- **E2E Tests** for critical user journeys (capture → review → save)
+- **Performance Tests** for memory usage and render performance
 
-### Cross-Platform Considerations
-```typescript
-// Platform Differences
-iOS: TestFlight beta testing, App Store deployment
-Android: Google Play Console (future development)
-Expo Go: Development testing (limited native features)
-Development Builds: Full native feature access including Google Sign-In
+## Known Technical Limitations
 
-// Feature Parity
-Core Features: 100% cross-platform compatibility
-Platform-Specific: iOS Shortcuts integration (future)
-Authentication: Google Sign-In in development builds only
-Camera: Native camera access on both platforms
-```
+### Current Constraints
+- **iOS Only:** Android support planned for Phase 2
+- **Expo Limitations:** Google Sign-In only works in development builds
+- **Network Dependency:** OCR processing requires internet connectivity
+- **Storage Limits:** AsyncStorage has size limitations for large image queues
 
-## Testing and Quality Assurance
-
-### Testing Strategy
-```typescript
-// Testing Approach
-Unit Testing: Component and service function testing
-Integration Testing: API communication and data flow
-E2E Testing: Full receipt capture and processing workflow
-Device Testing: Real iOS devices via TestFlight
-Performance Testing: Memory usage, battery impact, load times
-
-// Quality Gates
-TypeScript: Strict type checking and error prevention
-Linting: ESLint and Prettier code quality enforcement
-Build Validation: Successful iOS and Android builds
-API Integration: Backend compatibility and error handling
-User Acceptance: Real-world receipt processing validation
-```
-
-### Debugging and Development Tools
-```bash
-# Development Tools
-Expo DevTools: Real-time debugging and hot reload
-React Native Debugger: Component tree and state inspection
-Network Inspector: API request and response monitoring
-iOS Simulator: iOS-specific testing and debugging
-Physical Devices: Real-world testing via Expo Development Build
-```
+### Future Technical Improvements
+- **Background Processing:** iOS background app refresh for sync operations
+- **Image Processing:** On-device image optimization and compression
+- **Offline OCR:** Edge-based text extraction for immediate feedback
+- **Performance Monitoring:** Crash reporting and analytics integration

@@ -1,21 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { AppState } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import HomeScreen from './src/screens/HomeScreen';
-import CameraScreen from './src/screens/CameraScreen';
+import TabNavigator from './src/navigation/TabNavigator';
 import ReviewScreen from './src/screens/ReviewScreen';
 import AuthScreen from './src/screens/AuthScreen';
-import SettingsScreen from './src/screens/SettingsScreen';
-import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
-import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
-import AboutScreen from './src/screens/AboutScreen';
-import HelpScreen from './src/screens/HelpScreen';
-import ContactScreen from './src/screens/ContactScreen';
+import FeedbackScreen from './src/screens/FeedbackScreen';
 import { colors } from './src/styles/theme';
+import { authService } from './src/services/authService';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,89 +26,71 @@ const paperTheme = {
 };
 
 export default function App() {
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: string) => {
+      console.log('🔄 App state changed to:', nextAppState);
+      
+      if (nextAppState === 'active') {
+        // App came to foreground - refresh token if user is authenticated
+        const user = authService.getCurrentUser();
+        if (user) {
+          try {
+            console.log('🔐 Refreshing token on app foreground...');
+            await authService.refreshToken();
+            console.log('✅ Token refresh successful');
+          } catch (error) {
+            console.error('❌ Token refresh failed on app foreground:', error);
+            // Don't immediately sign out - let individual API calls handle 401s
+          }
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
         <NavigationContainer>
           <StatusBar style="auto" />
           <Stack.Navigator 
-            initialRouteName="Home"
+            initialRouteName="Main"
             screenOptions={{
-              headerShown: false, // Custom headers for each screen
+              headerShown: false,
               animation: 'slide_from_right',
             }}
           >
-            <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen 
-              name="Camera" 
-              component={CameraScreen}
-              options={{
-                animation: 'slide_from_bottom',
-              }}
+              name="Main" 
+              component={TabNavigator}
+              options={{ headerShown: false }}
             />
             <Stack.Screen 
               name="Review" 
               component={ReviewScreen}
               options={{
-                animation: 'slide_from_right',
+                headerShown: false,
+                animation: 'slide_from_bottom',
               }}
             />
-            <Stack.Screen name="Auth" component={AuthScreen} />
             <Stack.Screen 
-              name="Settings" 
-              component={SettingsScreen} 
-              options={{ 
-                title: 'Settings',
-                headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
-              }} 
+              name="Auth" 
+              component={AuthScreen}
+              options={{
+                headerShown: false,
+                animation: 'slide_from_bottom',
+              }}
             />
             <Stack.Screen 
-              name="PrivacyPolicy" 
-              component={PrivacyPolicyScreen} 
+              name="Feedback" 
+              component={FeedbackScreen} 
               options={{ 
-                title: 'Privacy Policy',
-                headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
-              }} 
-            />
-            <Stack.Screen 
-              name="TermsOfService" 
-              component={TermsOfServiceScreen} 
-              options={{ 
-                title: 'Terms of Service',
-                headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
-              }} 
-            />
-            <Stack.Screen 
-              name="About" 
-              component={AboutScreen} 
-              options={{ 
-                title: 'About',
-                headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
-              }} 
-            />
-            <Stack.Screen 
-              name="Help" 
-              component={HelpScreen} 
-              options={{ 
-                title: 'Help',
-                headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
-              }} 
-            />
-            <Stack.Screen 
-              name="Contact" 
-              component={ContactScreen} 
-              options={{ 
-                title: 'Contact',
+                title: 'Feedback',
                 headerShown: true,
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.textPrimary,

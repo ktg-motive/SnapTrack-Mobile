@@ -1,10 +1,70 @@
 # Active Context
 
-**Last Updated:** 2025-07-03 14:55:00 - iOS APP UI/UX FIXES COMPLETE: Production-Ready Mobile Experience  
-**Previous Update:** Major navigation and user experience improvements implemented
-**Session Context:** React Native mobile app development with Expo - ready for TestFlight deployment
+**Last Updated:** 2025-07-06 21:15:00 - Bug Fix Session - Impacts: [Mobile UI, Navigation, Tag Management]
+**Previous Update:** 2025-07-06 20:30:00
+**Session Context:** Fixed three critical mobile-specific bugs affecting tag selection, navigation, and cross-platform tag synchronization
 
-## Current Work Focus - Session July 3, 2025
+## Current Work Focus - Session July 6, 2025 (Continued)
+
+- ✅ **COMPLETED:** Keyboard Handling Fixes (July 6, 2025)
+  - Fixed receipt edit modal keyboard covering Delete/Cancel/Save buttons
+  - Enhanced KeyboardAvoidingView implementation with proper scroll behavior
+  - Fixed feedback screen keyboard covering message box and submit button
+  - Added keyboardShouldPersistTaps="handled" for better interaction
+
+- ✅ **COMPLETED:** Profile Management Enhancement (July 6, 2025)
+  - Implemented real Firebase profile updates in authService.updateProfile()
+  - Fixed display name not persisting after save/navigate issue
+  - Added focus listener to AccountScreen for automatic data refresh
+  - Enhanced error handling for profile update operations
+
+- ✅ **COMPLETED:** Apple Sign-In Integration (July 6, 2025)
+  - Added expo-apple-authentication dependency and iOS entitlements
+  - Implemented complete Apple Sign-In flow with Firebase integration
+  - Added device availability checking and comprehensive error handling
+  - Display name construction from Apple credential data
+  - Production-ready Apple authentication for iOS devices
+
+- ✅ **COMPLETED:** Tag System Verification (July 6, 2025)
+  - Verified auto-add new tags functionality is working correctly
+  - Tags automatically become available after being used on expenses
+  - Smart frequency scoring and normalization system operational
+  - Cross-platform tag consistency between mobile and web confirmed
+
+- ✅ **COMPLETED:** Mobile Bug Fixes (July 6, 2025)
+  - Fixed tag suggestion selection not working in ReviewScreen.tsx:622
+  - Fixed Terms/Privacy links pointing to wrong URLs in AuthScreen.tsx:96-102  
+  - Verified tag auto-add functionality for cross-platform synchronization
+  - Enhanced touch handling and navigation for better mobile UX
+
+## Previous Work Focus - Session January 5, 2025
+
+- ✅ **COMPLETED:** Home Screen Layout Redesign (January 5, 2025)
+  - Restructured layout: stats and capture button now fixed, only receipts scroll
+  - Reduced stats height and whitespace for tighter mobile layout
+  - Enhanced visual hierarchy with better spacing and positioning
+
+- ✅ **COMPLETED:** Smart Footer Component (January 5, 2025)
+  - Created HomeScreenFooter with 4 intelligent states (hasMore, loading, endOfList, empty)
+  - Replaced emoji icons with professional Ionicons for modern appearance
+  - Added proper accessibility support and haptic feedback
+
+- ✅ **COMPLETED:** Typography System Improvements (January 5, 2025)
+  - Applied Menlo font to all numbers throughout app for consistency
+  - Updated footer typography for more native mobile feel
+  - Enhanced visual hierarchy with proper font weights and sizing
+
+- ✅ **COMPLETED:** Image Preview Modal Enhancements (January 5, 2025)
+  - Fixed X button functionality with proper touch targets and feedback
+  - Moved vendor name from header to metadata section
+  - Added rounded corners to image container for smoother appearance
+  - Changed close button from gray to primary color for better definition
+
+- ✅ **COMPLETED:** Visual Design Improvements (January 5, 2025)
+  - Changed tag colors to green to differentiate from gray entity badges
+  - Improved visual hierarchy and information scanning
+
+## Previous Work Focus - Session July 3, 2025
 
 - ✅ **COMPLETED:** Major UI/UX Fixes (July 3, 2025)
   - Fixed login screen back button appearing when no navigation history

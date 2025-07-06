@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
+  Modal,
+  Linking,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,46 +21,18 @@ import { authService } from '../services/authService';
 
 export default function AuthScreen() {
   const navigation = useNavigation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [canGoBack, setCanGoBack] = useState(false);
 
   useEffect(() => {
     // Check if user is already authenticated
     if (authService.isAuthenticated()) {
-      navigation.navigate('Home' as never);
+      navigation.navigate('Main' as never);
     }
-
-    const checkCanGoBack = () => {
-      const state = navigation.getState();
-      const routes = state.routes;
-      const currentIndex = state.index;
-      
-      // Only show back button if there's a previous screen AND it's a meaningful screen to go back to
-      const hasPreviousScreen = currentIndex > 0;
-      const previousRoute = hasPreviousScreen ? routes[currentIndex - 1] : null;
-      
-      // Don't show back button if:
-      // - No previous screen
-      // - Previous screen is Auth
-      // - User is not authenticated (covers sign-out scenarios)
-      const shouldShowBack = hasPreviousScreen && 
-                            previousRoute && 
-                            previousRoute.name !== 'Auth' &&
-                            authService.isAuthenticated();
-      
-      setCanGoBack(shouldShowBack);
-    };
-
-    checkCanGoBack();
-
-    // Listen for navigation state changes
-    const unsubscribe = navigation.addListener('focus', checkCanGoBack);
-    
-    return unsubscribe;
   }, [navigation]);
 
   const handleAuth = async () => {
@@ -86,7 +58,7 @@ export default function AuthScreen() {
         );
       } else {
         await authService.signIn({ email, password });
-        navigation.navigate('Home' as never);
+        navigation.navigate('Main' as never);
       }
     } catch (error: any) {
       Alert.alert('Authentication Error', error.message);
@@ -100,7 +72,7 @@ export default function AuthScreen() {
 
     try {
       await authService.signInWithGoogle();
-      navigation.navigate('Home' as never);
+      navigation.navigate('Main' as never);
     } catch (error: any) {
       Alert.alert('Google Sign-In Error', error.message);
     } finally {
@@ -108,53 +80,117 @@ export default function AuthScreen() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleAppleSignIn = async () => {
+    setIsLoading(true);
+
     try {
-      await authService.signOut();
-      Alert.alert('Signed Out', 'You have been signed out successfully.');
+      await authService.signInWithApple();
+      navigation.navigate('Main' as never);
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Apple Sign-In Error', error.message);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleTermsPress = () => {
+    navigation.navigate('TermsOfService' as never);
+  };
+
+  const handlePrivacyPress = () => {
+    navigation.navigate('PrivacyPolicy' as never);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
-      >
-        <View style={styles.header}>
-          {canGoBack && (
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-          )}
-          
-          {authService.isAuthenticated() && (
-            <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-              <Text style={styles.signOutText}>Sign Out</Text>
-            </TouchableOpacity>
-          )}
+      <View style={styles.content}>
+        {/* Logo Section */}
+        <View style={styles.logoSection}>
+          <SnapTrackLogo width={200} height={60} />
         </View>
 
-        <View style={styles.content}>
-          <SnapTrackLogo width={240} height={80} />
-          
-          <Text style={styles.title}>
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
-          </Text>
-          <Text style={styles.subtitle}>
-            {isSignUp 
-              ? 'Join SnapTrack to start processing receipts'
-              : 'Sign in to continue managing your receipts'
-            }
-          </Text>
+        {/* Hero Tagline */}
+        <View style={styles.taglineSection}>
+          <Text style={styles.taglineNormal}>Snap it.</Text>
+          <Text style={styles.taglineGradient}>Track it.</Text>
+        </View>
 
-          <View style={styles.form}>
+        {/* Authentication Buttons */}
+        <View style={styles.buttonsSection}>
+          {/* Continue with Google */}
+          <TouchableOpacity 
+            style={[styles.primaryButton, isLoading && styles.buttonDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+          >
+            <View style={styles.primaryButtonContent}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="white" />
+                  <Text style={styles.primaryButtonText}>Continue with Google</Text>
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Continue with Apple */}
+          <TouchableOpacity 
+            style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
+            onPress={handleAppleSignIn}
+            disabled={isLoading}
+          >
+            <View style={styles.secondaryButtonContent}>
+              <Ionicons name="logo-apple" size={20} color="#000" />
+              <Text style={styles.secondaryButtonText}>Continue with Apple</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Continue with Email */}
+          <TouchableOpacity 
+            style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
+            onPress={() => setShowEmailModal(true)}
+            disabled={isLoading}
+          >
+            <View style={styles.secondaryButtonContent}>
+              <Ionicons name="mail-outline" size={20} color="#000" />
+              <Text style={styles.secondaryButtonText}>Continue with Email</Text>
+            </View>
+          </TouchableOpacity>
+
+        </View>
+
+        {/* Legal Footer */}
+        <View style={styles.legalSection}>
+          <Text style={styles.legalText}>
+            By continuing, you acknowledge that you have read and agreed to our{' '}
+            <Text style={styles.legalLink} onPress={handleTermsPress}>Terms of Service</Text> and{' '}
+            <Text style={styles.legalLink} onPress={handlePrivacyPress}>Privacy Policy</Text>.
+          </Text>
+        </View>
+      </View>
+
+      {/* Email Modal */}
+      <Modal
+        visible={showEmailModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEmailModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity 
+              onPress={() => setShowEmailModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Email Sign In</Text>
+            <View style={styles.modalPlaceholder} />
+          </View>
+
+          <View style={styles.modalContent}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email</Text>
               <TextInput
@@ -195,70 +231,40 @@ export default function AuthScreen() {
               </View>
             </View>
 
+            <View style={styles.switchContainer}>
+              <TouchableOpacity 
+                style={styles.switchToggle}
+                onPress={() => setIsSignUp(!isSignUp)}
+              >
+                <Text style={styles.switchText}>
+                  {isSignUp ? 'Switch to Sign In' : 'Switch to Sign Up'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity 
-              style={[styles.authButton, isLoading && styles.authButtonDisabled]}
+              style={[styles.modalSubmitButton, isLoading && styles.buttonDisabled]}
               onPress={handleAuth}
               disabled={isLoading}
             >
               <LinearGradient
-                colors={[colors.primary, colors.secondary]}
-                style={styles.authButtonGradient}
+                colors={['#009f86', '#2457d9']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.modalSubmitGradient}
               >
                 {isLoading ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <>
-                    <Ionicons 
-                      name={isSignUp ? 'person-add' : 'log-in-outline'} 
-                      size={20} 
-                      color="white" 
-                    />
-                    <Text style={styles.authButtonText}>
-                      {isSignUp ? 'Create Account' : 'Sign In'}
-                    </Text>
-                  </>
+                  <Text style={styles.modalSubmitText}>
+                    {isSignUp ? 'Create Account' : 'Sign In'}
+                  </Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
-
-            {/* Google Sign-In Button - Only show if available */}
-            {authService.isGoogleSignInAvailable() && (
-              <>
-                <View style={styles.dividerContainer}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>OR</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                <TouchableOpacity 
-                  style={[styles.googleButton, isLoading && styles.authButtonDisabled]}
-                  onPress={handleGoogleSignIn}
-                  disabled={isLoading}
-                >
-                  <View style={styles.googleButtonContent}>
-                    <Ionicons name="logo-google" size={20} color="#4285F4" />
-                    <Text style={styles.googleButtonText}>
-                      Continue with Google
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </>
-            )}
-
-            <TouchableOpacity 
-              style={styles.switchButton}
-              onPress={() => setIsSignUp(!isSignUp)}
-            >
-              <Text style={styles.switchButtonText}>
-                {isSignUp 
-                  ? 'Already have an account? Sign In' 
-                  : "Don't have an account? Sign Up"
-                }
-              </Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -266,161 +272,196 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    marginLeft: 4,
+    backgroundColor: '#FFFFFF',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
+  logoSection: {
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    marginTop: 40,
   },
-  title: {
-    ...typography.title1,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xxl,
-  },
-  keyboardAvoidingView: {
+  taglineSection: {
+    alignItems: 'center',
     flex: 1,
+    justifyContent: 'center',
+    marginTop: -80,
   },
-  signOutButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+  taglineNormal: {
+    fontSize: 68,
+    fontWeight: '700',
+    color: '#000000',
+    letterSpacing: -2,
+    textAlign: 'center',
+    lineHeight: 80,
   },
-  signOutText: {
-    ...typography.caption,
-    color: colors.error,
+  taglineGradient: {
+    fontSize: 68,
+    fontWeight: '700',
+    letterSpacing: -2,
+    color: '#009f86', // SnapTrack brand teal
+    textAlign: 'center',
+    lineHeight: 80,
+  },
+  buttonsSection: {
+    gap: 16,
+    marginBottom: 20,
+  },
+  primaryButton: {
+    backgroundColor: '#000000',
+    borderRadius: 28,
+    height: 56,
+    overflow: 'hidden',
+  },
+  primaryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    gap: 12,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
-  form: {
-    width: '100%',
-    marginTop: spacing.xl,
+  secondaryButton: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 28,
+    height: 56,
+  },
+  secondaryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    gap: 12,
+  },
+  secondaryButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  legalSection: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  legalText: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: '#666666',
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: '#000000',
+    fontWeight: '600',
+  },
+
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalCloseButton: {
+    minWidth: 60,
+  },
+  modalCloseText: {
+    color: '#666666',
+    fontSize: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  modalPlaceholder: {
+    minWidth: 60,
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 32,
+    paddingTop: 40,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   inputLabel: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+    fontSize: 14,
     fontWeight: '600',
+    color: '#333333',
+    marginBottom: 8,
   },
   textInput: {
-    ...typography.body,
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#000000',
     borderWidth: 1,
-    borderColor: colors.surface,
-    color: colors.textPrimary,
+    borderColor: '#E0E0E0',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.sm,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.surface,
+    borderColor: '#E0E0E0',
   },
   passwordInput: {
-    ...typography.body,
     flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    color: colors.textPrimary,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: '#000000',
   },
   passwordToggle: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  authButton: {
-    width: '100%',
-    borderRadius: borderRadius.md,
+  switchContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  switchToggle: {
+    paddingVertical: 8,
+  },
+  switchText: {
+    color: '#009f86',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalSubmitButton: {
+    borderRadius: 28,
+    height: 56,
     overflow: 'hidden',
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
   },
-  authButtonDisabled: {
-    opacity: 0.7,
-  },
-  authButtonGradient: {
+  modalSubmitGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    height: '100%',
   },
-  authButtonText: {
-    ...typography.body,
-    color: 'white',
+  modalSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
-    marginLeft: spacing.sm,
-  },
-  switchButton: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  switchButtonText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.surface,
-  },
-  dividerText: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginHorizontal: spacing.md,
-    fontWeight: '500',
-  },
-  googleButton: {
-    width: '100%',
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.surface,
-    backgroundColor: colors.card,
-    marginBottom: spacing.lg,
-  },
-  googleButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-  googleButtonText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginLeft: spacing.sm,
   },
 });

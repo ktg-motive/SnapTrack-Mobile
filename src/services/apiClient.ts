@@ -25,6 +25,7 @@ export class ApiError extends Error {
 class SnapTrackApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private isRefreshingToken: boolean = false;
 
   constructor() {
     this.baseUrl = CONFIG.API_BASE_URL;
@@ -47,19 +48,18 @@ class SnapTrackApiClient {
     const method = options.method || 'GET';
     const startTime = Date.now();
     
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
 
     if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+      headers['Authorization'] = `Bearer ${this.token}`;
     }
 
     const config: RequestInit = {
       ...options,
       headers,
-      timeout: CONFIG.API_TIMEOUT,
     };
 
     try {
@@ -70,6 +70,53 @@ class SnapTrackApiClient {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Handle 401 Unauthorized - attempt token refresh and retry once
+        if (response.status === 401 && this.token && !this.isRefreshingToken) {
+          console.log('🔐 Got 401, attempting token refresh and retry...');
+          
+          this.isRefreshingToken = true;
+          try {
+            // Import authService dynamically to avoid circular imports
+            const { authService } = await import('./authService');
+            const newToken = await authService.refreshToken();
+            
+            if (newToken) {
+              console.log('✅ Token refresh successful, retrying request...');
+              this.setAuthToken(newToken);
+              
+              // Retry the original request with new token
+              const retryHeaders: Record<string, string> = {
+                ...headers,
+                'Authorization': `Bearer ${newToken}`,
+              };
+              
+              const retryResponse = await fetch(url, {
+                ...config,
+                headers: retryHeaders,
+              });
+              
+              this.isRefreshingToken = false;
+              
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                console.log(`✅ Retry successful: ${endpoint}`);
+                errorReporting.logApiRequest(endpoint, method, Date.now() - startTime, true, retryResponse.status);
+                return retryData;
+              } else {
+                // Even retry failed - fall through to error handling
+                console.log('❌ Retry failed after token refresh');
+              }
+            } else {
+              console.log('❌ Token refresh returned null');
+            }
+          } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
+          }
+          
+          this.isRefreshingToken = false;
+        }
+        
         const apiError = new ApiError(
           errorData.message || `HTTP ${response.status}: ${response.statusText}`,
           response.status,
@@ -85,6 +132,7 @@ class SnapTrackApiClient {
           status: response.status,
           duration,
           hasToken: !!this.token,
+          triedRefresh: response.status === 401,
         });
         
         throw apiError;
@@ -301,11 +349,41 @@ class SnapTrackApiClient {
     console.log('🔍 Current auth token exists:', !!this.token);
     console.log('🔍 API endpoint will be:', `/api/expenses/${id}`);
     
+    // Transform Receipt updates to match backend Expense format (same as ReviewScreen logic)
+    const expenseUpdates: any = {
+      ...updates,
+    };
+    
+    // Transform field names to match backend expectations
+    if (updates.date) {
+      expenseUpdates.expense_date = updates.date;
+      delete expenseUpdates.date;
+    }
+    
+    // Ensure tags are properly formatted (backend might expect string or array)
+    if (updates.tags) {
+      expenseUpdates.tags = Array.isArray(updates.tags) 
+        ? updates.tags.filter(tag => tag && tag.trim()) 
+        : [updates.tags].filter(tag => tag && tag.trim());
+    }
+    
+    // Ensure amount is a number
+    if (updates.amount !== undefined) {
+      expenseUpdates.amount = typeof updates.amount === 'string' 
+        ? parseFloat(updates.amount) || 0 
+        : updates.amount;
+    }
+    
+    // Add updated timestamp as expected by backend
+    expenseUpdates.updated_at = new Date().toISOString();
+    
+    console.log('🔍 Transformed request body:', JSON.stringify(expenseUpdates, null, 2));
+    
     const response = await this.makeRequest<ApiResponse<Receipt>>(
       `/api/expenses/${id}`,
       {
         method: 'PATCH',
-        body: JSON.stringify(updates),
+        body: JSON.stringify(expenseUpdates),
       }
     );
 
@@ -316,7 +394,40 @@ class SnapTrackApiClient {
       throw new ApiError(response.error || 'Failed to update receipt');
     }
 
-    return response.data;
+    // Transform the expense response back to Receipt format (same as getReceipts)
+    const expense = response.expense || response.data;
+    if (!expense) {
+      throw new ApiError('Invalid response format from server');
+    }
+
+    // Handle tags - could be string, array, or null
+    let tags = [];
+    if (expense.tags) {
+      if (Array.isArray(expense.tags)) {
+        tags = expense.tags;
+      } else if (typeof expense.tags === 'string') {
+        tags = expense.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+      }
+    }
+
+    const transformedReceipt = {
+      id: expense.id.toString(), // Convert numeric ID to string
+      vendor: expense.vendor || expense.vendor_name || '',
+      amount: expense.amount || 0,
+      date: expense.expense_date || expense.date || '',
+      entity: expense.entity || '',
+      tags: tags,
+      notes: expense.notes || '',
+      confidence_score: expense.confidence_score || 0,
+      receipt_url: expense.image_url || expense.receipt_url || '',
+      created_at: expense.date_created || expense.created_at || '',
+      updated_at: expense.updated_at || expense.last_modified || '',
+      user_id: expense.user_id || '',
+      tenant_id: expense.tenant_id || ''
+    };
+
+    console.log('🔄 Transformed updated receipt:', JSON.stringify(transformedReceipt, null, 2));
+    return transformedReceipt;
   }
 
   /**
