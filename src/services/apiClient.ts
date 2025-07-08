@@ -8,6 +8,10 @@ import {
   PaginatedResponse,
   ReceiptFilters,
   QuickStats,
+  HelpCategory,
+  HelpArticle,
+  HelpCategoriesResponse,
+  HelpArticlesResponse,
 } from '../types';
 import { errorReporting } from './errorReporting';
 
@@ -233,8 +237,33 @@ class SnapTrackApiClient {
       throw new ApiError(response.error || 'Failed to upload receipt');
     }
 
-    // Check for extracted_data in different locations
+    // Handle new standardized backend response format
+    if (response.success && response.expense) {
+      console.log('🔍 New format detected - transforming response');
+      // Transform new format to maintain compatibility with existing UI
+      const transformedResponse = {
+        id: response.expense.id,
+        expense: response.expense,
+        confidence: response.confidence,
+        // IMPORTANT: Preserve AI validation data for enhanced processing UI
+        ai_validation: response.ai_validation,
+        // Backward compatibility fields for existing UI components
+        extracted_data: {
+          vendor: response.expense.vendor,
+          amount: response.expense.amount,
+          date: response.expense.date,
+          confidence_score: response.confidence?.amount || 0
+        },
+        receipt_url: response.expense.image_url,
+        status: response.expense.status === 'completed' ? 'completed' : 'processing'
+      };
+      console.log('✅ Transformed response:', JSON.stringify(transformedResponse, null, 2));
+      return transformedResponse;
+    }
+    
+    // Handle legacy response formats
     if (response.extracted_data) {
+      console.log('🔍 Legacy format detected');
       return response;
     } else if (response.data && response.data.extracted_data) {
       return response.data;
@@ -242,6 +271,7 @@ class SnapTrackApiClient {
       return response.data;
     }
 
+    console.log('⚠️ Unknown response format, returning as-is');
     return response;
   }
 
@@ -449,7 +479,7 @@ class SnapTrackApiClient {
   // Note: Mobile app follows frontend pattern - only creates expenses via uploadReceipt (POST /api/parse)
   // No direct expense creation endpoint used, consistent with web frontend design
 
-  // Entity Management (Read Only)
+  // Entity Management
 
   /**
    * Get user's entities
@@ -457,21 +487,58 @@ class SnapTrackApiClient {
   async getEntities(): Promise<Entity[]> {
     const response = await this.makeRequest<any>('/api/entities');
 
-    // Handle both wrapped and direct responses
+    // Handle backend response format: {"success": true, "entities": [...], "count": N}
     if (response.success === false) {
       throw new ApiError(response.error || 'Failed to get entities');
     }
 
-    // Check if response has entities property directly or nested in data
+    // Backend returns entities in response.entities array
     if (Array.isArray(response.entities)) {
       return response.entities;
-    } else if (response.data && Array.isArray(response.data.entities)) {
-      return response.data.entities;
-    } else if (Array.isArray(response)) {
+    }
+
+    // Fallback for other response formats
+    if (Array.isArray(response)) {
       return response;
     }
 
     throw new ApiError('Invalid entities response format');
+  }
+
+  /**
+   * Create new entity
+   */
+  async createEntity(entityData: {name: string}): Promise<Entity> {
+    const response = await this.makeRequest<any>('/api/entities', {
+      method: 'POST',
+      body: JSON.stringify(entityData),
+    });
+
+    if (response.success === false) {
+      throw new ApiError(response.error || 'Failed to create entity');
+    }
+
+    return response.data || response;
+  }
+
+  /**
+   * Update entity (Not supported by backend - entities can only be created/deleted)
+   */
+  async updateEntity(id: string, entityData: {name: string}): Promise<Entity> {
+    throw new ApiError('Entity updates not supported by backend. Please delete and recreate the entity.');
+  }
+
+  /**
+   * Delete entity
+   */
+  async deleteEntity(id: string): Promise<void> {
+    const response = await this.makeRequest<any>(`/api/entities/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.success === false) {
+      throw new ApiError(response.error || 'Failed to delete entity');
+    }
   }
 
   // User Management
@@ -598,27 +665,145 @@ class SnapTrackApiClient {
   /**
    * Get all user tags
    */
-  async getAllTags(): Promise<string[]> {
+  async getTags(): Promise<{data: string[]}> {
     const response = await this.makeRequest<any>('/api/tags');
 
-    // Handle different response formats
+    // Handle backend response format: {"success": true, "tags": [...], "count": N}
     if (response.success === false) {
       throw new ApiError(response.error || 'Failed to get tags');
     }
 
-    // Check for tags in different locations
+    // Backend returns tags as string array in response.tags
     if (Array.isArray(response.tags)) {
-      return response.tags;
-    } else if (response.data && Array.isArray(response.data.tags)) {
-      return response.data.tags;
-    } else if (Array.isArray(response)) {
-      return response;
-    } else if (response.data && Array.isArray(response.data)) {
-      return response.data;
+      return {data: response.tags};
     }
 
     // Return empty array if no tags found
-    return [];
+    return {data: []};
+  }
+
+  /**
+   * Get all user tags (legacy method for backwards compatibility)
+   */
+  async getAllTags(): Promise<string[]> {
+    const response = await this.getTags();
+    return response.data;
+  }
+
+  /**
+   * Create new tag (Not supported - tags are automatically derived from expenses)
+   */
+  async createTag(tagData: {name: string}): Promise<any> {
+    throw new ApiError('Tag creation not supported. Tags are automatically created when used in expenses.');
+  }
+
+  /**
+   * Update tag (Not supported - tags are automatically derived from expenses)
+   */
+  async updateTag(id: number, tagData: {name: string}): Promise<any> {
+    throw new ApiError('Tag updates not supported. Tags are automatically managed from expenses.');
+  }
+
+  /**
+   * Delete tag (Not supported - tags are automatically derived from expenses)
+   */
+  async deleteTag(id: number): Promise<void> {
+    throw new ApiError('Tag deletion not supported. Tags are automatically managed from expenses.');
+  }
+
+  // Help System (Public endpoints - no auth required)
+
+  /**
+   * Get all help categories
+   */
+  async getHelpCategories(): Promise<HelpCategoriesResponse> {
+    // Public endpoint - override makeRequest to exclude auth headers
+    const url = `${this.baseUrl}/api/help/categories`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(`Failed to fetch help categories: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get help articles with optional filtering
+   */
+  async getHelpArticles(params?: {
+    category?: string;
+    search?: string;
+  }): Promise<HelpArticlesResponse> {
+    const searchParams = new URLSearchParams();
+    
+    if (params?.category) {
+      searchParams.append('category', params.category);
+    }
+    
+    if (params?.search) {
+      searchParams.append('search', params.search);
+    }
+
+    const queryString = searchParams.toString();
+    const url = `${this.baseUrl}/api/help/content${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(`Failed to fetch help articles: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Get specific help article by key
+   */
+  async getHelpArticle(articleKey: string): Promise<{ article: HelpArticle }> {
+    const url = `${this.baseUrl}/api/help/article/${articleKey}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new ApiError(`Failed to fetch help article: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Submit feedback for help article (requires auth)
+   */
+  async submitHelpFeedback(articleId: string, isHelpful: boolean, feedbackText?: string): Promise<void> {
+    const response = await this.makeRequest<any>('/api/help/feedback', {
+      method: 'POST',
+      body: JSON.stringify({
+        article_id: articleId,
+        is_helpful: isHelpful,
+        feedback_text: feedbackText || ''
+      }),
+    });
+
+    if (response.success === false) {
+      throw new ApiError(response.error || 'Failed to submit help feedback');
+    }
   }
 
   // Health Check

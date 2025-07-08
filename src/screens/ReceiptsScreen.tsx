@@ -208,6 +208,15 @@ export default function ReceiptsScreen() {
           isLoadingMore={isLoadingMore}
           onEditReceipt={handleReceiptEdit}
           onPreviewReceipt={handleReceiptPreview}
+          onDeleteReceipt={async (receiptId) => {
+            try {
+              await apiClient.deleteReceipt(receiptId);
+              setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+            } catch (error) {
+              console.error('Failed to delete receipt:', error);
+              throw error;
+            }
+          }}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 

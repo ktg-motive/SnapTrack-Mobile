@@ -1,10 +1,71 @@
 # Active Context
 
-**Last Updated:** 2025-07-06 21:15:00 - Bug Fix Session - Impacts: [Mobile UI, Navigation, Tag Management]
-**Previous Update:** 2025-07-06 20:30:00
-**Session Context:** Fixed three critical mobile-specific bugs affecting tag selection, navigation, and cross-platform tag synchronization
+**Last Updated:** 2025-07-07 01:30:00 - Critical SnapTrack Bug Fixes - Impacts: [API Response Parsing, Entity Management, Receipt Deletion]
+**Previous Update:** 2025-07-06 23:15:00
+**Session Context:** Fixed critical SnapTrack parsing bug affecting both iOS and Android apps, plus entity management and deletion issues
 
-## Current Work Focus - Session July 6, 2025 (Continued)
+## Current Work Focus - Session July 7, 2025
+
+- ✅ **COMPLETED:** Critical SnapTrack Bug Fixes (July 7, 2025)
+  - **CRITICAL FIX 1:** Fixed API response parsing crash during receipt upload
+    - Backend `/api/parse` endpoint was returning complex nested format
+    - Mobile apps crashed when trying to parse response (but receipts were saved to DB)
+    - Standardized backend response to clean format in `/api/parse` endpoint
+    - Added transformation logic in `apiClient.ts` lines 240-273 to handle both formats
+    - Updated TypeScript interfaces to support both new and legacy formats
+  - **CRITICAL FIX 2:** Fixed entities.map regression in ReviewScreen and Settings
+    - `apiClient.getEntities()` was changed to return `{data: Entity[]}` instead of `Entity[]`
+    - Reverted to return `Entity[]` directly to maintain compatibility
+    - Fixed EnhancedSettingsScreen to use `entitiesResponse.value` instead of `.value.data`
+    - Enabled Settings navigation from AccountScreen (was showing alert)
+    - Switched from basic SettingsScreen to EnhancedSettingsScreen with entity management
+  - **CRITICAL FIX 3:** Fixed receipt deletion not working
+    - ReceiptsScreen was missing `onDeleteReceipt` prop for RecentReceipts component
+    - HomeScreen's `onDeleteReceipt` only updated local state but didn't call API
+    - Added proper deletion handlers that call `apiClient.deleteReceipt()` + update state
+
+## Previous Work Focus - Session July 6, 2025
+
+- ✅ **COMPLETED:** Settings Screen Feature Cleanup (July 6, 2025)
+  - Removed unimplemented features from EnhancedSettingsScreen per user request
+  - Removed Email Notifications toggle (not yet implemented)
+  - Removed Auto-categorization toggle (not yet implemented)  
+  - Removed Offline Sync toggle (not yet implemented)
+  - Removed Export Receipts button (not yet implemented)
+  - Removed Backup Data button (not yet implemented)
+  - Cleaned up UserSettings interface and removed unused state management
+  - Removed all related styles for preferences and toggles
+  - Settings screen now only shows actually implemented features
+
+- ✅ **COMPLETED:** Mobile Hamburger Menu Implementation (July 6, 2025)
+  - Created HamburgerMenu component with slide-out animation (280px width, 300ms duration)
+  - Implemented user profile section with photo, name, email, and stats integration
+  - Added navigation items: Account Settings, App Settings, Help & Support, Send Feedback
+  - Included app information section with version and About SnapTrack
+  - Added logout functionality with confirmation and proper navigation
+  - Implemented backdrop with tap-to-close and swipe-to-close gesture support
+  - Updated HomeScreen header with hamburger icon and proper layout
+  - Removed Account tab from footer navigation (5 tabs → 4 tabs)
+  - Enhanced App.tsx with account-related screens in main navigation stack
+
+- ✅ **COMPLETED:** Enhanced Settings Screen Implementation (July 6, 2025)
+  - Created EnhancedSettingsScreen with comprehensive entity and tag management
+  - Implemented Business Entity Management with add/delete functionality (edit not supported by backend)
+  - Added read-only tag display with chip-style UI showing automatically derived tags
+  - Created email configuration section showing user's unique SnapTrack email address
+  - Implemented app preferences with toggle switches for notifications, auto-categorization, offline sync
+  - Added data management section with export, backup, and clear data options
+  - Enhanced mobile-optimized UI with modals, loading states, and proper error handling
+
+- ✅ **COMPLETED:** API Client Consistency Fixes (July 6, 2025)
+  - Fixed entity management API methods to match backend implementation exactly
+  - Corrected entity ID types from number to string (consistent with web app)
+  - Updated getEntities() to properly handle backend response format: {"success": true, "entities": [...]}
+  - Removed unsupported updateEntity() method with informative error messages
+  - Fixed tag management API to properly handle backend response format: {"success": true, "tags": [...]}
+  - Removed unsupported tag CRUD operations (createTag, updateTag, deleteTag) with proper error messages
+  - Updated getTags() to return string array format matching backend's auto-derived tag system
+  - Ensured 100% API consistency between mobile app, web app, and backend implementation
 
 - ✅ **COMPLETED:** Keyboard Handling Fixes (July 6, 2025)
   - Fixed receipt edit modal keyboard covering Delete/Cancel/Save buttons
@@ -107,7 +168,62 @@
   - Tag autocomplete with backend API integration
   - Entity management system
 
+## CRITICAL API CONTRACTS - DO NOT BREAK
+
+**These API contracts are working in production and must be preserved:**
+
+1. **`apiClient.getEntities()` returns `Entity[]` directly**
+   - NOT `{data: Entity[]}` - this will break entity selection in ReviewScreen and Settings
+   - Backend returns: `{"success": true, "entities": [...], "count": N}`
+   - Mobile expects: Direct array of Entity objects
+
+2. **`/api/parse` endpoint response transformation**
+   - Backend returns standardized format: `{"success": true, "expense": {...}, "confidence": {...}}`
+   - Mobile app has transformation logic in `apiClient.ts` lines 240-273
+   - Both new and legacy formats must be supported for backward compatibility
+
+3. **Receipt deletion requires API call + state update**
+   - Must call `apiClient.deleteReceipt(receiptId)` first
+   - Then update local state with `setReceipts(prev => prev.filter(...))`
+   - Missing either step will cause sync issues
+
+4. **Settings navigation uses EnhancedSettingsScreen**
+   - Basic SettingsScreen has no entity management
+   - AccountScreen → Settings must navigate to EnhancedSettingsScreen
+   - Entity management is critical functionality that was working earlier
+
 ## Recent Changes
+
+**2025-07-07 01:30:00** - CRITICAL BUG FIXES COMPLETE: Fixed Major Production Issues:
+- **CRITICAL:** Fixed receipt upload crash - standardized backend API response + added transformation logic
+- **CRITICAL:** Fixed entities.map error - reverted getEntities() to return Entity[] directly
+- **CRITICAL:** Fixed receipt deletion - added missing API calls in HomeScreen and ReceiptsScreen
+- **CRITICAL:** Fixed Settings navigation - enabled EnhancedSettingsScreen with entity management
+- **API:** Documented critical API contracts that must be preserved to prevent future regressions
+- **BACKEND:** Deployed standardized /api/parse response format to production
+- **MOBILE:** Updated TypeScript interfaces to support both new and legacy response formats
+
+**2025-07-06 23:15:00** - SETTINGS FEATURE CLEANUP COMPLETE: Removed Unimplemented Features:
+- **CLEANUP:** Removed Email Notifications toggle from App Preferences section
+- **CLEANUP:** Removed Auto-categorization toggle from App Preferences section
+- **CLEANUP:** Removed Offline Sync toggle from App Preferences section
+- **CLEANUP:** Removed Export Receipts button from Data Management section
+- **CLEANUP:** Removed Backup Data button from Data Management section
+- **CODE:** Cleaned up UserSettings interface and removed unused state management
+- **CODE:** Removed all related styles for preferences and toggles (preferenceItem, toggle, etc.)
+- **UX:** Settings screen now only displays actually implemented features for better user experience
+
+**2025-07-06 22:45:00** - HAMBURGER MENU & ENHANCED SETTINGS COMPLETE: Advanced Mobile Navigation:
+- **FEATURE:** Implemented slide-out hamburger menu with 280px width and smooth 300ms animations
+- **FEATURE:** Added user profile section with photo, name, email, and real-time stats integration
+- **FEATURE:** Created comprehensive entity management (add/delete with proper backend API consistency)
+- **FEATURE:** Implemented read-only tag display showing automatically derived tags with chip-style UI
+- **FEATURE:** Added email configuration display with user's unique SnapTrack email address
+- **FEATURE:** Created app preferences section with toggle switches for notifications and settings
+- **NAVIGATION:** Removed Account tab from footer (5→4 tabs) and moved account functions to hamburger menu
+- **API:** Fixed all entity and tag API methods to match backend implementation exactly (entity IDs as strings)
+- **API:** Removed unsupported CRUD operations with informative error messages for better user experience
+- **UX:** Enhanced mobile-optimized settings UI with modals, loading states, and proper error handling
 
 **2025-07-03 14:55:00** - UI/UX FIXES COMPLETE: Production-Ready Mobile Experience:
 - **CRITICAL:** Fixed AuthScreen navigation issue - back button only shows when navigation stack exists

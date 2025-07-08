@@ -54,9 +54,13 @@ interface ExpenseData {
 }
 
 interface ProcessingState {
-  stage: 'uploading' | 'processing' | 'extracting' | 'complete' | 'error';
+  stage: 'uploading' | 'scanning' | 'analyzing' | 'extracting' | 'complete' | 'error';
   progress: number;
   message: string;
+  subMessage?: string;        // Additional context
+  hasAI?: boolean;           // AI processing detected
+  aiProgress?: number;       // AI-specific progress
+  estimatedTime?: number;    // Time remaining estimate
 }
 
 // Helper function to safely handle tags as either string or array
@@ -70,6 +74,65 @@ const normalizeTagsToArray = (tags: string | string[] | null | undefined): strin
   if (!tags) return [];
   if (Array.isArray(tags)) return tags.filter(tag => tag && tag.trim());
   return tags.toString().split(',').map(tag => tag.trim()).filter(tag => tag);
+};
+
+// Helper function to detect AI processing from backend response
+const analyzeProcessingType = (response: any) => {
+  // AI processing should be shown when AI validation was TRIGGERED, not just when successful
+  const aiTriggers = response.ai_validation?.triggers || 
+                     response.validation_triggers || [];
+  
+  const hasAI = aiTriggers.length > 0 || // AI was triggered
+                response.ai_validation?.validated || // AI succeeded
+                response.expense?.ai_validated ||
+                response.ai_reasoning ||
+                response.ai_validation?.reasoning ||
+                false; // Explicit fallback
+  
+  const confidence = response.confidence?.amount || 
+                     response.expense?.confidence_score || 
+                     response.confidence_score || 0;
+
+  console.log('🤖 AI Processing Analysis:', { hasAI: Boolean(hasAI), aiTriggers, confidence });
+  
+  return { hasAI: Boolean(hasAI), aiTriggers, confidence };
+};
+
+// Type for processing stages
+type ProcessingStageType = 'uploading' | 'scanning' | 'analyzing' | 'extracting' | 'complete' | 'error';
+
+// Helper function to get the next stage in processing flow
+const getNextStage = (currentStage: ProcessingStageType, hasAI: boolean): ProcessingStageType => {
+  const stageFlow = hasAI
+    ? ['uploading', 'scanning', 'analyzing', 'extracting', 'complete'] as const
+    : ['uploading', 'scanning', 'extracting', 'complete'] as const;
+
+  const currentIndex = stageFlow.indexOf(currentStage as any);
+  return (stageFlow[currentIndex + 1] as ProcessingStageType) || 'complete';
+};
+
+// Helper function to get stage information with progress and timing
+const getStageInfo = (stage: ProcessingStageType, hasAI: boolean) => {
+  const progressMapWithAI = {
+    uploading: { progress: 15, duration: 500, message: 'Uploading receipt image...' },
+    scanning: { progress: 35, duration: 1500, message: 'Scanning text with OCR...' },
+    analyzing: { progress: 80, duration: 2500, message: 'Analyzing with SnapTrack AI...' },
+    extracting: { progress: 95, duration: 500, message: 'Extracting final details...' },
+    complete: { progress: 100, duration: 500, message: 'Processing complete!' },
+    error: { progress: 0, duration: 0, message: 'Processing failed' }
+  };
+
+  const progressMapNoAI = {
+    uploading: { progress: 15, duration: 500, message: 'Uploading receipt image...' },
+    scanning: { progress: 60, duration: 1500, message: 'Scanning text with OCR...' },
+    analyzing: { progress: 60, duration: 0, message: '' }, // Not used without AI
+    extracting: { progress: 95, duration: 800, message: 'Extracting receipt details...' },
+    complete: { progress: 100, duration: 500, message: 'Processing complete!' },
+    error: { progress: 0, duration: 0, message: 'Processing failed' }
+  };
+
+  const progressMap = hasAI ? progressMapWithAI : progressMapNoAI;
+  return progressMap[stage] || { progress: 0, duration: 500, message: 'Processing...' };
 };
 
 export default function ReviewScreen() {
@@ -279,19 +342,14 @@ export default function ReviewScreen() {
       }
 
       // Stage 1: Upload image
+      const uploadingInfo = getStageInfo('uploading', false); // AI detection happens after upload
       setProcessingState({
         stage: 'uploading',
         progress: 0,
-        message: 'Uploading receipt image...'
+        message: uploadingInfo.message
       });
 
-      await new Promise(resolve => setTimeout(resolve, 500)); // Brief delay for UX
-      
-      setProcessingState({
-        stage: 'processing',
-        progress: 25,
-        message: 'Processing with OCR...'
-      });
+      await new Promise(resolve => setTimeout(resolve, uploadingInfo.duration));
 
       // For simulator: Try real API first, but fallback to mock if it fails
       let uploadedReceipt;
@@ -334,14 +392,45 @@ export default function ReviewScreen() {
       console.log('🔍 Upload response:', uploadedReceipt);
       setUploadedReceipt(uploadedReceipt);
 
-      // Stage 2: Extract data
+      // Analyze response for AI processing
+      const { hasAI, aiTriggers, confidence: aiConfidence } = analyzeProcessingType(uploadedReceipt);
+      
+      // Stage 2: Scanning (OCR)
+      const scanningInfo = getStageInfo('scanning', hasAI);
       setProcessingState({
-        stage: 'extracting',
-        progress: 75,
-        message: 'Extracting receipt details...'
+        stage: 'scanning',
+        progress: scanningInfo.progress,
+        message: scanningInfo.message,
+        hasAI: hasAI
       });
 
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Allow processing time
+      await new Promise(resolve => setTimeout(resolve, scanningInfo.duration));
+
+      // Stage 3: AI Analysis (conditional)
+      if (hasAI) {
+        const analyzingInfo = getStageInfo('analyzing', hasAI);
+        setProcessingState({
+          stage: 'analyzing',
+          progress: analyzingInfo.progress,
+          message: analyzingInfo.message,
+          subMessage: `AI detected ${aiTriggers.length} improvement opportunities`,
+          hasAI: true,
+          aiProgress: 50
+        });
+
+        await new Promise(resolve => setTimeout(resolve, analyzingInfo.duration));
+      }
+
+      // Stage 4: Extract data
+      const extractingInfo = getStageInfo('extracting', hasAI);
+      setProcessingState({
+        stage: 'extracting',
+        progress: extractingInfo.progress,
+        message: extractingInfo.message,
+        hasAI: hasAI
+      });
+
+      await new Promise(resolve => setTimeout(resolve, extractingInfo.duration));
 
       // Update form with extracted data - handle multiple possible response formats
       // The backend returns data in the 'expense' object, not 'extracted_data'
@@ -406,14 +495,17 @@ export default function ReviewScreen() {
         ai_reasoning: aiReasoning,
       }));
 
-      // Stage 3: Complete
+      // Final Stage: Complete
+      const completeInfo = getStageInfo('complete', hasAI);
       setProcessingState({
         stage: 'complete',
-        progress: 100,
-        message: 'Processing complete!'
+        progress: completeInfo.progress,
+        message: hasAI ? 'AI-enhanced processing complete!' : completeInfo.message,
+        hasAI: hasAI,
+        subMessage: hasAI ? `Confidence improved to ${Math.round((confidence || aiConfidence) * 100)}%` : undefined
       });
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, completeInfo.duration));
       setIsProcessing(false);
 
     } catch (error) {
@@ -793,11 +885,24 @@ export default function ReviewScreen() {
               {processingState.message}
             </Text>
             
+            {/* AI Sub-message */}
+            {processingState.subMessage && (
+              <Text style={[styles.processingSubtitle, { 
+                fontSize: 14, 
+                color: processingState.hasAI ? colors.neonPurple : colors.textMuted,
+                marginTop: 4
+              }]}>
+                {processingState.subMessage}
+              </Text>
+            )}
+            
             <View style={styles.progressBar}>
               <LinearGradient
                 colors={processingState.stage === 'error' 
                   ? [colors.error, colors.error] 
-                  : [colors.neonBlue, colors.neonPink]
+                  : processingState.stage === 'analyzing' && processingState.hasAI
+                    ? [colors.neonPurple, colors.neonBlue]  // AI gradient
+                    : [colors.neonBlue, colors.neonPink]    // Standard gradient
                 }
                 style={[styles.progressFill, { width: `${Math.max(0, Math.min(100, processingState.progress || 0))}%` }]}
                 start={{ x: 0, y: 0 }}
@@ -805,8 +910,9 @@ export default function ReviewScreen() {
               />
             </View>
             
-            {/* Stage indicators */}
+            {/* Stage indicators - Dynamic 5-stage layout */}
             <View style={styles.stageIndicators}>
+              {/* Upload Stage */}
               <View style={[
                 styles.stageIndicator,
                 (processingState.stage === 'uploading' || processingState.progress > 0) && styles.stageActive
@@ -822,36 +928,57 @@ export default function ReviewScreen() {
                 ]}>Upload</Text>
               </View>
               
+              {/* Scanning Stage */}
               <View style={[
                 styles.stageIndicator,
-                processingState.progress >= 25 && styles.stageActive
+                (processingState.stage === 'scanning' || processingState.progress >= 35) && styles.stageActive
               ]}>
                 <Ionicons 
                   name="scan-outline" 
                   size={16} 
-                  color={processingState.progress >= 25 ? colors.primary : colors.textMuted} 
+                  color={processingState.progress >= 35 ? colors.primary : colors.textMuted} 
                 />
                 <Text style={[
                   styles.stageText,
-                  processingState.progress >= 25 && { color: colors.primary }
+                  processingState.progress >= 35 && { color: colors.primary }
                 ]}>Scan</Text>
               </View>
               
+              {/* AI Analyzing Stage - Conditional */}
+              {processingState.hasAI && (
+                <View style={[
+                  styles.stageIndicator,
+                  (processingState.stage === 'analyzing' || processingState.progress >= 80) && styles.stageActive
+                ]}>
+                  <Ionicons 
+                    name="sparkles" 
+                    size={16} 
+                    color={processingState.progress >= 80 ? colors.neonPurple : colors.textMuted} 
+                  />
+                  <Text style={[
+                    styles.stageText,
+                    processingState.progress >= 80 && { color: colors.neonPurple }
+                  ]}>AI</Text>
+                </View>
+              )}
+              
+              {/* Extracting Stage */}
               <View style={[
                 styles.stageIndicator,
-                processingState.progress >= 75 && styles.stageActive
+                (processingState.stage === 'extracting' || processingState.progress >= 95) && styles.stageActive
               ]}>
                 <Ionicons 
                   name="document-text-outline" 
                   size={16} 
-                  color={processingState.progress >= 75 ? colors.primary : colors.textMuted} 
+                  color={processingState.progress >= 95 ? colors.primary : colors.textMuted} 
                 />
                 <Text style={[
                   styles.stageText,
-                  processingState.progress >= 75 && { color: colors.primary }
+                  processingState.progress >= 95 && { color: colors.primary }
                 ]}>Extract</Text>
               </View>
               
+              {/* Complete Stage */}
               <View style={[
                 styles.stageIndicator,
                 processingState.progress >= 100 && styles.stageActive

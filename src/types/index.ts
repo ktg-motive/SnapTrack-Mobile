@@ -37,16 +37,32 @@ export interface User {
 }
 
 export interface UploadedReceipt {
-  id: string;
-  extracted_data: {
+  // New standardized format fields
+  success?: boolean;
+  expense?: {
+    id: string;
+    vendor: string;
+    amount: number;
+    date: string;
+    entity: string;
+    image_url: string;
+    status: string;
+  };
+  confidence?: {
+    amount: number;
+    entity: number;
+  };
+  // Legacy format fields (for backward compatibility)
+  id?: string;
+  extracted_data?: {
     vendor: string;
     amount: number;
     date: string;
     confidence_score: number;
     raw_text?: string;
   };
-  receipt_url: string;
-  status: 'processing' | 'completed' | 'failed';
+  receipt_url?: string;
+  status?: 'processing' | 'completed' | 'failed';
 }
 
 export interface ApiResponse<T> {
@@ -114,4 +130,42 @@ export interface OfflineReceipt extends Omit<Receipt, 'id'> {
   local_id: string;
   image_uri: string;
   sync_status: 'pending' | 'syncing' | 'synced' | 'failed';
+}
+
+// Help system types
+export interface HelpCategory {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  article_count: number;
+}
+
+export interface HelpArticle {
+  id: string;
+  key: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  tags: string[];
+  video_url?: string;
+  screenshots: string[];
+  related_articles: string[];
+  requires_screenshots: boolean;
+  view_count: number;
+  helpful_count: number;
+  not_helpful_count: number;
+  help_categories: {
+    key: string;
+    title: string;
+    description: string;
+  };
+}
+
+export interface HelpCategoriesResponse {
+  categories: HelpCategory[];
+}
+
+export interface HelpArticlesResponse {
+  articles: HelpArticle[];
 }

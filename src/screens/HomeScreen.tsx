@@ -7,12 +7,14 @@ import {
   SafeAreaView,
   Alert,
   ScrollView,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, typography, shadows, spacing } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
@@ -27,12 +29,15 @@ import { offlineStorage } from '../services/offlineStorage';
 import { ReceiptEditModal } from '../components/ReceiptEditModal';
 import { ReceiptPreviewModal } from '../components/ReceiptPreviewModal';
 import { HomeScreenFooter, ReceiptsState } from '../components/HomeScreenFooter';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(true);
   const [quickStats, setQuickStats] = useState<QuickStatsType | null>(null);
   const [recentReceipts, setRecentReceipts] = useState<Receipt[]>([]);
+  const [allReceipts, setAllReceipts] = useState<Receipt[]>([]); // For cycling stats calculations
   const [userName, setUserName] = useState('User');
   const [refreshing, setRefreshing] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
@@ -42,6 +47,7 @@ export default function HomeScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+  const [hamburgerMenuVisible, setHamburgerMenuVisible] = useState(false);
 
   // Infinite scroll state
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,10 +116,11 @@ export default function HomeScreen() {
 
   const loadDashboardData = async (resetData = true) => {
     try {
-      // Load data in parallel
-      const [statsPromise, receiptsPromise] = await Promise.allSettled([
+      // Load data in parallel - get more receipts for stats calculations
+      const [statsPromise, receiptsPromise, allReceiptsPromise] = await Promise.allSettled([
         apiClient.getQuickStats(),
-        apiClient.getReceipts({ limit: 3, page: resetData ? 1 : currentPage }) // Get 3 receipts per page
+        apiClient.getReceipts({ limit: 3, page: resetData ? 1 : currentPage }), // Recent receipts for display
+        apiClient.getReceipts({ limit: 1000, page: 1 }) // All receipts for cycling stats calculation
       ]);
 
       if (statsPromise.status === 'fulfilled') {
@@ -145,6 +152,16 @@ export default function HomeScreen() {
         if (resetData) {
           setRecentReceipts([]); // Set empty array as fallback
         }
+      }
+
+      // Handle all receipts for stats
+      if (allReceiptsPromise.status === 'fulfilled') {
+        const allReceiptsData = allReceiptsPromise.value.data || [];
+        console.log('📊 Loaded all receipts for stats:', allReceiptsData.length);
+        setAllReceipts(allReceiptsData);
+      } else {
+        console.error('❌ Failed to load all receipts for stats:', allReceiptsPromise.reason);
+        setAllReceipts([]);
       }
     } catch (error) {
       console.error('❌ Failed to load dashboard data:', error);
@@ -210,9 +227,21 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Logo */}
-      <View style={styles.header}>
+      {/* Header with Logo and Hamburger Menu */}
+      <View style={[styles.header, { 
+        paddingTop: Platform.OS === 'android' 
+          ? Math.max(insets.top, 24) // Add extra space for Android camera notch
+          : 8 
+      }]}>
+        <TouchableOpacity 
+          style={styles.hamburgerButton}
+          onPress={() => setHamburgerMenuVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="menu" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
         <SnapTrackLogo width={180} height={60} />
+        <View style={styles.headerSpacer} />
       </View>
 
       {/* Offline/Sync Status Indicator - Fixed */}
@@ -246,6 +275,7 @@ export default function HomeScreen() {
       <QuickStats 
         stats={quickStats}
         isLoading={isLoading}
+        receipts={allReceipts}
       />
 
       {/* Main Capture Button - Fixed */}
@@ -279,8 +309,14 @@ export default function HomeScreen() {
               )
             );
           }}
-          onDeleteReceipt={(receiptId) => {
-            setRecentReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+          onDeleteReceipt={async (receiptId) => {
+            try {
+              await apiClient.deleteReceipt(receiptId);
+              setRecentReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+            } catch (error) {
+              console.error('Failed to delete receipt:', error);
+              throw error;
+            }
           }}
           onEditReceipt={(receipt) => {
             console.log('Edit receipt:', receipt.id);
@@ -360,6 +396,18 @@ export default function HomeScreen() {
           setSelectedReceipt(null);
         }}
       />
+
+      {/* Hamburger Menu */}
+      <HamburgerMenu
+        isVisible={hamburgerMenuVisible}
+        onClose={() => setHamburgerMenuVisible(false)}
+        navigation={navigation}
+        userStats={quickStats ? {
+          totalReceipts: quickStats.receipt_count,
+          totalAmount: quickStats.total_amount,
+          currentMonthReceipts: quickStats.monthly_count,
+        } : undefined}
+      />
     </SafeAreaView>
   );
 }
@@ -374,10 +422,17 @@ const styles = StyleSheet.create({
     flex: 1, // Takes remaining space between fixed elements
   },
   header: {
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 8, // Reduced from 20 to 8 for tighter layout
     paddingBottom: 8, // Reduced from 12 to 8
+  },
+  hamburgerButton: {
+    padding: spacing.sm,
+    borderRadius: 8,
+  },
+  headerSpacer: {
+    width: 40, // Same width as hamburger button to center logo
   },
   captureSection: {
     paddingHorizontal: 16, // Slightly reduced for more width

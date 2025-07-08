@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
+import { apiClient } from '../services/apiClient';
+import { HelpCategory, HelpArticle } from '../types';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 interface FAQItem {
   question: string;
@@ -12,242 +16,365 @@ interface FAQItem {
   helpful_count: number;
 }
 
+type ViewType = 'categories' | 'articles' | 'article';
+
+interface HelpScreenProps {
+  onRestartOnboarding?: () => void;
+}
+
 export default function HelpScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { onRestartOnboarding } = (route.params as HelpScreenProps) || {};
+  const [categories, setCategories] = useState<HelpCategory[]>([]);
+  const [articles, setArticles] = useState<HelpArticle[]>([]);
+  const [currentArticle, setCurrentArticle] = useState<HelpArticle | null>(null);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<Set<number>>(new Set());
+  const [view, setView] = useState<ViewType>('categories');
+  const [loading, setLoading] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<Set<string>>(new Set());
 
-  const categories = [
-    { key: 'all', title: 'All Topics', count: 13 },
-    { key: 'getting-started', title: 'Getting Started', count: 2 },
-    { key: 'organizing', title: 'Organizing Expenses', count: 3 },
-    { key: 'troubleshooting', title: 'Troubleshooting', count: 2 },
-    { key: 'security', title: 'Security & Privacy', count: 2 },
-  ];
+  // Load categories and articles on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
-  const faqData: FAQItem[] = [
-    {
-      category: 'getting-started',
-      question: 'How do I capture my first receipt?',
-      answer: 'Tap the "Capture Receipt" button on the main screen, then take a photo of your receipt. The app will automatically extract the vendor name, amount, and date using OCR technology. Make sure your receipt is well-lit and clearly visible for best results.',
-      tags: ['capture', 'photo', 'ocr', 'first-time'],
-      helpful_count: 24,
-    },
-    {
-      category: 'getting-started',
-      question: 'What types of receipts work best?',
-      answer: 'SnapTrack works with most paper receipts including restaurants, retail stores, gas stations, and professional services. For best OCR accuracy: ensure good lighting, avoid wrinkled receipts, and capture the entire receipt in the frame.',
-      tags: ['receipt-types', 'paper', 'accuracy'],
-      helpful_count: 18,
-    },
-    {
-      category: 'organizing',
-      question: 'How do I edit receipt information?',
-      answer: 'After capturing a receipt, you can edit the vendor name, amount, date, and add tags or notes. Simply tap on any field in the review screen to modify it. All changes are saved automatically.',
-      tags: ['editing', 'modify', 'details'],
-      helpful_count: 22,
-    },
-    {
-      category: 'organizing',
-      question: 'What are tags and how do I use them?',
-      answer: 'Tags help you categorize expenses for easier tracking and reporting. You can add multiple tags like "business", "travel", "meals", or custom tags. This makes it easy to filter and analyze your expenses later.',
-      tags: ['tags', 'categories', 'organization'],
-      helpful_count: 19,
-    },
-    {
-      category: 'organizing',
-      question: 'How do I organize expenses by project or client?',
-      answer: 'Use tags to categorize expenses by project, client, or department. You can add multiple tags to each receipt. This helps with project cost tracking, client billing, and business reporting.',
-      tags: ['projects', 'clients', 'tracking'],
-      helpful_count: 16,
-    },
-    {
-      category: 'troubleshooting',
-      question: 'Why is my receipt amount wrong?',
-      answer: 'OCR technology is very accurate but not perfect. Always verify extracted amounts and edit if needed. For best results: ensure receipts are clear, well-lit, and not wrinkled. You can always manually correct any extracted information.',
-      tags: ['ocr', 'accuracy', 'amounts', 'verification'],
-      helpful_count: 41,
-    },
-    {
-      category: 'troubleshooting',
-      question: 'My receipt image is blurry, what should I do?',
-      answer: 'Retake the photo with better lighting and steady hands. Ensure the entire receipt is visible in the frame. You can retake photos by going back to the camera screen if needed.',
-      tags: ['blurry', 'lighting', 'retake'],
-      helpful_count: 16,
-    },
-    {
-      category: 'security',
-      question: 'How secure is my financial data?',
-      answer: 'Very secure! All data is encrypted in transit and at rest using bank-grade security measures. We never share your data with third parties. You have full control to export or delete your data at any time.',
-      tags: ['security', 'encryption', 'privacy'],
-      helpful_count: 28,
-    },
-    {
-      category: 'security',
-      question: 'Can I delete my account and data?',
-      answer: 'Yes, you have complete control over your data. Use the Contact Support feature in Settings to request account deletion. All data will be permanently removed within 30 days. You can export your data before deletion.',
-      tags: ['delete', 'account', 'data-control'],
-      helpful_count: 12,
-    },
-  ];
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getHelpCategories();
+      setCategories(response.categories);
+    } catch (error) {
+      console.error('Failed to load help categories:', error);
+      // Fallback to static categories if API fails
+      setCategories([
+        { id: '1', key: 'getting-started', title: '🚀 Getting Started', description: 'App tutorial and basics', article_count: 6 },
+        { id: '2', key: 'organizing', title: 'Organizing Expenses', description: 'Manage your receipts', article_count: 4 },
+        { id: '3', key: 'troubleshooting', title: 'Troubleshooting', description: 'Solve common issues', article_count: 3 },
+        { id: '4', key: 'reports-export', title: 'Reports & Export', description: 'Export and analyze data', article_count: 4 },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredFAQs = faqData.filter(item => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
-      item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  });
+  const loadArticles = async (category?: string, search?: string) => {
+    try {
+      setLoading(true);
+      const params: { category?: string; search?: string } = {};
+      if (category && category !== 'all') params.category = category;
+      if (search) params.search = search;
+
+      const response = await apiClient.getHelpArticles(params);
+      setArticles(response.articles);
+    } catch (error) {
+      console.error('Failed to load help articles:', error);
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSpecificArticle = async (articleKey: string) => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getHelpArticle(articleKey);
+      setCurrentArticle(response.article);
+    } catch (error) {
+      console.error('Failed to load help article:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Dynamic category and search handling
+  const handleCategorySelect = (categoryKey: string) => {
+    setSelectedCategory(categoryKey);
+    setView('articles');
+    loadArticles(categoryKey, searchQuery);
+  };
+
+  const handleArticleSelect = (article: HelpArticle) => {
+    setCurrentArticle(article);
+    setView('article');
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      setView('articles');
+      loadArticles(selectedCategory, query);
+    } else if (selectedCategory !== 'all') {
+      loadArticles(selectedCategory, '');
+    } else {
+      setView('categories');
+    }
+  };
+
+  const goBack = () => {
+    if (view === 'article') {
+      setView('articles');
+      setCurrentArticle(null);
+    } else if (view === 'articles') {
+      setView('categories');
+      setSelectedCategory('all');
+      setSearchQuery('');
+    }
+  };
 
   const toggleExpanded = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
   };
 
-  const submitFeedback = (index: number, isHelpful: boolean) => {
-    setFeedbackSubmitted(prev => new Set(prev).add(index));
+  const submitFeedback = async (articleId: string, isHelpful: boolean, feedbackText?: string) => {
+    try {
+      await apiClient.submitHelpFeedback(articleId, isHelpful, feedbackText);
+      setFeedbackSubmitted(prev => new Set(prev).add(articleId));
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+    }
   };
 
   const handleContactSupport = () => {
     navigation.navigate('Contact' as never);
   };
 
-  const renderFAQItem = (item: FAQItem, index: number) => (
-    <View key={index} style={styles.faqItem}>
-      <TouchableOpacity
-        style={styles.questionContainer}
-        onPress={() => toggleExpanded(index)}
-      >
-        <View style={styles.questionHeader}>
-          <Text style={styles.questionText}>{item.question}</Text>
-          <View style={styles.questionMeta}>
-            <Ionicons name="thumbs-up" size={12} color={colors.success} />
-            <Text style={styles.helpfulCount}>{item.helpful_count}</Text>
-          </View>
+  const handleRestartTutorial = async () => {
+    console.log('🔄 Tutorial restart button pressed');
+    Alert.alert(
+      'Restart Tutorial',
+      'This will restart the interactive app tutorial to show you how to use SnapTrack.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Start Tutorial', 
+          onPress: async () => {
+            try {
+              console.log('🚀 Starting tutorial restart process...');
+              // Clear onboarding completion flag
+              await AsyncStorage.removeItem('onboarding_completed');
+              console.log('✅ Onboarding flag cleared from storage');
+              
+              if (onRestartOnboarding) {
+                console.log('📲 Using onRestartOnboarding callback');
+                // Use the callback if available (when navigated from Settings)
+                onRestartOnboarding();
+              } else {
+                console.log('📱 Triggering app state change to restart onboarding');
+                // Trigger app state change by navigating away and back
+                // This will cause the AppState handler in App.tsx to recheck onboarding
+                Alert.alert(
+                  'Tutorial Reset',
+                  'The tutorial has been reset. Tap OK and put the app in background briefly, then return to start the tutorial.',
+                  [{ 
+                    text: 'OK', 
+                    onPress: () => {
+                      // Navigate to home to ensure we're in a good state
+                      navigation.navigate('Main' as never, { screen: 'HomeTab' });
+                    }
+                  }]
+                );
+              }
+            } catch (error) {
+              console.error('❌ Error restarting tutorial:', error);
+              Alert.alert('Error', 'Failed to restart tutorial. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const renderArticleItem = (article: HelpArticle, index: number) => (
+    <TouchableOpacity
+      key={article.id}
+      style={styles.faqItem}
+      onPress={() => handleArticleSelect(article)}
+    >
+      <View style={styles.questionHeader}>
+        <Text style={styles.questionText}>{article.title}</Text>
+        <View style={styles.questionMeta}>
+          <Ionicons name="thumbs-up" size={12} color={colors.success} />
+          <Text style={styles.helpfulCount}>{article.helpful_count}</Text>
         </View>
-        <Ionicons
-          name={expandedIndex === index ? 'chevron-up' : 'chevron-down'}
-          size={24}
-          color={colors.primary}
-        />
-      </TouchableOpacity>
-      {expandedIndex === index && (
-        <View style={styles.answerContainer}>
-          <Text style={styles.answerText}>{item.answer}</Text>
-          <View style={styles.tags}>
-            {item.tags.slice(0, 3).map((tag, tagIndex) => (
-              <View key={tagIndex} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
+      </View>
+      <Text style={styles.excerptText}>{article.excerpt}</Text>
+      <View style={styles.tags}>
+        {article.tags.slice(0, 3).map((tag, tagIndex) => (
+          <View key={tagIndex} style={styles.tag}>
+            <Text style={styles.tagText}>{tag}</Text>
           </View>
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackQuestion}>Was this helpful?</Text>
-            {feedbackSubmitted.has(index) ? (
-              <Text style={styles.feedbackThanks}>Thanks for your feedback!</Text>
-            ) : (
-              <View style={styles.feedbackButtons}>
-                <TouchableOpacity
-                  style={[styles.feedbackButton, styles.helpfulButton]}
-                  onPress={() => submitFeedback(index, true)}
-                >
-                  <Ionicons name="thumbs-up" size={16} color={colors.success} />
-                  <Text style={styles.helpfulText}>Yes</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.feedbackButton, styles.notHelpfulButton]}
-                  onPress={() => submitFeedback(index, false)}
-                >
-                  <Ionicons name="thumbs-down" size={16} color={colors.error} />
-                  <Text style={styles.notHelpfulText}>No</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
-    </View>
+        ))}
+      </View>
+      <Ionicons
+        name="chevron-forward"
+        size={24}
+        color={colors.primary}
+        style={styles.chevronIcon}
+      />
+    </TouchableOpacity>
+  );
+
+  const renderCategoryItem = (category: HelpCategory) => (
+    <TouchableOpacity
+      key={category.key}
+      style={styles.categoryCard}
+      onPress={() => handleCategorySelect(category.key)}
+    >
+      <Text style={styles.categoryTitle}>{category.title}</Text>
+      <Text style={styles.categoryDescription}>{category.description}</Text>
+      <Text style={styles.categoryArticleCount}>{category.article_count} articles</Text>
+    </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
+      {/* Header with back button */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Help & Support</Text>
-        <Text style={styles.headerSubtitle}>
-          Find answers to common questions about using SnapTrack
-        </Text>
-      </View>
-
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search help articles..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-
-      {/* Categories */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category.key}
-            style={[
-              styles.categoryButton,
-              selectedCategory === category.key && styles.categoryButtonActive
-            ]}
-            onPress={() => setSelectedCategory(category.key)}
-          >
-            <Text style={[
-              styles.categoryButtonText,
-              selectedCategory === category.key && styles.categoryButtonTextActive
-            ]}>
-              {category.title}
+        <View style={styles.headerContent}>
+          {view !== 'categories' && (
+            <TouchableOpacity onPress={goBack} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>
+              {view === 'categories' ? 'Help & Support' :
+               view === 'articles' ? (categories.find(c => c.key === selectedCategory)?.title || 'Articles') :
+               currentArticle?.title || 'Article'}
             </Text>
-            <Text style={[
-              styles.categoryCount,
-              selectedCategory === category.key && styles.categoryCountActive
-            ]}>
-              {category.count}
+            <Text style={styles.headerSubtitle}>
+              {view === 'categories' ? 'Find answers to common questions about using SnapTrack' :
+               view === 'articles' ? `${articles.length} articles available` :
+               currentArticle?.help_categories.title || ''}
             </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Results */}
-      <View style={styles.resultsContainer}>
-        <Text style={styles.resultsTitle}>
-          {searchQuery ? `Results for "${searchQuery}"` : 
-           selectedCategory === 'all' ? 'All Help Topics' : 
-           categories.find(c => c.key === selectedCategory)?.title}
-        </Text>
-        <Text style={styles.resultsCount}>
-          {filteredFAQs.length} article{filteredFAQs.length !== 1 ? 's' : ''}
-        </Text>
+          </View>
+        </View>
       </View>
 
-      {/* FAQ Items */}
-      <View style={styles.faqContainer}>
-        {filteredFAQs.map((item, index) => renderFAQItem(item, index))}
-      </View>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading help content...</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.content}>
+          {/* Search - only show in categories and articles views */}
+          {view !== 'article' && (
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search help articles..."
+                value={searchQuery}
+                onChangeText={handleSearch}
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          )}
 
-      {/* Contact Support */}
-      <View style={styles.footer}>
-        <Text style={styles.footerTitle}>Still need help?</Text>
-        <Text style={styles.footerText}>
-          Contact our support team for personalized assistance with your SnapTrack account.
-        </Text>
-        <TouchableOpacity style={styles.contactButton} onPress={handleContactSupport}>
-          <Ionicons name="mail" size={20} color="white" />
-          <Text style={styles.contactButtonText}>Contact Support</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          {/* Categories View */}
+          {view === 'categories' && (
+            <View style={styles.categoriesContainer}>
+              <Text style={styles.sectionTitle}>Choose a Help Category</Text>
+              
+              {/* Tutorial Card */}
+              <TouchableOpacity 
+                style={styles.tutorialCard} 
+                onPress={handleRestartTutorial}
+                onPressIn={() => console.log('🔍 Tutorial card touch detected')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.tutorialIcon}>
+                  <Ionicons name="play-circle" size={32} color={colors.primary} />
+                </View>
+                <View style={styles.tutorialContent}>
+                  <Text style={styles.tutorialTitle}>📱 Interactive App Tutorial</Text>
+                  <Text style={styles.tutorialDescription}>
+                    Restart the guided walkthrough to learn how to use SnapTrack step-by-step
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+              </TouchableOpacity>
+              
+              {categories.map(renderCategoryItem)}
+            </View>
+          )}
+
+          {/* Articles View */}
+          {view === 'articles' && (
+            <View style={styles.articlesContainer}>
+              <Text style={styles.sectionTitle}>
+                {searchQuery ? `Search Results for "${searchQuery}"` : 'Help Articles'}
+              </Text>
+              {articles.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No articles found. Try adjusting your search.</Text>
+                </View>
+              ) : (
+                articles.map(renderArticleItem)
+              )}
+            </View>
+          )}
+
+          {/* Article View */}
+          {view === 'article' && currentArticle && (
+            <View style={styles.articleContainer}>
+              <Text style={styles.articleTitle}>{currentArticle.title}</Text>
+              <MarkdownRenderer content={currentArticle.content} />
+              
+              {/* Tags */}
+              <View style={styles.tags}>
+                {currentArticle.tags.map((tag, tagIndex) => (
+                  <View key={tagIndex} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Feedback */}
+              <View style={styles.feedbackContainer}>
+                <Text style={styles.feedbackQuestion}>Was this helpful?</Text>
+                {feedbackSubmitted.has(currentArticle.id) ? (
+                  <Text style={styles.feedbackThanks}>Thanks for your feedback!</Text>
+                ) : (
+                  <View style={styles.feedbackButtons}>
+                    <TouchableOpacity
+                      style={[styles.feedbackButton, styles.helpfulButton]}
+                      onPress={() => submitFeedback(currentArticle.id, true)}
+                    >
+                      <Ionicons name="thumbs-up" size={16} color={colors.success} />
+                      <Text style={styles.helpfulText}>Yes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.feedbackButton, styles.notHelpfulButton]}
+                      onPress={() => submitFeedback(currentArticle.id, false)}
+                    >
+                      <Ionicons name="thumbs-down" size={16} color={colors.error} />
+                      <Text style={styles.notHelpfulText}>No</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Contact Support - show in all views */}
+          <View style={styles.footer}>
+            <Text style={styles.footerTitle}>Still need help?</Text>
+            <Text style={styles.footerText}>
+              Contact our support team for personalized assistance with your SnapTrack account.
+            </Text>
+            <TouchableOpacity style={styles.contactButton} onPress={handleContactSupport}>
+              <Ionicons name="mail" size={20} color="white" />
+              <Text style={styles.contactButtonText}>Contact Support</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
@@ -255,6 +382,132 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  content: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: spacing.md,
+    padding: spacing.sm,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  sectionTitle: {
+    ...typography.title2,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+  },
+  categoriesContainer: {
+    padding: spacing.lg,
+  },
+  tutorialCard: {
+    backgroundColor: colors.primary + '10', // Primary color with low opacity
+    borderRadius: 12,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.primary + '30',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tutorialIcon: {
+    marginRight: spacing.md,
+  },
+  tutorialContent: {
+    flex: 1,
+  },
+  tutorialTitle: {
+    ...typography.title3,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+  tutorialDescription: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  categoryCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.surface,
+  },
+  categoryTitle: {
+    ...typography.title3,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  categoryDescription: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  categoryArticleCount: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  articlesContainer: {
+    padding: spacing.lg,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  articleContainer: {
+    padding: spacing.lg,
+  },
+  articleTitle: {
+    ...typography.title1,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+  },
+  articleContent: {
+    ...typography.body,
+    color: colors.textPrimary,
+    lineHeight: 24,
+    marginBottom: spacing.lg,
+  },
+  excerptText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    fontSize: 14,
+  },
+  chevronIcon: {
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.md,
   },
   header: {
     backgroundColor: colors.card,
@@ -292,72 +545,14 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textPrimary,
   },
-  categoryScroll: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.surface,
-  },
-  categoryButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  categoryButtonText: {
-    ...typography.caption,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  categoryButtonTextActive: {
-    color: 'white',
-  },
-  categoryCount: {
-    ...typography.caption,
-    fontSize: 12,
-    color: colors.textMuted,
-    marginLeft: spacing.xs,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  categoryCountActive: {
-    color: colors.primary,
-    backgroundColor: 'white',
-  },
-  resultsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  resultsTitle: {
-    ...typography.title3,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  resultsCount: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  faqContainer: {
-    marginHorizontal: spacing.lg,
+  faqItem: {
     backgroundColor: colors.card,
     borderRadius: 12,
-    overflow: 'hidden',
-  },
-  faqItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.surface,
+    position: 'relative',
   },
   questionContainer: {
     flexDirection: 'row',

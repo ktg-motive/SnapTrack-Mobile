@@ -49,9 +49,13 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      // Fix timezone handling - parse date string properly
+      const date = new Date(dateString);
+      // Use UTC methods to avoid timezone offset issues
+      return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
+        timeZone: 'UTC'
       });
     } catch {
       return 'Invalid Date';

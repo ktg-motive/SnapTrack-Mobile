@@ -100,12 +100,7 @@ export default function AccountScreen() {
   };
 
   const handleSettings = () => {
-    // Temporary: Show alert instead of navigation until we resolve the navigation issue
-    Alert.alert(
-      'Settings',
-      'Advanced settings coming soon! For now, you can access basic account options below.',
-      [{ text: 'OK' }]
-    );
+    navigation.navigate('Settings' as never);
   };
 
   const handleSignOut = () => {

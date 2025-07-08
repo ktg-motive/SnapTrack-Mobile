@@ -1,4 +1,4 @@
-package com.motiveai.snaptrack
+package com.snaptrack.mobile
 
 import android.app.Application
 import android.content.res.Configuration

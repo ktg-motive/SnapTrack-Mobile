@@ -21,6 +21,9 @@ export const colors = {
   textPrimary: '#212529',
   textSecondary: '#6c757d',
   textMuted: '#adb5bd',
+  onSurface: '#212529',         // Alias for textPrimary
+  onBackground: '#212529',      // Alias for textPrimary
+  onSurfaceVariant: '#6c757d',  // Alias for textSecondary
   
   // Status
   error: '#dc3545',
@@ -30,7 +33,11 @@ export const colors = {
   accent: '#2457d9',          // Alias for secondary
   border: '#dee2e6',          // Border color
   outline: '#adb5bd',         // Outline color
+  outlineVariant: '#dee2e6',  // Alias for border
   primaryContainer: '#009f8620', // Primary with opacity
+  onPrimaryContainer: '#004d40', // Dark text on primary container
+  secondaryContainer: '#2457d920', // Secondary with opacity
+  onSecondaryContainer: '#1a365d', // Dark text on secondary container
 };
 
 export const typography = {

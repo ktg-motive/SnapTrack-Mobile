@@ -1,6 +1,6 @@
 # System Patterns & Architectural Decisions
 
-**Last Updated:** 2025-01-05 16:00:00 - UI/UX Enhancement Session - Impacts: [Portfolio Design System]
+**Last Updated:** 2025-07-07 01:30:00 - Critical API Patterns Documentation - Impacts: [API Integration, State Management]
 
 ## Architectural Decision Records
 
@@ -97,6 +97,148 @@ export const typography = {
 - Scalable vector graphics for all screen densities
 
 **Standard:** Adopted as portfolio standard for all mobile interfaces.
+
+### ADR-005: Hamburger Menu Navigation Pattern (2025-07-06)
+**Decision:** Implement slide-out hamburger menu for account-related functions instead of dedicated footer tab.
+
+**Context:** Mobile apps benefit from reducing cognitive load in primary navigation while providing easy access to secondary functions.
+
+**Implementation:**
+```typescript
+// HamburgerMenu component with slide-out animation
+interface HamburgerMenuProps {
+  isVisible: boolean;
+  onClose: () => void;
+  navigation: any;
+  userStats?: UserStats;
+}
+
+// 280px width (85% of screen, max 320px)
+const MENU_WIDTH = Math.min(SCREEN_WIDTH * 0.85, 320);
+
+// 300ms smooth animation with native driver
+Animated.timing(slideAnim, {
+  toValue: 0,
+  duration: 300,
+  useNativeDriver: true,
+})
+```
+
+**Navigation Structure:**
+```
+Hamburger Menu
+├── Profile Section (photo, name, email, stats)
+├── Navigation Items
+│   ├── Account Settings
+│   ├── App Settings  
+│   ├── Help & Support
+│   └── Send Feedback
+├── App Information (version, about)
+└── Logout Button
+```
+
+**Benefits:**
+- Reduces footer tabs from 5 to 4 for better mobile usability
+- Provides space for rich user information display
+- Allows hierarchical navigation for secondary functions
+- Follows iOS design patterns (Settings app, etc.)
+- Maintains consistent access to account functions
+
+**Portfolio Impact:** Establishes standard for complex mobile navigation in professional apps.
+
+### ADR-006: Enhanced Settings Screen with API Consistency (2025-07-06)
+**Decision:** Create comprehensive mobile settings that match web app functionality while respecting backend limitations.
+
+**Context:** Mobile users need advanced settings management but backend doesn't support all CRUD operations.
+
+**Implementation Strategy:**
+```typescript
+// Entity Management: Add/Delete only (no update)
+handleEditEntity = () => {
+  Alert.alert(
+    'Edit Entity',
+    'Entity editing is not supported. Delete and recreate with desired name.',
+    [
+      { text: 'OK' },
+      { text: 'Delete Entity', style: 'destructive', onPress: handleDelete }
+    ]
+  );
+};
+
+// Tag Management: Read-only display with chip UI
+<View style={styles.tagsContainer}>
+  {tags.map((tag, index) => (
+    <View key={index} style={styles.tagChip}>
+      <Text style={styles.tagText}>{tag}</Text>
+    </View>
+  ))}
+</View>
+```
+
+**API Consistency Patterns:**
+- Entity IDs as strings (not numbers) to match backend
+- Response format handling: `{"success": true, "entities": [...], "count": N}`
+- Informative error messages for unsupported operations
+- Graceful degradation for backend limitations
+
+**User Experience Principles:**
+- Explain limitations clearly to users
+- Provide alternative workflows when possible
+- Maintain visual consistency with web app
+- Use mobile-optimized UI patterns (modals, toggles, chips)
+
+**Benefits:**
+- 100% API compatibility with web app and backend
+- Clear user understanding of feature capabilities
+- Professional mobile settings experience
+- Future-proof for backend enhancements
+
+**Portfolio Standard:** Template for mobile settings in any multi-platform application.
+
+### ADR-007: Modal-Driven Mobile Settings UI Pattern (2025-07-06)
+**Decision:** Use slide-up modals for entity/tag creation instead of inline editing.
+
+**Context:** Mobile screens have limited space for inline editing workflows that work well on desktop.
+
+**Modal Pattern:**
+```typescript
+// Full-screen modal with pageSheet presentation
+<Modal
+  visible={showEntityModal}
+  animationType="slide"
+  presentationStyle="pageSheet"
+>
+  <SafeAreaView style={styles.modalContainer}>
+    <View style={styles.modalHeader}>
+      <TouchableOpacity onPress={onCancel}>
+        <Text style={styles.modalCancelText}>Cancel</Text>
+      </TouchableOpacity>
+      <Text style={styles.modalTitle}>Add Entity</Text>
+      <TouchableOpacity onPress={onSave}>
+        <Text style={styles.modalSaveText}>Save</Text>
+      </TouchableOpacity>
+    </View>
+    <View style={styles.modalContent}>
+      {/* Form content */}
+    </View>
+  </SafeAreaView>
+</Modal>
+```
+
+**Design Principles:**
+- Clear header with Cancel/Title/Save layout
+- Auto-focus first input field
+- Proper keyboard handling
+- Native iOS modal presentation style
+- Consistent color scheme and typography
+
+**Benefits:**
+- Focuses user attention on single task
+- Provides clear action boundaries (Cancel/Save)
+- Works well with mobile keyboards
+- Follows native iOS patterns
+
+**Application:** Standard pattern for any mobile form or creation workflow.
 
 ## Design System Patterns
 
@@ -333,3 +475,80 @@ const analytics = {
 - Data minimization principles established
 - GDPR compliance patterns prepared
 - User control over data collection preferences
+
+## Critical API Integration Patterns
+
+### ADR-009: API Response Contract Preservation (2025-07-07)
+**Decision:** Maintain strict API contracts and handle response transformations in the client.
+
+**Context:** API response format changes can break mobile apps instantly, causing crashes and data loss.
+
+**Critical Patterns:**
+
+1. **Entity Management API Contract:**
+```typescript
+// apiClient.getEntities() MUST return Entity[] directly
+async getEntities(): Promise<Entity[]> {
+  const response = await this.makeRequest<any>('/api/entities');
+  // Backend returns: {"success": true, "entities": [...]}
+  if (Array.isArray(response.entities)) {
+    return response.entities; // Return array directly, NOT {data: entities}
+  }
+}
+```
+
+2. **Receipt Upload Response Transformation:**
+```typescript
+// Handle multiple response formats for backward compatibility
+if (response.success && response.expense) {
+  // New standardized format - transform for UI compatibility
+  return {
+    id: response.expense.id,
+    extracted_data: {
+      vendor: response.expense.vendor,
+      amount: response.expense.amount,
+      date: response.expense.date,
+    },
+    receipt_url: response.expense.image_url,
+    status: 'completed'
+  };
+}
+```
+
+3. **Deletion Pattern - API + State:**
+```typescript
+// Always call API first, then update local state
+onDeleteReceipt={async (receiptId) => {
+  await apiClient.deleteReceipt(receiptId); // API call first
+  setReceipts(prev => prev.filter(r => r.id !== receiptId)); // Then state
+}}
+```
+
+**Rationale:**
+- Prevents production crashes from response format mismatches
+- Maintains backward compatibility
+- Centralizes transformation logic
+- Preserves working functionality
+
+**Impact:** Critical for app stability - breaking these patterns causes immediate user-facing crashes.
+
+### API Error Handling Pattern
+**Pattern:** Always provide fallback behavior for API failures.
+
+```typescript
+try {
+  const entities = await apiClient.getEntities();
+  setEntities(entities);
+} catch (error) {
+  // Fallback to default entities
+  setEntities([
+    { id: '1', name: 'Personal', ... },
+    { id: '2', name: 'Business', ... }
+  ]);
+}
+```
+
+**Benefits:**
+- App remains functional during API outages
+- Better user experience with graceful degradation
+- Easier debugging with predictable fallbacks

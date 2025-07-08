@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.motiveai.snaptrack'
+    namespace 'com.snaptrack.mobile'
     defaultConfig {
-        applicationId 'com.motiveai.snaptrack'
+        applicationId 'com.snaptrack.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -115,6 +115,12 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+        }
+    }
+    
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "SnapTrack-${variant.versionName}.apk"
         }
     }
     packagingOptions {

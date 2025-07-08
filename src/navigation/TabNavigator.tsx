@@ -1,8 +1,10 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
@@ -10,7 +12,7 @@ import CameraScreen from '../screens/CameraScreen';
 import ReceiptsScreen from '../screens/ReceiptsScreen';
 import HelpScreen from '../screens/HelpScreen';
 import AccountScreen from '../screens/AccountScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import EnhancedSettingsScreen from '../screens/EnhancedSettingsScreen';
 import AboutScreen from '../screens/AboutScreen';
 import ContactScreen from '../screens/ContactScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
@@ -84,7 +86,7 @@ function AccountStackNavigator() {
       />
       <Stack.Screen 
         name="Settings" 
-        component={SettingsScreen}
+        component={EnhancedSettingsScreen}
         options={{ title: 'Settings' }}
       />
       <Stack.Screen 
@@ -112,6 +114,8 @@ function AccountStackNavigator() {
 }
 
 export default function TabNavigator() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -126,8 +130,6 @@ export default function TabNavigator() {
             iconName = focused ? 'receipt' : 'receipt-outline';
           } else if (route.name === 'HelpTab') {
             iconName = focused ? 'help-circle' : 'help-circle-outline';
-          } else if (route.name === 'AccountTab') {
-            iconName = focused ? 'person' : 'person-outline';
           }
 
           return <Ionicons name={iconName!} size={size} color={color} />;
@@ -139,11 +141,15 @@ export default function TabNavigator() {
           borderTopColor: colors.surface,
           borderTopWidth: 1,
           paddingTop: 4,
-          paddingBottom: 4,
-          height: 60, // Slightly taller to accommodate 5 tabs
+          paddingBottom: Platform.OS === 'ios' 
+            ? Math.max(insets.bottom - 10, 15) // Add extra padding for iOS app switcher
+            : Math.max(insets.bottom + 10, 20), // Add more padding for Android navigation bar
+          height: Platform.OS === 'ios' 
+            ? 60 + Math.max(insets.bottom - 10, 15)
+            : 60 + Math.max(insets.bottom + 10, 20),
         },
         tabBarLabelStyle: {
-          fontSize: 11, // Slightly smaller to fit 5 labels
+          fontSize: 12, // Standard size for 4 labels
           marginTop: -2,
           marginBottom: 2,
         },
@@ -169,11 +175,6 @@ export default function TabNavigator() {
         name="HelpTab"
         component={HelpStackNavigator}
         options={{ tabBarLabel: 'Help' }}
-      />
-      <Tab.Screen
-        name="AccountTab"
-        component={AccountStackNavigator}
-        options={{ tabBarLabel: 'Account' }}
       />
     </Tab.Navigator>
   );
