@@ -15,6 +15,11 @@ export interface Receipt {
   updated_at: string;
   user_id: string;
   tenant_id: string;
+  
+  // Text receipt support (from email processing)
+  extraction_method?: string;
+  email_subject?: string;
+  raw_text?: string;
 }
 
 export interface Entity {

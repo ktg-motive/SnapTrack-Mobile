@@ -1,10 +1,13 @@
-import { Platform } from 'expo-modules-core';
-
 const config = {
   expo: {
     name: "SnapTrack",
     slug: "snaptrack-mobile",
-    version: "1.0.0",
+    version: "1.2.0",
+    extra: {
+      eas: {
+        projectId: "886b28f0-e481-4ab2-aafe-bf4958623369"
+      }
+    },
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
@@ -18,7 +21,7 @@ const config = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.snaptrack.mobile",
-      buildNumber: "1.0.0",
+      buildNumber: "4",
       googleServicesFile: "./GoogleService-Info.plist",
       infoPlist: {
         NSCameraUsageDescription: "SnapTrack needs camera access to capture receipt images for expense tracking.",
@@ -27,7 +30,7 @@ const config = {
     },
     android: {
       package: "com.snaptrack.mobile",
-      versionCode: 1,
+      versionCode: 4,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#0a0a0a"
@@ -61,11 +64,10 @@ const config = {
         {
           iosUrlScheme: "com.googleusercontent.apps.925529316912-rgmp4c8ah10vig4at93a62kl0seipdgm"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ]
   }
 };
 
-// Don't add Apple Authentication for Android builds
-
-export default config;
+module.exports = config;

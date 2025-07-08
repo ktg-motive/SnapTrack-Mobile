@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, typography, shadows, spacing } from '../styles/theme';
+import { smartOptimizeImage } from '../utils/imageOptimization';
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
@@ -88,13 +89,22 @@ export default function CameraScreen() {
         } else {
           // Real camera capture
           const photo = await cameraRef.current!.takePictureAsync({
-            quality: 0.8,
+            quality: 0.6,  // Reduced from 0.8 to 0.6 for smaller initial file
             base64: false,
             skipProcessing: false,
           });
           
+          // Optimize image for faster upload while maintaining OCR quality
+          console.log('📸 Optimizing captured image for upload...');
+          const optimizedResult = await smartOptimizeImage(photo.uri);
+          
+          console.log('🚀 Upload optimization complete:', {
+            savings: `${((1 - optimizedResult.compressionRatio) * 100).toFixed(1)}%`,
+            newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
+          });
+          
           navigation.navigate('Review' as never, { 
-            imageUri: photo.uri,
+            imageUri: optimizedResult.uri,
             source: 'camera'
           } as never);
         }
@@ -135,14 +145,23 @@ export default function CameraScreen() {
     
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
+      quality: 0.6,  // Reduced from 0.8 to 0.6 for smaller initial file
       allowsEditing: true,
       aspect: [4, 3],
     });
 
     if (!result.canceled && result.assets[0]) {
+      // Optimize image for faster upload while maintaining OCR quality
+      console.log('📸 Optimizing library image for upload...');
+      const optimizedResult = await smartOptimizeImage(result.assets[0].uri);
+      
+      console.log('🚀 Upload optimization complete:', {
+        savings: `${((1 - optimizedResult.compressionRatio) * 100).toFixed(1)}%`,
+        newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
+      });
+      
       navigation.navigate('Review' as never, { 
-        imageUri: result.assets[0].uri,
+        imageUri: optimizedResult.uri,
         source: 'library'
       } as never);
     }

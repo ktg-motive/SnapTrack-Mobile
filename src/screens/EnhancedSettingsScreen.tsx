@@ -345,15 +345,15 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
           <TouchableOpacity style={styles.actionItem} onPress={() => {
             // For now, let's show release notes in an alert - could be a modal later
             Alert.alert(
-              '🎉 What\'s New in v1.2.0',
-              '🤖 NEW: AI-powered receipt intelligence with automatic validation\n\n✨ ENHANCED: 5-stage processing flow shows AI analyzing stage\n\n🐛 FIXED: AI validation detection and UI response processing\n\n⚡ FASTER: Real-time AI validation feedback and progress indicators\n\nTry uploading a blurry receipt and watch the AI enhancement in action!',
-              [{ text: 'Got it!', style: 'default' }]
+              '🎉 What\'s New in v1.1.0',
+              '🤖 Big News: AI Receipt Intelligence!\nSnapTrack now automatically enhances blurry or unclear receipts with AI validation. You\'ll see exactly when and why we\'re improving your data.\n\n✨ Enhanced: Smart Processing Flow\nWatch the new 5-stage flow in action - when confidence is low, you\'ll see "AI analyzing" with improvement counts.\n\n🐛 Fixed: Better AI Detection\nNo more wondering if AI kicked in - the system now shows validation status clearly.\n\nTry a blurry receipt and watch the magic happen!',
+              [{ text: 'Amazing!', style: 'default' }]
             );
           }}>
             <Ionicons name="newspaper" size={20} color={colors.primary} />
             <View style={styles.actionItemContent}>
               <Text style={styles.actionItemText}>Release Notes</Text>
-              <Text style={styles.actionItemSubtext}>What's new in v1.2.0</Text>
+              <Text style={styles.actionItemSubtext}>What's new in v1.1.0</Text>
             </View>
             <Ionicons name="chevron-forward-outline" size={16} color={colors.textMuted} />
           </TouchableOpacity>

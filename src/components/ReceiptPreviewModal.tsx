@@ -81,6 +81,37 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
               style={styles.receiptImage}
               resizeMode="contain"
             />
+          ) : receipt.extraction_method === 'text' ? (
+            <View style={styles.textReceiptContainer}>
+              <View style={styles.textReceiptCard}>
+                <Ionicons name="mail-outline" size={48} color={theme.colors.primary} />
+                <Text style={styles.textReceiptTitle}>Email Receipt</Text>
+                <Text style={styles.textReceiptSubtitle}>
+                  Processed from email content
+                </Text>
+                
+                {/* Email Subject */}
+                {receipt.email_subject && (
+                  <View style={styles.emailSubjectContainer}>
+                    <Text style={styles.emailSubjectLabel}>Email Subject:</Text>
+                    <Text style={styles.emailSubjectText}>{receipt.email_subject}</Text>
+                  </View>
+                )}
+                
+                {/* Receipt Summary */}
+                <View style={styles.receiptSummary}>
+                  <Text style={styles.summaryAmount}>${receipt.amount.toFixed(2)}</Text>
+                  <Text style={styles.summaryVendor}>{receipt.vendor}</Text>
+                  <Text style={styles.summaryDate}>
+                    {new Date(receipt.date).toLocaleDateString()}
+                  </Text>
+                </View>
+                
+                <View style={styles.extractionBadge}>
+                  <Text style={styles.badgeText}>Text Processing</Text>
+                </View>
+              </View>
+            </View>
           ) : (
             <View style={styles.noImageContainer}>
               <Ionicons name="document-outline" size={64} color={theme.colors.outline} />
@@ -285,5 +316,88 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
+  },
+  
+  // Text receipt styles
+  textReceiptContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  textReceiptCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 300,
+  },
+  textReceiptTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: theme.colors.onSurface,
+    marginTop: theme.spacing.md,
+    textAlign: 'center',
+  },
+  textReceiptSubtitle: {
+    fontSize: 14,
+    color: theme.colors.onSurfaceVariant,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
+  },
+  emailSubjectContainer: {
+    marginTop: theme.spacing.lg,
+    width: '100%',
+  },
+  emailSubjectLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: theme.colors.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  emailSubjectText: {
+    fontSize: 14,
+    color: theme.colors.onSurface,
+    marginTop: theme.spacing.xs,
+    lineHeight: 20,
+  },
+  receiptSummary: {
+    marginTop: theme.spacing.lg,
+    alignItems: 'center',
+    width: '100%',
+  },
+  summaryAmount: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    textAlign: 'center',
+  },
+  summaryVendor: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.colors.onSurface,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
+  },
+  summaryDate: {
+    fontSize: 14,
+    color: theme.colors.onSurfaceVariant,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
+  },
+  extractionBadge: {
+    backgroundColor: theme.colors.primaryContainer,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    marginTop: theme.spacing.lg,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: theme.colors.onPrimaryContainer,
+    textAlign: 'center',
   },
 });

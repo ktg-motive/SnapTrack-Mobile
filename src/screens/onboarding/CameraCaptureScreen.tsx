@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 // Using Expo vector icons instead
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
+import { smartOptimizeImage } from '../../utils/imageOptimization';
 
 interface CameraCaptureScreenProps {
   onNext: () => void;
@@ -73,10 +74,21 @@ export default function CameraCaptureScreen({
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
-      const photo = await cameraRef.current.takePictureAsync();
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.6,  // Reduced quality for smaller initial file
+      });
 
-      setImageUri(photo.uri);
-      onReceiptCapture(photo.uri);
+      // Optimize image for faster upload while maintaining OCR quality
+      console.log('📸 Optimizing captured image for upload...');
+      const optimizedResult = await smartOptimizeImage(photo.uri);
+      
+      console.log('🚀 Upload optimization complete:', {
+        savings: `${((1 - optimizedResult.compressionRatio) * 100).toFixed(1)}%`,
+        newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
+      });
+
+      setImageUri(optimizedResult.uri);
+      onReceiptCapture(optimizedResult.uri);
 
       // Success animation
       Animated.timing(successAnim, {
@@ -104,12 +116,21 @@ export default function CameraCaptureScreen({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.6,  // Reduced from 0.8 to 0.6 for smaller initial file
       });
 
       if (!result.canceled && result.assets[0]) {
-        setImageUri(result.assets[0].uri);
-        onReceiptCapture(result.assets[0].uri);
+        // Optimize image for faster upload while maintaining OCR quality
+        console.log('📸 Optimizing library image for upload...');
+        const optimizedResult = await smartOptimizeImage(result.assets[0].uri);
+        
+        console.log('🚀 Upload optimization complete:', {
+          savings: `${((1 - optimizedResult.compressionRatio) * 100).toFixed(1)}%`,
+          newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
+        });
+        
+        setImageUri(optimizedResult.uri);
+        onReceiptCapture(optimizedResult.uri);
         
         // Success animation
         Animated.timing(successAnim, {

@@ -33,6 +33,8 @@ try {
   console.log('Apple Authentication not available in this environment');
 }
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import * as Crypto from 'expo-crypto';
 
 import { CONFIG } from '../config';
 import { AuthCredentials, AuthUser } from '../types';
@@ -187,8 +189,16 @@ class AuthService {
       // Check if device supports Google Play Services
       await GoogleSignin.hasPlayServices();
       
+      // Sign out first to ensure clean state (fixes Android flash issue)
+      await GoogleSignin.signOut();
+      
       // Get Google user info
       const userInfo = await GoogleSignin.signIn();
+      console.log('📱 Google Sign-In userInfo received:', {
+        hasIdToken: !!userInfo.data?.idToken,
+        email: userInfo.data?.user?.email,
+        id: userInfo.data?.user?.id
+      });
       
       if (!userInfo.data?.idToken) {
         throw new Error('No ID token received from Google');
@@ -200,6 +210,7 @@ class AuthService {
       // Sign in to Firebase with Google credential
       const userCredential = await signInWithCredential(this.auth, googleCredential);
       const firebaseUser = userCredential.user;
+      console.log('🔥 Firebase sign-in successful:', firebaseUser.email);
       
       // Get Firebase auth token
       const token = await firebaseUser.getIdToken();
@@ -220,7 +231,11 @@ class AuthService {
       
       return authUser;
     } catch (error: any) {
-      console.error('❌ Google sign in failed:', error.message);
+      console.error('❌ Google sign in failed:', {
+        message: error.message,
+        code: error.code,
+        details: error
+      });
       
       if (error.code === 'SIGN_IN_CANCELLED') {
         throw new Error('Sign in was cancelled');
@@ -228,9 +243,11 @@ class AuthService {
         throw new Error('Sign in is already in progress');
       } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
         throw new Error('Google Play Services not available');
+      } else if (error.code === '10') {
+        throw new Error('Developer error: Check your Google Sign-In configuration');
       }
       
-      throw new Error('Google sign in failed. Please try again.');
+      throw new Error(`Google sign in failed: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -258,28 +275,43 @@ class AuthService {
         throw new Error('Apple Sign-In is not available on this device');
       }
       
-      // Get Apple credential
+      // Generate a random nonce for security (required by Firebase)
+      const rawNonce = this.generateNonce();
+      const hashedNonce = await this.sha256(rawNonce);
+      
+      console.log('🍎 Generated nonce for Apple Sign-In');
+      
+      // Get Apple credential with nonce
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
+        nonce: hashedNonce,
       });
       
       if (!credential.identityToken) {
         throw new Error('No identity token received from Apple');
       }
       
-      // Create Firebase credential
+      console.log('🍎 Apple credential received:', {
+        hasIdentityToken: !!credential.identityToken,
+        hasAuthorizationCode: !!credential.authorizationCode,
+        email: credential.email,
+        realUserStatus: credential.realUserStatus
+      });
+      
+      // Create Firebase credential with raw nonce
       const provider = new OAuthProvider('apple.com');
       const firebaseCredential = provider.credential({
         idToken: credential.identityToken,
-        rawNonce: credential.realUserStatus,
+        rawNonce: rawNonce, // Use the raw nonce, not hashed
       });
       
       // Sign in to Firebase with Apple credential
       const userCredential = await signInWithCredential(this.auth, firebaseCredential);
       const firebaseUser = userCredential.user;
+      console.log('🔥 Firebase Apple sign-in successful:', firebaseUser.email);
       
       // Get Firebase auth token
       const token = await firebaseUser.getIdToken();
@@ -502,6 +534,29 @@ class AuthService {
       console.error('❌ Failed to initialize auth:', error);
       return null;
     }
+  }
+
+  /**
+   * Generate a random nonce for Apple Sign-In
+   */
+  private generateNonce(): string {
+    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    let result = '';
+    for (let i = 0; i < 32; i++) {
+      result += charset[Math.floor(Math.random() * charset.length)];
+    }
+    return result;
+  }
+
+  /**
+   * Hash a string using SHA256 for Apple Sign-In nonce
+   */
+  private async sha256(str: string): Promise<string> {
+    const digest = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      str
+    );
+    return digest;
   }
 }
 

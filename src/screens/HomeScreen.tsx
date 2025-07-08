@@ -119,7 +119,7 @@ export default function HomeScreen() {
       // Load data in parallel - get more receipts for stats calculations
       const [statsPromise, receiptsPromise, allReceiptsPromise] = await Promise.allSettled([
         apiClient.getQuickStats(),
-        apiClient.getReceipts({ limit: 3, page: resetData ? 1 : currentPage }), // Recent receipts for display
+        apiClient.getReceipts({ limit: 3, page: 1 }), // Always use page 1 for recent receipts display
         apiClient.getReceipts({ limit: 1000, page: 1 }) // All receipts for cycling stats calculation
       ]);
 
@@ -139,19 +139,14 @@ export default function HomeScreen() {
         console.log('📝 Loaded receipts:', receiptsData.length, 'receipts');
         console.log('📝 Page:', currentPageNum, 'of', totalPages);
         
-        if (resetData) {
-          setRecentReceipts(receiptsData);
-          setCurrentPage(1);
-        } else {
-          setRecentReceipts(prev => [...prev, ...receiptsData]);
-        }
+        // Always reset recent receipts since we're always fetching page 1
+        setRecentReceipts(receiptsData);
+        setCurrentPage(1);
         
         setHasMoreReceipts(currentPageNum < totalPages);
       } else {
         console.error('❌ Failed to load recent receipts:', receiptsPromise.reason);
-        if (resetData) {
-          setRecentReceipts([]); // Set empty array as fallback
-        }
+        setRecentReceipts([]); // Set empty array as fallback
       }
 
       // Handle all receipts for stats
@@ -170,6 +165,7 @@ export default function HomeScreen() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    setCurrentPage(1); // Reset pagination state before loading
     await loadDashboardData(true); // Reset data on refresh
     setRefreshing(false);
   };
