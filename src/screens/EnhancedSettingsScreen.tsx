@@ -342,6 +342,22 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
             <Ionicons name="chevron-forward-outline" size={16} color={colors.textMuted} />
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.actionItem} onPress={() => {
+            // For now, let's show release notes in an alert - could be a modal later
+            Alert.alert(
+              '🎉 What\'s New in v1.2.0',
+              '🤖 NEW: AI-powered receipt intelligence with automatic validation\n\n✨ ENHANCED: 5-stage processing flow shows AI analyzing stage\n\n🐛 FIXED: AI validation detection and UI response processing\n\n⚡ FASTER: Real-time AI validation feedback and progress indicators\n\nTry uploading a blurry receipt and watch the AI enhancement in action!',
+              [{ text: 'Got it!', style: 'default' }]
+            );
+          }}>
+            <Ionicons name="newspaper" size={20} color={colors.primary} />
+            <View style={styles.actionItemContent}>
+              <Text style={styles.actionItemText}>Release Notes</Text>
+              <Text style={styles.actionItemSubtext}>What's new in v1.2.0</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('About' as never)}>
             <Ionicons name="information-circle" size={20} color={colors.primary} />
             <View style={styles.actionItemContent}>
