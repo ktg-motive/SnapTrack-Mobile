@@ -21,7 +21,7 @@ const config = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.snaptrack.mobile",
-      buildNumber: "6",
+      buildNumber: "7",
       googleServicesFile: "./GoogleService-Info.plist",
       infoPlist: {
         NSCameraUsageDescription: "SnapTrack needs camera access to capture receipt images for expense tracking.",
@@ -30,7 +30,7 @@ const config = {
     },
     android: {
       package: "com.snaptrack.mobile",
-      versionCode: 6,
+      versionCode: 7,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#0a0a0a"

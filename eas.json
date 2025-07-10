@@ -45,7 +45,10 @@
       "ios": {
         "appleId": "kai@motiveinc.com",
         "ascAppId": "6740468031",
-        "sku": "snaptrack-mobile"
+        "sku": "snaptrack-mobile",
+        "ascApiKeyPath": "./AuthKey_4735TSMA98.p8",
+        "ascApiKeyId": "4735TSMA98",
+        "ascApiKeyIssuerId": "cb1568be-bcc6-4199-a1e1-b87bd26922ef"
       },
       "android": {
         "track": "internal"
