@@ -257,7 +257,7 @@ class SnapTrackApiClient {
           confidence_score: response.confidence?.amount || 0
         },
         receipt_url: response.expense.image_url,
-        status: response.expense.status === 'completed' ? 'complete' : 'analyzing'
+        status: (response.expense.status === 'completed' ? 'complete' : 'analyzing') as 'uploading' | 'scanning' | 'analyzing' | 'extracting' | 'complete' | 'error'
       };
       console.log('✅ Transformed response:', JSON.stringify(transformedResponse, null, 2));
       return transformedResponse;
@@ -304,6 +304,14 @@ class SnapTrackApiClient {
     if (Array.isArray(response)) {
       return {
         data: response,
+        pagination: {
+          current_page: 1,
+          per_page: response.length,
+          total_count: response.length,
+          total_pages: 1,
+          has_next_page: false,
+          has_prev_page: false
+        },
         total: response.length,
         page: 1,
         limit: response.length,
@@ -316,7 +324,7 @@ class SnapTrackApiClient {
       
       const transformedExpenses = response.expenses.map((expense: any) => {
         // Handle tags - could be string, array, or null
-        let tags = [];
+        let tags: string[] = [];
         if (expense.tags) {
           if (Array.isArray(expense.tags)) {
             tags = expense.tags;
@@ -326,12 +334,21 @@ class SnapTrackApiClient {
           }
         }
         
+        // Normalize entity - handle empty/null
+        let normalizedEntity = expense.entity || '';
+        if (!normalizedEntity || normalizedEntity.trim() === '' || 
+            normalizedEntity === 'null' || normalizedEntity === 'undefined') {
+          normalizedEntity = 'Personal';
+        } else {
+          normalizedEntity = normalizedEntity.trim();
+        }
+        
         const transformed = {
           id: expense.id.toString(),
           vendor: expense.vendor || expense.vendor_name || '',
           amount: expense.amount || 0,
           date: expense.expense_date || expense.date || '',
-          entity: expense.entity || '',
+          entity: normalizedEntity,
           tags: tags,
           notes: expense.notes || '',
           confidence_score: expense.confidence_score || 0,
@@ -348,6 +365,14 @@ class SnapTrackApiClient {
       
       return {
         data: transformedExpenses,
+        pagination: {
+          current_page: response.pagination?.current_page || 1,
+          per_page: response.pagination?.per_page || response.expenses.length,
+          total_count: response.pagination?.total_count || response.expenses.length,
+          total_pages: response.pagination?.total_pages || 1,
+          has_next_page: response.pagination?.has_next_page || false,
+          has_prev_page: response.pagination?.has_prev_page || false
+        },
         total: response.pagination?.total_count || response.expenses.length,
         page: response.pagination?.current_page || 1,
         limit: response.pagination?.per_page || response.expenses.length,
@@ -396,7 +421,7 @@ class SnapTrackApiClient {
     if (updates.tags) {
       expenseUpdates.tags = Array.isArray(updates.tags) 
         ? updates.tags.filter((tag): tag is string => typeof tag === 'string' && tag.trim() !== '') 
-        : [updates.tags].filter((tag): tag is string => typeof tag === 'string' && tag.trim() !== '');
+        : [updates.tags].filter((tag: any): tag is string => typeof tag === 'string' && tag.trim() !== '');
     }
     
     // Ensure amount is a number
@@ -433,7 +458,7 @@ class SnapTrackApiClient {
     }
 
     // Handle tags - could be string, array, or null
-    let tags = [];
+    let tags: string[] = [];
     if (expense.tags) {
       if (Array.isArray(expense.tags)) {
         tags = expense.tags;
@@ -442,12 +467,21 @@ class SnapTrackApiClient {
       }
     }
 
+    // Normalize entity - handle empty/null
+    let normalizedEntity = expense.entity || '';
+    if (!normalizedEntity || normalizedEntity.trim() === '' || 
+        normalizedEntity === 'null' || normalizedEntity === 'undefined') {
+      normalizedEntity = 'Personal';
+    } else {
+      normalizedEntity = normalizedEntity.trim();
+    }
+
     const transformedReceipt = {
       id: expense.id.toString(), // Convert numeric ID to string
       vendor: expense.vendor || expense.vendor_name || '',
       amount: expense.amount || 0,
       date: expense.expense_date || expense.date || '',
-      entity: expense.entity || '',
+      entity: normalizedEntity,
       tags: tags,
       notes: expense.notes || '',
       confidence_score: expense.confidence_score || 0,
@@ -620,9 +654,14 @@ class SnapTrackApiClient {
       entities[receipt.entity] = (entities[receipt.entity] || 0) + receipt.amount;
     });
 
+    // Get the actual total count from the API response
+    const totalCount = receiptsResponse.total || receiptsResponse.pagination?.total_count || receipts.length;
+    
+    console.log('📊 Using total count from API:', totalCount, '(loaded:', receipts.length, ')');
+
     return {
       total_amount: totalAmount,
-      receipt_count: receipts.length,
+      receipt_count: totalCount, // Use actual total count from API
       monthly_total: monthlyTotal,
       monthly_count: monthlyReceipts.length,
       entities,

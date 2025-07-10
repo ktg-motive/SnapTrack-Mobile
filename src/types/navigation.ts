@@ -25,7 +25,7 @@ export type MainTabParamList = {
   HomeTab: undefined;
   CaptureTab: undefined;
   ReceiptsTab: undefined;
-  HelpTab: undefined;
+  StatisticsTab: undefined;
   AccountTab: undefined;
 };
 
@@ -41,8 +41,8 @@ export type ReceiptsStackParamList = {
   ReceiptsMain: undefined;
 };
 
-export type HelpStackParamList = {
-  HelpMain: undefined;
+export type StatisticsStackParamList = {
+  StatisticsMain: undefined;
 };
 
 export type AccountStackParamList = {
@@ -53,4 +53,5 @@ export type AccountStackParamList = {
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
   EditProfile: undefined;
+  Help: undefined;
 };

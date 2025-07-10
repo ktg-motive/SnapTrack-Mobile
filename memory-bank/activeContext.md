@@ -1,10 +1,51 @@
 # Active Context
 
-**Last Updated:** 2025-07-07 01:30:00 - Critical SnapTrack Bug Fixes - Impacts: [API Response Parsing, Entity Management, Receipt Deletion]
-**Previous Update:** 2025-07-06 23:15:00
-**Session Context:** Fixed critical SnapTrack parsing bug affecting both iOS and Android apps, plus entity management and deletion issues
+**Last Updated:** 2025-07-10 21:45:00 - Statistics Screen to Dashboard Conversion & Entity Normalization - Impacts: [Navigation, Data Analytics, Entity Management]
+**Previous Update:** 2025-07-10 19:30:00
+**Session Context:** Completed statistics screen implementation as Dashboard, fixed pagination for complete data loading, addressed entity normalization
 
-## Current Work Focus - Session July 7, 2025
+## Current Work Focus - Session July 10, 2025 (Evening)
+
+- ✅ **COMPLETED:** Statistics Screen Implementation as Dashboard (July 10, 2025)
+  - **NAVIGATION:** Replaced Help tab with Statistics tab in bottom navigation
+  - **DASHBOARD:** Renamed "Statistics" to "Dashboard" for better user understanding
+  - **ENTITY BREAKDOWNS:** Implemented entity-based expense visualization with percentages
+  - **TIME FILTERING:** Added cycling time periods (This Month, Last Month, Last 3 Months, Year to Date, All Time)
+  - **PAGINATION FIX:** Fixed issue where only 25 of 32 receipts were loading - implemented proper pagination
+  - **EXPANDABLE TAGS:** Added progressive disclosure for tag analysis within each entity
+  - **HAPTIC FEEDBACK:** Integrated iOS haptic feedback for premium user experience
+  - **REAL-TIME DATA:** Fixed React.useMemo dependencies to ensure timeframe changes update immediately
+  - **ENTITY NORMALIZATION:** Identified and planned fix for 'personal' vs 'Personal' entity confusion
+
+- ✅ **COMPLETED:** Navigation Structure Updates (July 10, 2025)
+  - **HELP RELOCATION:** Moved Help screen from bottom tab to Account stack navigator
+  - **HAMBURGER MENU:** Fixed Help navigation to use nested navigation structure
+  - **SETTINGS SCREEN:** Updated Help navigation in EnhancedSettingsScreen
+  - **TYPE SAFETY:** Updated TypeScript navigation types to reflect new structure
+
+## Previous Work Focus - Session July 10, 2025 (Afternoon)
+
+- ✅ **COMPLETED:** Receipt Preview Redesign Implementation (July 10, 2025)
+  - **UX DESIGN:** Implemented comprehensive receipt preview redesign per UX designer specifications
+  - **SMART IMAGE DISPLAY:** Added dynamic aspect ratio calculation with Image.getSize() API
+  - **ZOOM FUNCTIONALITY:** Implemented pinch-to-zoom with ScrollView (1x-3x zoom levels)
+  - **ASPECT RATIO FIX:** Fixed root cause of image squishing - images were being forced to 2048x2048 squares
+  - **IMAGE OPTIMIZATION:** Updated imageOptimization.ts to preserve aspect ratios during capture processing
+  - **ENHANCED METADATA:** Added rich details section with icons, confidence indicators, and entity badges
+  - **SMART ACTIONS:** Implemented contextual actions bar with Edit/Delete/Close functionality
+  - **TEXT COMPONENT ERRORS:** Fixed React Native conditional rendering issues causing Text component crashes
+  - **DUPLICATE KEY FIX:** Resolved FlatList duplicate key warnings with comprehensive deduplication logic
+  - **PRODUCTION READY:** Cleaned up debug logging for production deployment
+
+- ✅ **COMPLETED:** Critical Image Processing Fix (July 10, 2025)
+  - **ROOT CAUSE:** Images being saved as 2048x2048 squares instead of maintaining aspect ratio
+  - **EXPO-IMAGE-MANIPULATOR:** Fixed resize operation that was forcing square dimensions
+  - **ASPECT RATIO PRESERVATION:** New receipts now maintain proper portrait/landscape ratios
+  - **OCR OPTIMIZATION:** Maintained Google Vision API compatibility with 2048px max dimension
+  - **SMART RESIZING:** Portrait receipts constrained by height, landscape by width
+  - **BEFORE/AFTER:** Old receipts (2048x2048 squares) vs New receipts (e.g., 1920x2560 portrait)
+
+## Previous Work Focus - Session July 7, 2025
 
 - ✅ **COMPLETED:** Critical SnapTrack Bug Fixes (July 7, 2025)
   - **CRITICAL FIX 1:** Fixed API response parsing crash during receipt upload
@@ -192,7 +233,37 @@
    - AccountScreen → Settings must navigate to EnhancedSettingsScreen
    - Entity management is critical functionality that was working earlier
 
+5. **Dashboard pagination for complete data loading**
+   - Default API response limited to 25 receipts per page
+   - Must implement pagination loop to load ALL receipts
+   - Check `pagination.has_next_page` to continue loading
+   - Critical for accurate statistics and entity breakdowns
+
 ## Recent Changes
+
+**2025-07-10 21:45:00** - DASHBOARD IMPLEMENTATION & ENTITY NORMALIZATION: Enhanced Analytics Experience:
+- **FEATURE:** Replaced Help tab with Statistics tab in bottom navigation (Help moved to Account stack)
+- **FEATURE:** Renamed "Statistics" screen to "Dashboard" for clearer user understanding
+- **FEATURE:** Implemented comprehensive entity-based expense breakdowns with real-time percentages
+- **FEATURE:** Added cycling time period filters with haptic feedback (This Month → Last Month → Last 3 Months → YTD → All Time)
+- **CRITICAL FIX:** Fixed pagination issue - dashboard was only loading 25 receipts instead of all 32
+- **CRITICAL FIX:** Implemented proper pagination loop to load ALL receipts from API (page-by-page)
+- **CRITICAL FIX:** Fixed React.useMemo dependencies to ensure stats update when timeframe changes
+- **UI/UX:** Added progressive disclosure with expandable tag analysis for each entity
+- **DECISION:** Entity normalization will be handled at Parse API level - email receipts should get 'Unassigned' entity
+- **TECHNICAL:** Updated StatisticsScreen.tsx with pagination logic (lines 172-219) to handle multi-page responses
+- **NAVIGATION:** Fixed all "HelpTab not found" errors by updating navigation to nested structure
+
+**2025-07-10 19:30:00** - RECEIPT PREVIEW REDESIGN COMPLETE: Professional Financial App Experience:
+- **UX:** Implemented complete receipt preview redesign following `/Users/Kai/Dev/Active/SnapTrack/docs/RECEIPT_PREVIEW_REDESIGN.md`
+- **IMAGES:** Fixed root cause of receipt image squishing - expo-image-manipulator was forcing 2048x2048 squares
+- **IMAGES:** New receipts maintain proper aspect ratios (e.g., 1920x2560 portrait instead of distorted squares)
+- **IMAGES:** Smart image display with dynamic sizing, proper zoom functionality (1x-3x), loading states
+- **UI:** Enhanced metadata display with icons, confidence indicators, entity badges, and smart actions
+- **ERRORS:** Fixed React Native Text component crashes by replacing `condition &&` with `condition ? : null`
+- **DATA:** Resolved FlatList duplicate key warnings with multi-layer deduplication in HomeScreen and RecentReceipts
+- **PERFORMANCE:** Cleaned up extensive debug logging for production readiness
+- **TECHNICAL:** Updated imageOptimization.ts lines 61-104 to preserve aspect ratios during image processing
 
 **2025-07-07 01:30:00** - CRITICAL BUG FIXES COMPLETE: Fixed Major Production Issues:
 - **CRITICAL:** Fixed receipt upload crash - standardized backend API response + added transformation logic
@@ -255,23 +326,29 @@
 
 ## Next Steps
 
-**Priority 1 (TestFlight Deployment):**
-- Run `npx expo prebuild --clean` to regenerate native projects with new icon
+**Priority 1 (Parse API Backend Update):**
+- Update Parse API to set entity='Unassigned' for all email-forwarded receipts
+- Remove default entity='personal' from email parsing logic
+- Test email receipt flow shows 'Unassigned' entity in mobile app
+- Ensure users can reassign 'Unassigned' receipts to proper entities
+
+**Priority 2 (TestFlight Deployment):**
+- Run `npx expo prebuild --clean` to regenerate native projects
 - Execute `eas build --platform ios` to build for TestFlight
-- Test app icon appears correctly on device home screen
-- Verify all UI fixes work properly in production build
+- Test Dashboard screen with all entity data loading correctly
+- Verify navigation changes (Help in Account tab) work in production
 
-**Priority 2 (Production Readiness):**
-- Test receipt processing end-to-end with real API
-- Verify offline storage and sync functionality
-- Test authentication flow in production environment
-- Validate all error handling scenarios
+**Priority 3 (Production Polish):**
+- Monitor Dashboard performance with large receipt datasets
+- Consider adding loading skeleton for Dashboard initial load
+- Test offline functionality with new Dashboard screen
+- Validate all pagination edge cases (100+ receipts)
 
-**Priority 3 (Future Enhancements):**
-- Implement receipt history and search functionality
-- Add export functionality for expense data
-- Enhance statistics dashboard with charts
-- Consider Android deployment and testing
+**Priority 4 (Future Enhancements):**
+- Add charts/graphs to Dashboard for visual analytics
+- Implement date range picker instead of cycling periods
+- Add export functionality for filtered Dashboard data
+- Consider entity comparison view across time periods
 
 ## Cross-Project Impact Alerts
 

@@ -3,13 +3,14 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../styles/theme';
+import { colors, typography, spacing } from '../styles/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
 import CameraScreen from '../screens/CameraScreen';
 import ReceiptsScreen from '../screens/ReceiptsScreen';
+import StatisticsScreen from '../screens/StatisticsScreen';
 import HelpScreen from '../screens/HelpScreen';
 import AccountScreen from '../screens/AccountScreen';
 import EnhancedSettingsScreen from '../screens/EnhancedSettingsScreen';
@@ -47,25 +48,10 @@ function ReceiptsStackNavigator() {
   );
 }
 
-function HelpStackNavigator() {
+function StatisticsStackNavigator() {
   return (
-    <Stack.Navigator 
-      screenOptions={{ 
-        headerShown: true,
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.textPrimary,
-      }}
-    >
-      <Stack.Screen 
-        name="HelpMain" 
-        component={HelpScreen}
-        options={{ title: 'Help & Support' }}
-      />
-      <Stack.Screen 
-        name="Contact" 
-        component={ContactScreen}
-        options={{ title: 'Contact Support' }}
-      />
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="StatisticsMain" component={StatisticsScreen} />
     </Stack.Navigator>
   );
 }
@@ -75,8 +61,19 @@ function AccountStackNavigator() {
     <Stack.Navigator 
       screenOptions={{ 
         headerShown: true,
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.textPrimary,
+        headerStyle: { 
+          backgroundColor: colors.background,
+          elevation: 0, // Remove shadow on Android
+          shadowOpacity: 0, // Remove shadow on iOS
+        },
+        headerTintColor: colors.primary,
+        headerTitleStyle: {
+          ...typography.title3,
+          color: colors.textPrimary,
+          fontWeight: '600',
+        },
+        headerBackVisible: true,
+        headerBackTitleVisible: Platform.OS === 'ios',
       }}
     >
       <Stack.Screen 
@@ -87,27 +84,50 @@ function AccountStackNavigator() {
       <Stack.Screen 
         name="Settings" 
         component={EnhancedSettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{ 
+          title: 'Settings',
+          headerBackTitle: 'Account', // Only shown on iOS
+        }}
       />
       <Stack.Screen 
         name="EditProfile" 
         component={EditProfileScreen}
-        options={{ title: 'Edit Profile' }}
+        options={{ 
+          title: 'Edit Profile',
+          headerBackTitle: 'Account', // Only shown on iOS
+        }}
       />
       <Stack.Screen 
         name="About" 
         component={AboutScreen}
-        options={{ title: 'About SnapTrack' }}
+        options={{ 
+          title: 'About SnapTrack',
+          headerBackTitle: 'Settings', // Only shown on iOS
+        }}
       />
       <Stack.Screen 
         name="PrivacyPolicy" 
         component={PrivacyPolicyScreen}
-        options={{ title: 'Privacy Policy' }}
+        options={{ 
+          title: 'Privacy Policy',
+          headerBackTitle: 'Account', // Only shown on iOS
+        }}
       />
       <Stack.Screen 
         name="TermsOfService" 
         component={TermsOfServiceScreen}
-        options={{ title: 'Terms of Service' }}
+        options={{ 
+          title: 'Terms of Service',
+          headerBackTitle: 'Account', // Only shown on iOS
+        }}
+      />
+      <Stack.Screen 
+        name="Help" 
+        component={HelpScreen}
+        options={{ 
+          title: 'Help & Support',
+          headerBackTitle: 'Account', // Only shown on iOS
+        }}
       />
     </Stack.Navigator>
   );
@@ -128,8 +148,10 @@ export default function TabNavigator() {
             iconName = focused ? 'camera' : 'camera-outline';
           } else if (route.name === 'ReceiptsTab') {
             iconName = focused ? 'receipt' : 'receipt-outline';
-          } else if (route.name === 'HelpTab') {
-            iconName = focused ? 'help-circle' : 'help-circle-outline';
+          } else if (route.name === 'StatisticsTab') {
+            iconName = Platform.OS === 'ios' 
+              ? (focused ? 'stats-chart' : 'stats-chart-outline')
+              : (focused ? 'analytics' : 'analytics-outline');
           }
 
           return <Ionicons name={iconName!} size={size} color={color} />;
@@ -172,9 +194,9 @@ export default function TabNavigator() {
         options={{ tabBarLabel: 'Receipts' }}
       />
       <Tab.Screen
-        name="HelpTab"
-        component={HelpStackNavigator}
-        options={{ tabBarLabel: 'Help' }}
+        name="StatisticsTab"
+        component={StatisticsStackNavigator}
+        options={{ tabBarLabel: 'Stats' }}
       />
     </Tab.Navigator>
   );

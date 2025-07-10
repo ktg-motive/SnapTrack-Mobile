@@ -103,7 +103,10 @@ export default function HamburgerMenu({ isVisible, onClose, navigation, userStat
 
   const handleHelp = () => {
     onClose();
-    navigation.navigate('HelpTab');
+    // Navigate to Help screen in the Account tab since Help is now part of the Account stack
+    navigation.navigate('AccountTab', {
+      screen: 'Help'
+    });
   };
 
   const handleFeedback = () => {

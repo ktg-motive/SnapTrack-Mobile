@@ -11,6 +11,8 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
@@ -160,6 +162,21 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
     );
   };
 
+  const handleCopyEmail = async () => {
+    const email = `expense@${user?.email?.split('@')[0] || 'user'}.snaptrack.bot`;
+    try {
+      await Clipboard.setStringAsync(email);
+      
+      // Haptic feedback
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      Alert.alert('Email Copied!', `${email} has been copied to your clipboard.`);
+    } catch (error) {
+      console.error('Failed to copy email:', error);
+      Alert.alert('Error', 'Failed to copy email to clipboard. Please try again.');
+    }
+  };
+
   const handleRestartOnboarding = () => {
     Alert.alert(
       'Restart Tutorial',
@@ -306,7 +323,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
             <Text style={styles.emailAddress}>
               expense@{user?.email?.split('@')[0] || 'user'}.snaptrack.bot
             </Text>
-            <TouchableOpacity style={styles.copyButton}>
+            <TouchableOpacity style={styles.copyButton} onPress={handleCopyEmail}>
               <Text style={styles.copyButtonText}>Copy Email</Text>
             </TouchableOpacity>
             
@@ -333,7 +350,10 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
           <TouchableOpacity style={styles.actionItem} onPress={() => {
             navigation.goBack(); // Close settings modal first
             navigation.navigate('Main', { 
-              screen: 'HelpTab' 
+              screen: 'AccountTab',
+              params: {
+                screen: 'Help'
+              }
             });
           }}>
             <Ionicons name="help-circle" size={20} color={colors.primary} />

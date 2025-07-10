@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { colors, typography, shadows } from '../styles/theme';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
+import { colors, typography, shadows, statsCardColors, borderRadius, spacing } from '../styles/theme';
 import { QuickStats as QuickStatsType, Receipt } from '../types';
+import * as Haptics from 'expo-haptics';
 
 interface QuickStatsProps {
   stats: QuickStatsType | null;
@@ -105,60 +106,96 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
     return labels[timeframeIndex];
   };
 
-  // Get card styling based on timeframe
-  const getCardStyle = (timeframeIndex: number) => {
-    const baseStyle = styles.statCard;
-    const colorStyles = [
-      { backgroundColor: '#02B2B3' }, // Light teal - Today
-      { backgroundColor: '#069196' }, // Light-medium teal - This Week
-      { backgroundColor: '#079195' }, // Medium teal - This Month  
-      { backgroundColor: '#06686B' }, // Dark teal - All Time
-    ];
-    return [baseStyle, colorStyles[timeframeIndex]];
+  // Get timeframe badge text
+  const getTimeframeBadge = (timeframeIndex: number) => {
+    const badges = ['today', 'week', 'month', 'all'];
+    return badges[timeframeIndex];
   };
 
   // Handle card tap to cycle timeframes
-  const handleStatCardTap = () => {
+  const handleStatCardTap = async () => {
+    // Provide tactile feedback
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTimeframeState(prev => (prev + 1) % 4); // Cycle 0→1→2→3→0
   };
 
   // Calculate values for display (both cards use same timeframe)
   const statsForTimeframe = calculateStats(timeframeState);
+  const allTimeStats = calculateStats(3); // Always calculate all-time stats for total count
+  
+  // For "All Time" mode, use the actual total count from API stats instead of receipts array length
+  const displayCount = timeframeState === 3 
+    ? (stats?.receipt_count || allTimeStats.count) // Use API total count for All Time
+    : statsForTimeframe.count;
+  
+  const StatsCard = ({ title, value, isLoading, onPress }) => {
+    const [isPressed, setIsPressed] = useState(false);
+
+    return (
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => setIsPressed(true)}
+        onPressOut={() => setIsPressed(false)}
+        style={[
+          styles.statsCard,
+          isPressed && styles.cardPressed
+        ]}
+        accessibilityRole="button"
+        accessibilityHint="Tap to cycle through different time periods"
+      >
+        {/* Main content */}
+        <View style={styles.cardContent}>
+          {isLoading ? (
+            <ActivityIndicator size="small" color={statsCardColors.value} />
+          ) : (
+            <Text 
+              style={styles.valueText}
+              numberOfLines={1}
+              adjustsFontSizeToFit={true}
+              minimumFontScale={0.8}
+            >
+              {value}
+            </Text>
+          )}
+          <Text 
+            style={styles.titleText}
+            numberOfLines={2}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.9}
+          >
+            {title}
+          </Text>
+        </View>
+        
+        {/* Micro-visual cues */}
+        <View style={styles.cueContainer}>
+          {/* Four tiny dots showing current timeframe state */}
+          <View style={styles.moreDots}>
+            <View style={[styles.dot, timeframeState === 0 ? styles.dotActive : styles.dotInactive]} />
+            <View style={[styles.dot, timeframeState === 1 ? styles.dotActive : styles.dotInactive]} />
+            <View style={[styles.dot, timeframeState === 2 ? styles.dotActive : styles.dotInactive]} />
+            <View style={[styles.dot, timeframeState === 3 ? styles.dotActive : styles.dotInactive]} />
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={getCardStyle(timeframeState)}
+      <StatsCard
+        title={getTimeframeLabel(timeframeState)}
+        value={`$${statsForTimeframe.totalAmount.toFixed(2)}`}
+        isLoading={isLoading}
         onPress={handleStatCardTap}
-        activeOpacity={0.8}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="white" />
-        ) : (
-          <Text style={[typography.money, styles.statValue, { color: 'white' }]}>
-            ${statsForTimeframe.totalAmount.toFixed(2)}
-          </Text>
-        )}
-        <Text style={[typography.caption, styles.statLabel, { color: 'white' }]}>
-          {getTimeframeLabel(timeframeState)}
-        </Text>
-      </TouchableOpacity>
+      />
       
-      <TouchableOpacity 
-        style={getCardStyle(timeframeState)}
+      <StatsCard
+        title={getTimeframeLabel(timeframeState)}
+        value={displayCount.toString()}
+        isLoading={isLoading}
         onPress={handleStatCardTap}
-        activeOpacity={0.8}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="white" />
-        ) : (
-          <Text style={[typography.money, styles.statValue, { color: 'white' }]}>
-            {statsForTimeframe.count}
-          </Text>
-        )}
-        <Text style={[typography.caption, styles.statLabel, { color: 'white' }]}>
-          {getTimeframeLabel(timeframeState)}
-        </Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 }
@@ -166,30 +203,89 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    marginTop: 4, // Reduced margin when positioned under receipts
-    marginBottom: 8, // Reduced bottom margin for tighter spacing
-    gap: 12,
-    backgroundColor: colors.surface, // Solid background to distinguish from receipts
-    paddingHorizontal: 16, // Add horizontal padding
-    paddingVertical: 8, // Reduced vertical padding for thinner overall height
-    borderRadius: 12, // Rounded corners for clean appearance
+    gap: spacing.sm,                         // 8px gap between cards
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
-  statCard: {
+  
+  statsCard: {
+    flex: 1,                                 // Equal width cards
+    backgroundColor: statsCardColors.background,
+    borderRadius: borderRadius.lg,           // 16 from style guide
+    borderWidth: 1,
+    borderColor: statsCardColors.border,
+    padding: spacing.md,                     // 16 from style guide
+    minHeight: 85,                           // Slightly taller for better proportions
+    ...shadows.card,                         // From style guide
+    
+    // Enable relative positioning for cues
+    position: 'relative',
+    overflow: 'visible', // Allow badges to extend slightly outside
+  },
+  
+  cardPressed: {
+    backgroundColor: statsCardColors.pressed,
+    borderColor: statsCardColors.pressedBorder,
+    transform: [{ scale: 0.98 }],
+  },
+  
+  cardContent: {
     flex: 1,
-    // backgroundColor removed - will be set dynamically
-    paddingVertical: 12, // Reduced from 20 to 12 for thinner boxes
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.card,
   },
-  statValue: {
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.2)', // Subtle dark shadow on white text
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  
+  valueText: {
+    ...typography.title2,                    // 24px, line 30, weight 600
+    color: statsCardColors.value,
+    fontWeight: '700',
+    textAlign: 'center',
+    numberOfLines: 1,                        // Prevent wrapping
+    adjustsFontSizeToFit: true,              // Scale down if needed
+    minimumFontScale: 0.8,                   // Don't scale below 80%
   },
-  statLabel: {
-    color: 'white', // White text on colored background
+  
+  titleText: {
+    ...typography.caption,                   // 12px, line 16, weight 500
+    color: statsCardColors.title,
+    textAlign: 'center',
+    marginTop: spacing.xs,                   // 4 from style guide
+    fontWeight: '500',
+    numberOfLines: 2,                        // Allow up to 2 lines
+    adjustsFontSizeToFit: true,              // Scale down if needed
+    minimumFontScale: 0.9,                   // Don't scale below 90%
+  },
+  
+  // Micro-visual cue container
+  cueContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
+    bottom: 0,
+    pointerEvents: 'none', // Don't interfere with main touch area
+  },
+  
+  // Four tiny dots in top-right corner showing timeframe state
+  moreDots: {
+    position: 'absolute',
+    top: spacing.sm,                         // 8 from style guide
+    right: spacing.sm,                       // 8 from style guide
+    flexDirection: 'row',
+    gap: 3,                                  // Slightly more gap for 4 dots
+  },
+  
+  dot: {
+    width: 4,                                // Slightly larger for better visibility
+    height: 4,
+    borderRadius: 2,
+  },
+  
+  dotActive: {
+    backgroundColor: statsCardColors.accent,
+  },
+  
+  dotInactive: {
+    backgroundColor: statsCardColors.title + '30', // 30% opacity of secondary text
   },
 });
