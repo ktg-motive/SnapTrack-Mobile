@@ -168,12 +168,12 @@ validate_git_status() {
 
 # Function to get release type from user
 get_release_type() {
-    echo "Select release type:"
-    echo "1) Major (Breaking changes)"
-    echo "2) Minor (New features)"
-    echo "3) Patch (Bug fixes)"
-    echo "4) Custom version"
-    printf "Enter choice (1-4): "
+    echo "Select release type:" >&2
+    echo "1) Major (Breaking changes)" >&2
+    echo "2) Minor (New features)" >&2
+    echo "3) Patch (Bug fixes)" >&2
+    echo "4) Custom version" >&2
+    printf "Enter choice (1-4): " >&2
     read -r choice
     
     case $choice in
@@ -187,11 +187,11 @@ get_release_type() {
 
 # Function to get platform selection from user
 get_platform_selection() {
-    echo "Select platforms to build:"
-    echo "1) Both iOS and Android"
-    echo "2) iOS only"
-    echo "3) Android only"
-    printf "Enter choice (1-3): "
+    echo "Select platforms to build:" >&2
+    echo "1) Both iOS and Android" >&2
+    echo "2) iOS only" >&2
+    echo "3) Android only" >&2
+    printf "Enter choice (1-3): " >&2
     read -r choice
     
     case $choice in
