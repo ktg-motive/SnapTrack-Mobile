@@ -348,13 +348,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionItem} onPress={() => {
-            navigation.goBack(); // Close settings modal first
-            navigation.navigate('Main', { 
-              screen: 'AccountTab',
-              params: {
-                screen: 'Help'
-              }
-            });
+            navigation.navigate('Help' as never);
           }}>
             <Ionicons name="help-circle" size={20} color={colors.primary} />
             <View style={styles.actionItemContent}>

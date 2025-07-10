@@ -34,11 +34,13 @@ export const formatPercentage = (value: number, decimals: number = 1): string =>
 export const formatDate = (date: Date | string, format: 'short' | 'medium' | 'long' = 'medium'): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  const options: Intl.DateTimeFormatOptions = {
-    short: { month: 'short', day: 'numeric' },
-    medium: { month: 'short', day: 'numeric', year: 'numeric' },
-    long: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
-  }[format];
+  const optionsMap = {
+    short: { month: 'short' as const, day: 'numeric' as const },
+    medium: { month: 'short' as const, day: 'numeric' as const, year: 'numeric' as const },
+    long: { weekday: 'long' as const, month: 'long' as const, day: 'numeric' as const, year: 'numeric' as const },
+  };
+  
+  const options: Intl.DateTimeFormatOptions = optionsMap[format];
   
   return new Intl.DateTimeFormat('en-US', options).format(dateObj);
 };

@@ -167,7 +167,7 @@ const DetailRow: React.FC<{
     } else if (typeof value === 'boolean') {
       safeValue = String(value);
     } else if (Array.isArray(value)) {
-      safeValue = value.join(', ');
+      safeValue = (value as string[]).join(', ');
     } else {
       safeValue = String(value);
     }

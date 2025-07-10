@@ -128,7 +128,7 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
     ? (stats?.receipt_count || allTimeStats.count) // Use API total count for All Time
     : statsForTimeframe.count;
   
-  const StatsCard = ({ title, value, isLoading, onPress }) => {
+  const StatsCard = ({ title, value, isLoading, onPress }: { title: string; value: string; isLoading: boolean; onPress: () => void }) => {
     const [isPressed, setIsPressed] = useState(false);
 
     return (
@@ -240,9 +240,6 @@ const styles = StyleSheet.create({
     color: statsCardColors.value,
     fontWeight: '700',
     textAlign: 'center',
-    numberOfLines: 1,                        // Prevent wrapping
-    adjustsFontSizeToFit: true,              // Scale down if needed
-    minimumFontScale: 0.8,                   // Don't scale below 80%
   },
   
   titleText: {
@@ -251,9 +248,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xs,                   // 4 from style guide
     fontWeight: '500',
-    numberOfLines: 2,                        // Allow up to 2 lines
-    adjustsFontSizeToFit: true,              // Scale down if needed
-    minimumFontScale: 0.9,                   // Don't scale below 90%
   },
   
   // Micro-visual cue container

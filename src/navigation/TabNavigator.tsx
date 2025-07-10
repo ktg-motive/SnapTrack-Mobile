@@ -63,8 +63,6 @@ function AccountStackNavigator() {
         headerShown: true,
         headerStyle: { 
           backgroundColor: colors.background,
-          elevation: 0, // Remove shadow on Android
-          shadowOpacity: 0, // Remove shadow on iOS
         },
         headerTintColor: colors.primary,
         headerTitleStyle: {
@@ -73,7 +71,6 @@ function AccountStackNavigator() {
           fontWeight: '600',
         },
         headerBackVisible: true,
-        headerBackTitleVisible: Platform.OS === 'ios',
       }}
     >
       <Stack.Screen 
@@ -86,7 +83,6 @@ function AccountStackNavigator() {
         component={EnhancedSettingsScreen}
         options={{ 
           title: 'Settings',
-          headerBackTitle: 'Account', // Only shown on iOS
         }}
       />
       <Stack.Screen 
@@ -94,7 +90,6 @@ function AccountStackNavigator() {
         component={EditProfileScreen}
         options={{ 
           title: 'Edit Profile',
-          headerBackTitle: 'Account', // Only shown on iOS
         }}
       />
       <Stack.Screen 
@@ -102,7 +97,6 @@ function AccountStackNavigator() {
         component={AboutScreen}
         options={{ 
           title: 'About SnapTrack',
-          headerBackTitle: 'Settings', // Only shown on iOS
         }}
       />
       <Stack.Screen 
@@ -110,7 +104,6 @@ function AccountStackNavigator() {
         component={PrivacyPolicyScreen}
         options={{ 
           title: 'Privacy Policy',
-          headerBackTitle: 'Account', // Only shown on iOS
         }}
       />
       <Stack.Screen 
@@ -118,7 +111,6 @@ function AccountStackNavigator() {
         component={TermsOfServiceScreen}
         options={{ 
           title: 'Terms of Service',
-          headerBackTitle: 'Account', // Only shown on iOS
         }}
       />
       <Stack.Screen 
@@ -126,7 +118,6 @@ function AccountStackNavigator() {
         component={HelpScreen}
         options={{ 
           title: 'Help & Support',
-          headerBackTitle: 'Account', // Only shown on iOS
         }}
       />
     </Stack.Navigator>
