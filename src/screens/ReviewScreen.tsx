@@ -313,7 +313,7 @@ export default function ReviewScreen() {
             confidence_score: mockData.confidence_score
           },
           receipt_url: imageUri,
-          status: 'completed' as const
+          status: 'complete' as const
         };
 
         setUploadedReceipt(mockUploadedReceipt);
@@ -384,7 +384,7 @@ export default function ReviewScreen() {
             reasoning: "Simulator fallback validated by AI"
           },
           receipt_url: imageUri,
-          status: 'completed' as const
+          status: 'complete' as const
         };
         console.log('🔍 Created simulator fallback receipt:', uploadedReceipt);
       }

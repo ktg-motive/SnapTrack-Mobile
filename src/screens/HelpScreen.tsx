@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
@@ -23,7 +25,7 @@ interface HelpScreenProps {
 }
 
 export default function HelpScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { onRestartOnboarding } = (route.params as HelpScreenProps) || {};
   const [categories, setCategories] = useState<HelpCategory[]>([]);
@@ -138,7 +140,7 @@ export default function HelpScreen() {
   };
 
   const handleContactSupport = () => {
-    navigation.navigate('Contact' as never);
+    navigation.navigate('Contact');
   };
 
   const handleRestartTutorial = async () => {
@@ -172,7 +174,7 @@ export default function HelpScreen() {
                     text: 'OK', 
                     onPress: () => {
                       // Navigate to home to ensure we're in a good state
-                      navigation.navigate('Main' as never, { screen: 'HomeTab' });
+                      navigation.navigate('Main', { screen: 'HomeTab' });
                     }
                   }]
                 );

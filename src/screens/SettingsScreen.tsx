@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../types/navigation';
 import { colors, typography, spacing } from '../styles/theme';
 import { FeedbackType } from '../types/feedback';
 
@@ -14,7 +16,7 @@ interface SettingItem {
 }
 
 export default function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const settingsItems: SettingItem[] = [
     // Feedback & Support Section
@@ -22,7 +24,7 @@ export default function SettingsScreen() {
       title: 'Send Feedback',
       subtitle: 'Share your overall experience',
       icon: 'star-outline',
-      onPress: () => navigation.navigate('Feedback' as never, { 
+      onPress: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.GENERAL_RATING,
         initialContext: 'Settings menu - General feedback'
       }),
@@ -32,7 +34,7 @@ export default function SettingsScreen() {
       title: 'Report Problem',
       subtitle: 'Found a bug or issue?',
       icon: 'bug-outline',
-      onPress: () => navigation.navigate('Feedback' as never, { 
+      onPress: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.PROBLEM_REPORT,
         initialContext: 'Settings menu - Problem report'
       }),
@@ -42,7 +44,7 @@ export default function SettingsScreen() {
       title: 'Request Feature',
       subtitle: 'Suggest new features or improvements',
       icon: 'bulb-outline',
-      onPress: () => navigation.navigate('Feedback' as never, { 
+      onPress: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.FEATURE_REQUEST,
         initialContext: 'Settings menu - Feature request'
       }),
@@ -52,35 +54,35 @@ export default function SettingsScreen() {
       title: 'Help & Support',
       subtitle: 'Get help using SnapTrack',
       icon: 'help-circle-outline',
-      onPress: () => navigation.navigate('Help' as never),
+      onPress: () => navigation.navigate('Contact'),
       showArrow: true,
     },
     {
       title: 'Contact Support',
       subtitle: 'Submit feedback and support requests',
       icon: 'chatbubbles-outline',
-      onPress: () => navigation.navigate('Contact' as never),
+      onPress: () => navigation.navigate('Contact'),
       showArrow: true,
     },
     {
       title: 'Privacy Policy',
       subtitle: 'How we protect your data',
       icon: 'shield-checkmark-outline',
-      onPress: () => navigation.navigate('PrivacyPolicy' as never),
+      onPress: () => navigation.navigate('PrivacyPolicy'),
       showArrow: true,
     },
     {
       title: 'Terms of Service',
       subtitle: 'Terms and conditions',
       icon: 'document-text-outline',
-      onPress: () => navigation.navigate('TermsOfService' as never),
+      onPress: () => navigation.navigate('TermsOfService'),
       showArrow: true,
     },
     {
       title: 'About SnapTrack',
       subtitle: 'Version info and credits',
       icon: 'information-circle-outline',
-      onPress: () => navigation.navigate('About' as never),
+      onPress: () => navigation.navigate('About'),
       showArrow: true,
     },
   ];

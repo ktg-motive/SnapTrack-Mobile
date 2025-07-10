@@ -54,7 +54,9 @@ class SnapTrackApiClient {
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers && typeof options.headers === 'object' && !(options.headers instanceof Headers) 
+          ? options.headers as Record<string, string>
+          : {}),
     };
 
     if (this.token) {
@@ -255,7 +257,7 @@ class SnapTrackApiClient {
           confidence_score: response.confidence?.amount || 0
         },
         receipt_url: response.expense.image_url,
-        status: response.expense.status === 'completed' ? 'completed' : 'processing'
+        status: response.expense.status === 'completed' ? 'complete' : 'analyzing'
       };
       console.log('✅ Transformed response:', JSON.stringify(transformedResponse, null, 2));
       return transformedResponse;
@@ -393,8 +395,8 @@ class SnapTrackApiClient {
     // Ensure tags are properly formatted (backend might expect string or array)
     if (updates.tags) {
       expenseUpdates.tags = Array.isArray(updates.tags) 
-        ? updates.tags.filter(tag => tag && tag.trim()) 
-        : [updates.tags].filter(tag => tag && tag.trim());
+        ? updates.tags.filter((tag): tag is string => typeof tag === 'string' && tag.trim() !== '') 
+        : [updates.tags].filter((tag): tag is string => typeof tag === 'string' && tag.trim() !== '');
     }
     
     // Ensure amount is a number
@@ -436,7 +438,7 @@ class SnapTrackApiClient {
       if (Array.isArray(expense.tags)) {
         tags = expense.tags;
       } else if (typeof expense.tags === 'string') {
-        tags = expense.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
+        tags = (expense.tags as string).split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0);
       }
     }
 

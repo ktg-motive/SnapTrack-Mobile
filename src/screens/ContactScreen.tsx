@@ -2,18 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import { colors, typography, spacing } from '../styles/theme';
 import { FeedbackType } from '../types/feedback';
+import type { RootStackParamList } from '../types/navigation';
 
 export default function ContactScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const contactMethods = [
     {
       title: 'General Support',
       subtitle: 'Get help with your account or general questions',
       icon: 'help-circle' as keyof typeof Ionicons.glyphMap,
-      action: () => navigation.navigate('Feedback' as never, { 
+      action: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.GENERAL_RATING,
         initialContext: 'Contact screen - General support'
       }),
@@ -22,7 +24,7 @@ export default function ContactScreen() {
       title: 'Report a Problem',
       subtitle: 'Something not working? Let us know about bugs or issues',
       icon: 'bug' as keyof typeof Ionicons.glyphMap,
-      action: () => navigation.navigate('Feedback' as never, { 
+      action: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.PROBLEM_REPORT,
         initialContext: 'Contact screen - Problem report'
       }),
@@ -31,7 +33,7 @@ export default function ContactScreen() {
       title: 'Request a Feature',
       subtitle: 'Suggest improvements or new features',
       icon: 'bulb' as keyof typeof Ionicons.glyphMap,
-      action: () => navigation.navigate('Feedback' as never, { 
+      action: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.FEATURE_REQUEST,
         initialContext: 'Contact screen - Feature request'
       }),
@@ -40,7 +42,7 @@ export default function ContactScreen() {
       title: 'Privacy Questions',
       subtitle: 'Questions about data privacy and security',
       icon: 'shield-checkmark' as keyof typeof Ionicons.glyphMap,
-      action: () => navigation.navigate('Feedback' as never, { 
+      action: () => navigation.navigate('Feedback', { 
         initialType: FeedbackType.GENERAL_RATING,
         initialContext: 'Contact screen - Privacy question'
       }),

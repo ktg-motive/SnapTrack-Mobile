@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
@@ -39,7 +41,7 @@ interface EnhancedSettingsScreenProps {
 }
 
 export default function EnhancedSettingsScreen({ onRestartOnboarding }: EnhancedSettingsScreenProps) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings>({});
@@ -330,7 +332,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
 
           <TouchableOpacity style={styles.actionItem} onPress={() => {
             navigation.goBack(); // Close settings modal first
-            navigation.navigate('Main' as never, { 
+            navigation.navigate('Main', { 
               screen: 'HelpTab' 
             });
           }}>

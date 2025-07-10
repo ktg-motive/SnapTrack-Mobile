@@ -78,9 +78,9 @@ export default function CompletionScreen({ onComplete }: CompletionScreenProps) 
   };
 
   const steps = [
-    { icon: 'camera-alt', text: 'Snap', description: 'Capture receipts with your camera' },
-    { icon: 'psychology', text: 'Review', description: 'AI validates and enhances data' },
-    { icon: 'label', text: 'Organize', description: 'Tag and categorize expenses' },
+    { icon: 'camera-alt' as keyof typeof Icon.glyphMap, text: 'Snap', description: 'Capture receipts with your camera' },
+    { icon: 'psychology' as keyof typeof Icon.glyphMap, text: 'Review', description: 'AI validates and enhances data' },
+    { icon: 'label' as keyof typeof Icon.glyphMap, text: 'Organize', description: 'Tag and categorize expenses' },
   ];
 
   const renderConfetti = () => {

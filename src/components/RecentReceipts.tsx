@@ -15,7 +15,7 @@ interface RecentReceiptsProps {
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   hasMoreReceipts?: boolean;
-  refreshControl?: React.ReactElement;
+  refreshControl?: React.ReactElement<any>;
 }
 
 export default function RecentReceipts({ 

@@ -21,6 +21,13 @@ export interface Receipt {
   email_subject?: string;
   raw_text?: string;
   
+  // Additional API response fields for backward compatibility
+  vendor_name?: string;
+  image_url?: string;
+  date_created?: string;
+  last_modified?: string;
+  receipt_date?: string;
+  
   // Additional date field for compatibility
   expense_date?: string;
 }
@@ -96,7 +103,6 @@ export interface UploadedReceipt {
   parsed_tags?: string | string[];
   confidence_score?: number;
   validation_confidence?: number;
-  confidence?: number;
   ai_validated?: boolean;
   ai_reasoning?: string;
   ai_validation?: {
@@ -127,6 +133,7 @@ export interface PaginatedResponse<T> {
   pages?: number;
   page?: number;
   total?: number;
+  limit?: number;
 }
 
 export interface ReceiptFilters {

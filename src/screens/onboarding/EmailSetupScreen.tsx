@@ -56,9 +56,9 @@ export default function EmailSetupScreen({ onNext, state }: EmailSetupScreenProp
   };
 
   const emailApps = [
-    { name: 'Gmail', icon: 'email', color: '#DB4437' },
-    { name: 'Outlook', icon: 'email', color: '#0078D4' },
-    { name: 'Apple Mail', icon: 'email', color: '#007AFF' },
+    { name: 'Gmail', icon: 'email' as keyof typeof Icon.glyphMap, color: '#DB4437' },
+    { name: 'Outlook', icon: 'email' as keyof typeof Icon.glyphMap, color: '#0078D4' },
+    { name: 'Apple Mail', icon: 'email' as keyof typeof Icon.glyphMap, color: '#007AFF' },
   ];
 
   return (

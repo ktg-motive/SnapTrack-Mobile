@@ -13,25 +13,25 @@ interface EntitySelectionScreenProps {
 const { width } = Dimensions.get('window');
 
 const commonEntities = [
-  { id: 'personal', name: 'Personal', icon: 'person', color: '#4CAF50' },
-  { id: 'work', name: 'Work', icon: 'work', color: '#2196F3' },
-  { id: 'business', name: 'Business Travel', icon: 'business-center', color: '#FF9800' },
-  { id: 'motive', name: 'Motive AI', icon: 'psychology', color: '#9C27B0' },
-  { id: 'freelance', name: 'Freelance', icon: 'laptop', color: '#607D8B' },
-  { id: 'rental', name: 'Rental Property', icon: 'home', color: '#795548' },
+  { id: 'personal', name: 'Personal', icon: 'person' as keyof typeof Icon.glyphMap, color: '#4CAF50' },
+  { id: 'work', name: 'Work', icon: 'work' as keyof typeof Icon.glyphMap, color: '#2196F3' },
+  { id: 'business', name: 'Business Travel', icon: 'business-center' as keyof typeof Icon.glyphMap, color: '#FF9800' },
+  { id: 'motive', name: 'Motive AI', icon: 'psychology' as keyof typeof Icon.glyphMap, color: '#9C27B0' },
+  { id: 'freelance', name: 'Freelance', icon: 'laptop' as keyof typeof Icon.glyphMap, color: '#607D8B' },
+  { id: 'rental', name: 'Rental Property', icon: 'home' as keyof typeof Icon.glyphMap, color: '#795548' },
 ];
 
 const commonTags = [
-  { id: 'meals', name: 'Meals', icon: 'restaurant', color: '#FF5722' },
-  { id: 'travel', name: 'Travel', icon: 'flight', color: '#03A9F4' },
-  { id: 'office', name: 'Office', icon: 'business', color: '#8BC34A' },
-  { id: 'equipment', name: 'Equipment', icon: 'computer', color: '#FF9800' },
-  { id: 'medical', name: 'Medical', icon: 'local-hospital', color: '#F44336' },
-  { id: 'education', name: 'Education', icon: 'school', color: '#9C27B0' },
-  { id: 'entertainment', name: 'Entertainment', icon: 'movie', color: '#E91E63' },
-  { id: 'gas', name: 'Gas', icon: 'local-gas-station', color: '#607D8B' },
-  { id: 'parking', name: 'Parking', icon: 'local-parking', color: '#795548' },
-  { id: 'supplies', name: 'Supplies', icon: 'inventory', color: '#009688' },
+  { id: 'meals', name: 'Meals', icon: 'restaurant' as keyof typeof Icon.glyphMap, color: '#FF5722' },
+  { id: 'travel', name: 'Travel', icon: 'flight' as keyof typeof Icon.glyphMap, color: '#03A9F4' },
+  { id: 'office', name: 'Office', icon: 'business' as keyof typeof Icon.glyphMap, color: '#8BC34A' },
+  { id: 'equipment', name: 'Equipment', icon: 'computer' as keyof typeof Icon.glyphMap, color: '#FF9800' },
+  { id: 'medical', name: 'Medical', icon: 'local-hospital' as keyof typeof Icon.glyphMap, color: '#F44336' },
+  { id: 'education', name: 'Education', icon: 'school' as keyof typeof Icon.glyphMap, color: '#9C27B0' },
+  { id: 'entertainment', name: 'Entertainment', icon: 'movie' as keyof typeof Icon.glyphMap, color: '#E91E63' },
+  { id: 'gas', name: 'Gas', icon: 'local-gas-station' as keyof typeof Icon.glyphMap, color: '#607D8B' },
+  { id: 'parking', name: 'Parking', icon: 'local-parking' as keyof typeof Icon.glyphMap, color: '#795548' },
+  { id: 'supplies', name: 'Supplies', icon: 'inventory' as keyof typeof Icon.glyphMap, color: '#009688' },
 ];
 
 export default function EntitySelectionScreen({ 

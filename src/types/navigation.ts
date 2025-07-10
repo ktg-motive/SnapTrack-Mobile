@@ -10,6 +10,15 @@ export type RootStackParamList = {
     initialType: FeedbackType;
     initialContext: string;
   };
+  Onboarding: undefined;
+  Auth: undefined;
+  AccountTab: undefined;
+  Settings: undefined;
+  About: undefined;
+  Contact: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
+  EditProfile: undefined;
 };
 
 export type MainTabParamList = {
