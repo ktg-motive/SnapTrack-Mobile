@@ -46,7 +46,7 @@ export enum FeedbackStatus {
 export interface FeedbackSubmission {
   type: FeedbackType;
   category?: FeedbackCategory;
-  rating?: number; // 1-5 stars for general rating
+  rating?: number | null; // 1-5 stars for general rating
   subject?: string;
   message: string;
   context?: string; // What user was doing when providing feedback

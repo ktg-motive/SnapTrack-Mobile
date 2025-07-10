@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useNavigation } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,13 +18,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, typography, shadows, spacing } from '../styles/theme';
 import { smartOptimizeImage } from '../utils/imageOptimization';
+import type { RootStackParamList } from '../types/navigation';
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessing, setIsProcessing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   if (!permission) {
     return <View style={styles.loadingContainer} />;
@@ -77,11 +79,11 @@ export default function CameraScreen() {
                   // Use a real receipt image for testing
                   const realReceiptImage = 'https://philip.greenspun.com/blog/wp-content/uploads/2024/04/2024-04-08-20.26.03-scaled.jpg';
                   
-                  navigation.navigate('Review' as never, { 
+                  navigation.navigate('Review', { 
                     imageUri: realReceiptImage,
                     source: 'camera'
                     // Removed mockData to force real API calls in simulator
-                  } as never);
+                  });
                 }
               }
             ]
@@ -103,10 +105,10 @@ export default function CameraScreen() {
             newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
           });
           
-          navigation.navigate('Review' as never, { 
+          navigation.navigate('Review', { 
             imageUri: optimizedResult.uri,
             source: 'camera'
-          } as never);
+          });
         }
       } catch (error) {
         Alert.alert('Error', 'Failed to take picture. Please try again.');
@@ -131,11 +133,11 @@ export default function CameraScreen() {
               // Use a real receipt image for testing
               const realReceiptImage = 'https://philip.greenspun.com/blog/wp-content/uploads/2024/04/2024-04-08-20.26.03-scaled.jpg';
               
-              navigation.navigate('Review' as never, { 
+              navigation.navigate('Review', { 
                 imageUri: realReceiptImage,
                 source: 'library'
                 // Removed mockData to force real API calls in simulator
-              } as never);
+              });
             }
           }
         ]
@@ -160,10 +162,10 @@ export default function CameraScreen() {
         newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
       });
       
-      navigation.navigate('Review' as never, { 
+      navigation.navigate('Review', { 
         imageUri: optimizedResult.uri,
         source: 'library'
-      } as never);
+      });
     }
   };
 

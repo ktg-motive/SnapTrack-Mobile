@@ -20,6 +20,9 @@ export interface Receipt {
   extraction_method?: string;
   email_subject?: string;
   raw_text?: string;
+  
+  // Additional date field for compatibility
+  expense_date?: string;
 }
 
 export interface Entity {
@@ -67,7 +70,39 @@ export interface UploadedReceipt {
     raw_text?: string;
   };
   receipt_url?: string;
-  status?: 'processing' | 'completed' | 'failed';
+  status?: 'uploading' | 'scanning' | 'analyzing' | 'extracting' | 'complete' | 'error';
+  
+  // Additional fields for compatibility
+  image_url?: string;
+  vendor?: string;
+  corrected_vendor?: string;
+  parsed_vendor?: string;
+  vendor_name?: string;
+  business_name?: string;
+  merchant?: string;
+  amount?: number;
+  corrected_amount?: number;
+  parsed_amount?: number;
+  total_amount?: number;
+  total?: number;
+  price?: number;
+  expense_date?: string;
+  date?: string;
+  corrected_date?: string;
+  parsed_date?: string;
+  receipt_date?: string;
+  transaction_date?: string;
+  tags?: string | string[];
+  parsed_tags?: string | string[];
+  confidence_score?: number;
+  validation_confidence?: number;
+  confidence?: number;
+  ai_validated?: boolean;
+  ai_reasoning?: string;
+  ai_validation?: {
+    validated: boolean;
+    reasoning: string;
+  };
 }
 
 export interface ApiResponse<T> {
@@ -75,6 +110,7 @@ export interface ApiResponse<T> {
   data: T;
   error?: string;
   message?: string;
+  expense?: T; // Legacy field for backward compatibility
 }
 
 export interface PaginatedResponse<T> {
@@ -87,6 +123,10 @@ export interface PaginatedResponse<T> {
     has_next_page: boolean;
     has_prev_page: boolean;
   };
+  // Legacy fields for backward compatibility
+  pages?: number;
+  page?: number;
+  total?: number;
 }
 
 export interface ReceiptFilters {

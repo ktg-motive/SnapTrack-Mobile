@@ -295,7 +295,7 @@ export default function ReviewScreen() {
         console.log('📱 Using mock receipt data for simulator');
         
         setProcessingState({
-          stage: 'processing',
+          stage: 'analyzing',
           progress: 50,
           message: 'Processing mock receipt...'
         });
@@ -331,7 +331,7 @@ export default function ReviewScreen() {
         }));
 
         setProcessingState({
-          stage: 'completed',
+          stage: 'complete',
           progress: 100,
           message: 'Mock processing complete!'
         });

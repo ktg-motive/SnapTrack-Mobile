@@ -183,6 +183,13 @@ class OfflineStorageService {
   }
 
   /**
+   * Alias for getCachedReceipts for backward compatibility
+   */
+  async getReceipts(): Promise<any[]> {
+    return this.getCachedReceipts();
+  }
+
+  /**
    * Check if device is currently online
    */
   async isOnline(): Promise<boolean> {
