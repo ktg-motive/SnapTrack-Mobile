@@ -66,7 +66,27 @@ update_version_in_files() {
     # Update package.json to keep it in sync
     sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$version\"/" package.json
     
-    echo "Updated version to $version (build $build_num)"
+    # CRITICAL: Update native iOS files when they exist
+    if [ -d "ios" ]; then
+        echo "Updating native iOS version files..."
+        # Update project.pbxproj
+        sed -i '' "s/MARKETING_VERSION = [^;]*/MARKETING_VERSION = $version/g" ios/SnapTrack.xcodeproj/project.pbxproj
+        sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*/CURRENT_PROJECT_VERSION = $build_num/g" ios/SnapTrack.xcodeproj/project.pbxproj
+        
+        # Update Info.plist
+        sed -i '' "/<key>CFBundleShortVersionString<\/key>/{n;s/<string>[^<]*<\/string>/<string>$version<\/string>/;}" ios/SnapTrack/Info.plist
+        sed -i '' "/<key>CFBundleVersion<\/key>/{n;s/<string>[^<]*<\/string>/<string>$build_num<\/string>/;}" ios/SnapTrack/Info.plist
+    fi
+    
+    # Update native Android files when they exist
+    if [ -d "android" ]; then
+        echo "Updating native Android version files..."
+        # Update build.gradle versionName and versionCode
+        sed -i '' "s/versionName \"[^\"]*\"/versionName \"$version\"/" android/app/build.gradle
+        sed -i '' "s/versionCode [0-9]*/versionCode $build_num/" android/app/build.gradle
+    fi
+    
+    echo "Updated version to $version (build $build_num) in all files"
 }
 
 # Function to create release notes
