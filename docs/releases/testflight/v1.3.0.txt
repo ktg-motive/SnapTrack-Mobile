@@ -1,0 +1,18 @@
+SnapTrack v1.3.0 - minor
+
+Recent improvements and fixes:
+• Fix TypeScript errors and pass quality gates
+• fix: Redirect prompts to stderr to fix input display issue
+• fix: Replace echo -n with printf in release script for better compatibility
+• build: Add release automation scripts and native build updates
+• Implement Dashboard screen with entity-based analytics and fix pagination
+
+TESTING FOCUS:
+• Test core receipt processing functionality
+• Verify image capture and optimization
+• Test data synchronization across devices
+
+This build includes performance optimizations and bug fixes.
+Quality gates passed: TypeScript coverage >90%, all tests passing.
+
+Build: 1.3.0 | Target: iOS 13.0+ | Size: ~15MB
