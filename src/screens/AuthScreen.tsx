@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const passwordInputRef = useRef<any>(null);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -58,7 +59,18 @@ export default function AuthScreen() {
         );
       } else {
         await authService.signIn({ email, password });
-        navigation.navigate('Main' as never);
+        // Show success feedback before navigation
+        Alert.alert(
+          'Sign In Successful!',
+          'Welcome back to SnapTrack!',
+          [{ 
+            text: 'Continue', 
+            onPress: () => {
+              setShowEmailModal(false);
+              navigation.navigate('Main' as never);
+            }
+          }]
+        );
       }
     } catch (error: any) {
       Alert.alert('Authentication Error', error.message);
@@ -72,7 +84,15 @@ export default function AuthScreen() {
 
     try {
       await authService.signInWithGoogle();
-      navigation.navigate('Main' as never);
+      // Show success feedback before navigation
+      Alert.alert(
+        'Sign In Successful!',
+        'Welcome to SnapTrack!',
+        [{ 
+          text: 'Continue', 
+          onPress: () => navigation.navigate('Main' as never)
+        }]
+      );
     } catch (error: any) {
       Alert.alert('Google Sign-In Error', error.message);
     } finally {
@@ -85,7 +105,15 @@ export default function AuthScreen() {
 
     try {
       await authService.signInWithApple();
-      navigation.navigate('Main' as never);
+      // Show success feedback before navigation
+      Alert.alert(
+        'Sign In Successful!',
+        'Welcome to SnapTrack!',
+        [{ 
+          text: 'Continue', 
+          onPress: () => navigation.navigate('Main' as never)
+        }]
+      );
     } catch (error: any) {
       Alert.alert('Apple Sign-In Error', error.message);
     } finally {
@@ -202,6 +230,14 @@ export default function AuthScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                autoComplete="email"
+                textContentType="emailAddress"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => {
+                  // Focus password field when user hits next
+                  passwordInputRef.current?.focus();
+                }}
               />
             </View>
 
@@ -209,6 +245,7 @@ export default function AuthScreen() {
               <Text style={styles.inputLabel}>Password</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
+                  ref={passwordInputRef}
                   style={styles.passwordInput}
                   value={password}
                   onChangeText={setPassword}
@@ -217,6 +254,10 @@ export default function AuthScreen() {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="password"
+                  textContentType="password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleAuth}
                 />
                 <TouchableOpacity 
                   style={styles.passwordToggle}

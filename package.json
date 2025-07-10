@@ -21,9 +21,13 @@
     "build:test": "expo export --platform ios --output-dir ./build-test --experimental-bundle",
     "release:prepare": "npm run pre-release && echo 'Ready for EAS build!'",
     "release:build": "npm run pre-release && eas build --platform all --auto-submit",
-    "release:ios": "npm run pre-release && eas build --platform ios --auto-submit",
-    "release:android": "npm run pre-release && eas build --platform android --auto-submit",
-    "release": "./scripts/release.sh"
+    "release:ios": "./scripts/release-ios.sh",
+    "release:android": "./scripts/release-android.sh",
+    "release": "./scripts/release.sh",
+    "qa-test": "./scripts/qa-test.sh",
+    "qa-android": "./scripts/qa-android.sh",
+    "qa-ios": "./scripts/qa-ios.sh",
+    "qa-build": "npm run pre-release && eas build --profile development --platform all"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -37,6 +41,7 @@
     "expo": "53.0.19",
     "expo-apple-authentication": "~7.2.4",
     "expo-camera": "~16.1.10",
+    "expo-clipboard": "^7.1.5",
     "expo-constants": "^17.1.7",
     "expo-crypto": "^14.1.5",
     "expo-device": "^7.1.4",
@@ -60,17 +65,26 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@react-native-community/cli": "^18.0.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^12.9.0",
+    "@types/jest": "^29.5.12",
     "@types/react": "~19.0.10",
-    "typescript": "~5.8.3",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
-    "@testing-library/react-native": "^12.4.3",
-    "@types/jest": "^29.5.12",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-native": "^4.1.0",
     "jest": "^29.7.0",
-    "react-test-renderer": "19.0.0"
+    "jest-expo": "^53.0.9",
+    "react-test-renderer": "19.0.0",
+    "typescript": "~5.8.3"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    }
+  }
 }

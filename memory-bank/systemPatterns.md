@@ -1,6 +1,6 @@
 # System Patterns & Architectural Decisions
 
-**Last Updated:** 2025-07-07 01:30:00 - Critical API Patterns Documentation - Impacts: [API Integration, State Management]
+**Last Updated:** 2025-07-10 19:30:00 - Receipt Preview & Image Processing Patterns - Impacts: [UX Design, Image Processing, Data Integrity]
 
 ## Architectural Decision Records
 
@@ -256,6 +256,152 @@ handleEditEntity = () => {
 2. Primary actions always use blue for consistency
 3. Financial amounts use primary blue to emphasize importance
 4. Secondary metadata uses gray for visual de-emphasis
+
+### ADR-009: Receipt Preview Modal Design Pattern (2025-07-10)
+**Decision:** Implement comprehensive receipt preview with smart image display and professional financial app experience.
+
+**Context:** Original receipt preview showed squished images and provided limited functionality. UX designer requested professional preview experience per `/Users/Kai/Dev/Active/SnapTrack/docs/RECEIPT_PREVIEW_REDESIGN.md`.
+
+**Implementation Pattern:**
+```typescript
+// Smart Image Display with Aspect Ratio Preservation
+const ReceiptImageSection = ({ imageUri, onZoom }) => {
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  
+  useEffect(() => {
+    Image.getSize(imageUri, (originalWidth, originalHeight) => {
+      // Calculate optimal display size maintaining aspect ratio
+      const aspectRatio = originalHeight / originalWidth;
+      const availableWidth = screenWidth - (spacing.md * 2);
+      
+      let displayWidth = availableWidth;
+      let displayHeight = displayWidth * aspectRatio;
+      
+      // Constrain by height if too tall
+      if (displayHeight > maxImageHeight) {
+        displayHeight = maxImageHeight;
+        displayWidth = displayHeight / aspectRatio;
+      }
+      
+      setImageSize({ width: displayWidth, height: displayHeight });
+    });
+  }, [imageUri]);
+
+  return (
+    <ScrollView 
+      minimumZoomScale={1}
+      maximumZoomScale={3}
+      pinchGestureEnabled={true}>
+      <Image style={imageSize} resizeMode="stretch" />
+    </ScrollView>
+  );
+};
+```
+
+**Benefits:**
+- Dynamic aspect ratio calculation maintains receipt proportions
+- Pinch-to-zoom functionality for receipt text readability  
+- Professional financial app experience with rich metadata
+- Enhanced UI with confidence indicators and smart actions
+
+### ADR-010: Image Processing Aspect Ratio Preservation (2025-07-10)
+**Decision:** Fix expo-image-manipulator to preserve original aspect ratios instead of forcing square dimensions.
+
+**Problem:** All receipts were being saved as 2048x2048 squares, causing horizontal compression and unreadable text.
+
+**Root Cause:** 
+```typescript
+// BROKEN - Forces square dimensions
+{
+  resize: {
+    width: 2048,   // Both specified = square!
+    height: 2048,
+  }
+}
+```
+
+**Solution:**
+```typescript
+// FIXED - Preserves aspect ratio
+const aspectRatio = originalWidth / originalHeight;
+
+if (aspectRatio > 1) {
+  // Landscape - constrain by width
+  resizeWidth = Math.min(originalWidth, config.maxWidth);
+  resizeHeight = resizeWidth / aspectRatio;
+} else {
+  // Portrait - constrain by height  
+  resizeHeight = Math.min(originalHeight, config.maxHeight);
+  resizeWidth = resizeHeight * aspectRatio;
+}
+
+{
+  resize: {
+    width: Math.round(resizeWidth),   // Calculated
+    height: Math.round(resizeHeight), // Calculated
+  }
+}
+```
+
+**Impact:**
+- New receipts maintain proper proportions (e.g., 1920x2560 portrait)
+- Still optimized for Google Vision API with 2048px max dimension
+- Fixes receipt readability and professional appearance
+
+### ADR-011: React Native Conditional Rendering Safety Pattern (2025-07-10)
+**Decision:** Use explicit ternary operators instead of logical AND operators for conditional rendering.
+
+**Problem:** React Native "Text strings must be rendered within a <Text> component" errors when using `condition &&`.
+
+**Anti-Pattern:**
+```typescript
+// BROKEN - Can render falsy values
+{badgeColor && <View style={{backgroundColor: badgeColor}} />}
+{confidence < 85 && <Icon name="warning" />}
+```
+
+**Safe Pattern:**
+```typescript
+// SAFE - Only renders valid components or null
+{badgeColor ? <View style={{backgroundColor: badgeColor}} /> : null}
+{confidence < 85 ? <Icon name="warning" /> : null}
+```
+
+**Rationale:**
+- React Native interprets falsy values as renderable content
+- Explicit ternaries guarantee only valid components are rendered
+- Prevents crashes and improves component reliability
+
+### ADR-012: Multi-Layer Data Deduplication Pattern (2025-07-10)
+**Decision:** Implement deduplication at multiple levels to prevent FlatList duplicate key warnings.
+
+**Problem:** FlatList showing "Encountered two children with the same key" errors due to duplicate receipt IDs.
+
+**Multi-Layer Solution:**
+```typescript
+// Layer 1: API Response Level (HomeScreen)
+setRecentReceipts(prev => {
+  const existingIds = new Set(prev.map(receipt => receipt.id));
+  const newReceipts = receiptsData.filter(receipt => !existingIds.has(receipt.id));
+  return [...prev, ...newReceipts];
+});
+
+// Layer 2: Component Props Level (RecentReceipts)
+useEffect(() => {
+  const uniqueReceipts = receipts.filter((receipt, index, self) => 
+    index === self.findIndex(r => r.id === receipt.id)
+  );
+  setLocalReceipts(uniqueReceipts);
+}, [receipts]);
+
+// Layer 3: FlatList Key Extraction
+keyExtractor={(item) => item.id}  // Now guaranteed unique
+```
+
+**Benefits:**
+- Prevents duplicate keys at data source
+- Handles API inconsistencies gracefully
+- Ensures stable FlatList rendering performance
 
 ### Component Architecture: Smart State Components
 **Pattern:** Components manage their own state and provide callback interfaces for parent coordination.

@@ -7,7 +7,7 @@ interface SnapTrackLogoProps {
   size?: string | number; // Support both string sizes like "large" and number sizes
 }
 
-export default function SnapTrackLogo({ width = 180, height = 60, size }: SnapTrackLogoProps) {
+export function SnapTrackLogo({ width = 180, height = 60, size }: SnapTrackLogoProps) {
   // Handle string sizes
   let finalWidth = width;
   let finalHeight = height;
@@ -27,6 +27,7 @@ export default function SnapTrackLogo({ width = 180, height = 60, size }: SnapTr
       source={require('../../assets/snaptrack-logo.png')}
       style={[styles.logo, { width: finalWidth, height: finalHeight }]}
       resizeMode="contain"
+      testID="snaptrack-logo"
     />
   );
 }
@@ -36,3 +37,5 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 });
+
+export default SnapTrackLogo;

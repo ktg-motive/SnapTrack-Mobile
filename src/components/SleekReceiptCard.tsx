@@ -4,11 +4,14 @@ import {
   Text,
   StyleSheet,
   Alert,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Receipt } from '../types';
 import { colors, spacing, borderRadius, typography, shadows } from '../styles/theme';
-import { SlideOutActions } from './SlideOutActions';
+import { hapticFeedback } from '../utils/hapticFeedback';
 
 interface SleekReceiptCardProps {
   receipt: Receipt;
@@ -17,6 +20,16 @@ interface SleekReceiptCardProps {
   onDelete?: (receiptId: string) => void;
 }
 
+// UPDATED: Use consistent Trust Teal for ALL entities for better scalability
+const getEntityColor = () => {
+  // Use single color for ALL entities as per design recommendations
+  return {
+    primary: colors.primary, // Trust Teal (#009f86) for ALL entities
+    background: colors.primaryContainer,
+    border: `${colors.primary}33`,
+  };
+};
+
 
 export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
   receipt,
@@ -24,15 +37,18 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
   onPreview,
   onDelete,
 }) => {
-  const handleEdit = () => {
+  const handleEdit = async () => {
+    await hapticFeedback.editMode();
     onEdit?.(receipt);
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    await hapticFeedback.cardTap();
     onPreview?.(receipt);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    await hapticFeedback.deleteAction();
     Alert.alert(
       'Delete Receipt',
       'Are you sure you want to delete this receipt? This action cannot be undone.',
@@ -66,13 +82,22 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
     return `$${amount.toFixed(2)}`;
   };
 
+  const entityColor = getEntityColor(); // Use consistent Trust Teal for all entities
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        {/* Main Content - Two Lines */}
+        {/* Entity Color Indicator - NEW */}
+        <View 
+          style={[
+            styles.entityIndicator,
+            { backgroundColor: entityColor.primary }
+          ]} 
+        />
+        
         <View style={styles.content}>
-          {/* First Line: Vendor and Amount */}
-          <View style={styles.firstLine}>
+          {/* Header: Vendor + Amount */}
+          <View style={styles.headerRow}>
             <Text style={styles.vendor} numberOfLines={1}>
               {receipt.vendor || 'Unknown Vendor'}
             </Text>
@@ -80,38 +105,49 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
               {formatAmount(receipt.amount)}
             </Text>
           </View>
-
-          {/* Second Line: Entity/Tags and Date */}
-          <View style={styles.secondLine}>
-            <View style={styles.metaContainer}>
-              {receipt.entity && (
-                <View style={styles.entityBadge}>
-                  <Text style={styles.entityText}>{receipt.entity}</Text>
-                </View>
-              )}
-              {receipt.tags && receipt.tags.length > 0 && (
-                <Text style={styles.tags} numberOfLines={1}>
-                  {receipt.tags.slice(0, 2).join(', ')}
-                  {receipt.tags.length > 2 && (
-                    <Text style={styles.tagCount}> +{receipt.tags.length - 2}</Text>
-                  )}
-                </Text>
-              )}
+          
+          {/* Meta: Category + Date */}
+          <View style={styles.metaRow}>
+            <View style={styles.categoryContainer}>
+              <View style={[styles.categoryDot, { backgroundColor: entityColor.primary }]} />
+              <Text style={styles.category} numberOfLines={1}>
+                {receipt.entity && (
+                  <>
+                    {receipt.entity}
+                    {receipt.tags && receipt.tags.length > 0 && (
+                      <Text style={styles.categoryDivider}> • </Text>
+                    )}
+                  </>
+                )}
+                {receipt.tags && receipt.tags.length > 0 && (
+                  <>
+                    {receipt.tags.slice(0, 2).join(', ')}
+                    {receipt.tags.length > 2 && (
+                      <Text style={styles.tagCount}> +{receipt.tags.length - 2}</Text>
+                    )}
+                  </>
+                )}
+              </Text>
             </View>
             <Text style={styles.date}>
               {formatDate(receipt.date)}
             </Text>
           </View>
-
-          {/* Third Line: Actions */}
-          <View style={styles.actionsLine}>
-            <SlideOutActions
-              onEdit={handleEdit}
-              onPreview={receipt.receipt_url ? handlePreview : undefined}
-              onDelete={handleDelete}
-              hasPreview={!!receipt.receipt_url}
-            />
-          </View>
+        </View>
+        
+        {/* Always-Visible Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+            <Ionicons name="pencil" size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+          {receipt.receipt_url && (
+            <TouchableOpacity style={styles.actionButton} onPress={handlePreview}>
+              <Ionicons name="eye" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+            <Ionicons name="trash" size={16} color={colors.error} />
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -120,25 +156,41 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: spacing.sm,
-    marginVertical: spacing.xs,
+    // Platform-specific margins to match section header
+    marginHorizontal: Platform.select({
+      ios: 20,     // Match section header margin for iOS
+      android: 16, // Keep existing Android margin
+    }),
+    marginVertical: spacing.xs, // 6px - reduced from 8px
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    borderRadius: borderRadius.lg, // 16px - increased for premium feel
+    padding: 12, // Reduced from 16px for efficiency
     ...shadows.card,
     borderWidth: 1,
     borderColor: colors.border,
+    position: 'relative',
+    overflow: 'hidden', // CRITICAL: Ensures entity indicator stays within card
+  },
+  entityIndicator: {
+    height: 3,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0, // Use right instead of width for better positioning
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
   },
   content: {
+    marginTop: spacing.sm, // Space for entity indicator
     marginBottom: spacing.sm,
   },
-  firstLine: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm, // Reduced from 12px
   },
   vendor: {
     ...typography.title3,
@@ -153,40 +205,36 @@ const styles = StyleSheet.create({
     color: colors.primary,
     flexShrink: 0,
   },
-  secondLine: {
+  metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  metaContainer: {
+  categoryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     marginRight: spacing.sm,
   },
-  entityBadge: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     marginRight: spacing.xs,
   },
-  entityText: {
+  category: {
     ...typography.body2,
-    fontWeight: '500',
     color: colors.textSecondary,
-    fontSize: 13,
-  },
-  tags: {
-    ...typography.body2,
-    color: colors.success, // Changed to green to differentiate from Entity
     fontSize: 14,
     flex: 1,
+  },
+  categoryDivider: {
+    color: colors.textMuted,
   },
   tagCount: {
     ...typography.number,
     fontSize: 14,
-    color: colors.success, // Changed to green to match tags
+    color: colors.textMuted,
   },
   date: {
     ...typography.body2,
@@ -194,8 +242,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flexShrink: 0,
   },
-  actionsLine: {
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: spacing.sm,
     marginTop: spacing.sm,
-    alignItems: 'flex-end',
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });

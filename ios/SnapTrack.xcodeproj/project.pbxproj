@@ -7,28 +7,28 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		09C2B5DEB22648258F7F0004 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 44D8A7C075A94C3F8DCD516D /* GoogleService-Info.plist */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		147C7421E1A4F0E76B4DFE0F /* libPods-SnapTrack.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0FFB38FB93B30F9D23716D69 /* libPods-SnapTrack.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		4AB67BAF1575BE2F74F12654 /* libPods-SnapTrack.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 99DE857738248B0A2ADD5C3F /* libPods-SnapTrack.a */; };
-		637EB66D589A432F94FA9887 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CCBD7DAFED81436EB0E06E58 /* GoogleService-Info.plist */; };
-		96BF72140C269CDFDD7EA4C6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 428C98B8CC7E7C273B00EB12 /* PrivacyInfo.xcprivacy */; };
+		9C24531BF3CC3F41693CA6F7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D9F6E19D20DE3CBF44C292C2 /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E0122322CBCA679635A303C0 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6204267E06FDB975DBF7C3 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F74DB2B39B0C45E2876BA458 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41AFEA543370EBB613BD2D81 /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0FFB38FB93B30F9D23716D69 /* libPods-SnapTrack.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SnapTrack.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* SnapTrack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnapTrack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SnapTrack/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SnapTrack/Info.plist; sourceTree = "<group>"; };
-		162975469533B3DB71D41AF1 /* Pods-SnapTrack.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SnapTrack.debug.xcconfig"; path = "Target Support Files/Pods-SnapTrack/Pods-SnapTrack.debug.xcconfig"; sourceTree = "<group>"; };
-		428C98B8CC7E7C273B00EB12 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = SnapTrack/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		6D6204267E06FDB975DBF7C3 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SnapTrack/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		99DE857738248B0A2ADD5C3F /* libPods-SnapTrack.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SnapTrack.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		41AFEA543370EBB613BD2D81 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SnapTrack/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		44D8A7C075A94C3F8DCD516D /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "SnapTrack/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		94D14481FA4A7D6DE5529A19 /* Pods-SnapTrack.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SnapTrack.debug.xcconfig"; path = "Target Support Files/Pods-SnapTrack/Pods-SnapTrack.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = SnapTrack/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B97492F4C222309B3EEB8BD8 /* Pods-SnapTrack.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SnapTrack.release.xcconfig"; path = "Target Support Files/Pods-SnapTrack/Pods-SnapTrack.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C38914B9D9D2559D176BEEEC /* Pods-SnapTrack.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SnapTrack.release.xcconfig"; path = "Target Support Files/Pods-SnapTrack/Pods-SnapTrack.release.xcconfig"; sourceTree = "<group>"; };
-		CCBD7DAFED81436EB0E06E58 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "SnapTrack/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		D9F6E19D20DE3CBF44C292C2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = SnapTrack/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SnapTrack/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* SnapTrack-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "SnapTrack-Bridging-Header.h"; path = "SnapTrack/SnapTrack-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -39,13 +39,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4AB67BAF1575BE2F74F12654 /* libPods-SnapTrack.a in Frameworks */,
+				147C7421E1A4F0E76B4DFE0F /* libPods-SnapTrack.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1179BF33D079AAF4DA4602C2 /* SnapTrack */ = {
+			isa = PBXGroup;
+			children = (
+				41AFEA543370EBB613BD2D81 /* ExpoModulesProvider.swift */,
+			);
+			name = SnapTrack;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* SnapTrack */ = {
 			isa = PBXGroup;
 			children = (
@@ -55,44 +63,27 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				CCBD7DAFED81436EB0E06E58 /* GoogleService-Info.plist */,
-				428C98B8CC7E7C273B00EB12 /* PrivacyInfo.xcprivacy */,
+				44D8A7C075A94C3F8DCD516D /* GoogleService-Info.plist */,
+				D9F6E19D20DE3CBF44C292C2 /* PrivacyInfo.xcprivacy */,
 			);
 			name = SnapTrack;
 			sourceTree = "<group>";
 		};
-		29BC95B3FBE49BDDEA680DBE /* SnapTrack */ = {
+		1BA225C591BF03390B36EE17 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				6D6204267E06FDB975DBF7C3 /* ExpoModulesProvider.swift */,
+				1179BF33D079AAF4DA4602C2 /* SnapTrack */,
 			);
-			name = SnapTrack;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				99DE857738248B0A2ADD5C3F /* libPods-SnapTrack.a */,
+				0FFB38FB93B30F9D23716D69 /* libPods-SnapTrack.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		36599B3B688858F0245DC8B7 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				29BC95B3FBE49BDDEA680DBE /* SnapTrack */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		3A3AB4A5D688F7602B3C2CA2 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				162975469533B3DB71D41AF1 /* Pods-SnapTrack.debug.xcconfig */,
-				C38914B9D9D2559D176BEEEC /* Pods-SnapTrack.release.xcconfig */,
-			);
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -109,8 +100,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				3A3AB4A5D688F7602B3C2CA2 /* Pods */,
-				36599B3B688858F0245DC8B7 /* ExpoModulesProviders */,
+				9556A40988F96D28AFBF3441 /* Pods */,
+				1BA225C591BF03390B36EE17 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -123,6 +114,15 @@
 				13B07F961A680F5B00A75B9A /* SnapTrack.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		9556A40988F96D28AFBF3441 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				94D14481FA4A7D6DE5529A19 /* Pods-SnapTrack.debug.xcconfig */,
+				B97492F4C222309B3EEB8BD8 /* Pods-SnapTrack.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -142,13 +142,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "SnapTrack" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				48B62724C6949118C575DA3F /* [Expo] Configure project */,
+				B9B6A7DDC9243F83957FB608 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				950C5CEB07FBB7B9A922A2BD /* [CP] Embed Pods Frameworks */,
+				0053C0F714D84F86299F7DFD /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -198,14 +198,32 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				637EB66D589A432F94FA9887 /* GoogleService-Info.plist in Resources */,
-				96BF72140C269CDFDD7EA4C6 /* PrivacyInfo.xcprivacy in Resources */,
+				09C2B5DEB22648258F7F0004 /* GoogleService-Info.plist in Resources */,
+				9C24531BF3CC3F41693CA6F7 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		0053C0F714D84F86299F7DFD /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-SnapTrack/Pods-SnapTrack-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SnapTrack/Pods-SnapTrack-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -242,25 +260,6 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		48B62724C6949118C575DA3F /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-SnapTrack/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -314,23 +313,24 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SnapTrack/Pods-SnapTrack-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		950C5CEB07FBB7B9A922A2BD /* [CP] Embed Pods Frameworks */ = {
+		B9B6A7DDC9243F83957FB608 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SnapTrack/Pods-SnapTrack-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			inputFileListPaths = (
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SnapTrack/Pods-SnapTrack-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-SnapTrack/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -340,7 +340,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				E0122322CBCA679635A303C0 /* ExpoModulesProvider.swift in Sources */,
+				F74DB2B39B0C45E2876BA458 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -349,12 +349,12 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 162975469533B3DB71D41AF1 /* Pods-SnapTrack.debug.xcconfig */;
+			baseConfigurationReference = 94D14481FA4A7D6DE5529A19 /* Pods-SnapTrack.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = SnapTrack/SnapTrack.entitlements;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = KYJRJPT7MW;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -362,14 +362,12 @@
 					"FB_SONARKIT_ENABLED=1",
 				);
 				INFOPLIST_FILE = SnapTrack/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Snaptrack Mobile";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -388,22 +386,20 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C38914B9D9D2559D176BEEEC /* Pods-SnapTrack.release.xcconfig */;
+			baseConfigurationReference = B97492F4C222309B3EEB8BD8 /* Pods-SnapTrack.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = SnapTrack/SnapTrack.entitlements;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = KYJRJPT7MW;
 				INFOPLIST_FILE = SnapTrack/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Snaptrack Mobile";
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -474,7 +470,10 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -529,7 +528,10 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

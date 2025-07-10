@@ -92,8 +92,8 @@ android {
         applicationId 'com.snaptrack.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.1.0"
+        versionCode 5
+        versionName "1.2.1"
     }
     signingConfigs {
         debug {
@@ -115,12 +115,6 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
-        }
-    }
-    
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            outputFileName = "SnapTrack-${variant.versionName}.apk"
         }
     }
     packagingOptions {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, FlatList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, shadows, spacing } from '../styles/theme';
 import { Receipt } from '../types';
@@ -34,16 +34,24 @@ export default function RecentReceipts({
 
   // Update local state when receipts prop changes
   React.useEffect(() => {
-    setLocalReceipts(receipts);
+    // Deduplicate receipts by ID to ensure unique keys
+    const uniqueReceipts = receipts.filter((receipt, index, self) => 
+      index === self.findIndex(r => r.id === receipt.id)
+    );
+    setLocalReceipts(uniqueReceipts);
   }, [receipts]);
 
   // Handle receipt updates
   const handleUpdateReceipt = (updatedReceipt: Receipt) => {
-    setLocalReceipts(prev => 
-      prev.map(receipt => 
+    setLocalReceipts(prev => {
+      const updated = prev.map(receipt => 
         receipt.id === updatedReceipt.id ? updatedReceipt : receipt
-      )
-    );
+      );
+      // Ensure no duplicates after update
+      return updated.filter((receipt, index, self) => 
+        index === self.findIndex(r => r.id === receipt.id)
+      );
+    });
     onUpdateReceipt?.(updatedReceipt);
   };
 
@@ -180,6 +188,12 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title3,
     color: colors.textPrimary,
+    fontWeight: '600',
+    // Platform-specific left margin to match card margins
+    marginLeft: Platform.select({
+      ios: 20,     // Match iOS card margin
+      android: 16, // Match Android card margin
+    }),
   },
   flatListContent: {
     paddingBottom: spacing.sm, // Reduced since footer provides visual boundary

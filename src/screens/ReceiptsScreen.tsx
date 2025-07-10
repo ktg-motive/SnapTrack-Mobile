@@ -30,6 +30,7 @@ export default function ReceiptsScreen() {
   const [isConnected, setIsConnected] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredReceipts, setFilteredReceipts] = useState<Receipt[]>([]);
+  const [totalReceiptCount, setTotalReceiptCount] = useState(0); // Track total count from API
   
   // Modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -91,6 +92,7 @@ export default function ReceiptsScreen() {
         const offlineReceipts = await offlineStorage.getReceipts();
         setReceipts(offlineReceipts);
         setFilteredReceipts(offlineReceipts);
+        setTotalReceiptCount(offlineReceipts.length); // Set total count for offline mode
         setIsLoading(false);
         return;
       }
@@ -99,10 +101,15 @@ export default function ReceiptsScreen() {
       const newReceipts = response.data || [];
       const totalPages = response.pages || 1;
       const currentPageNum = response.page || 1;
+      const totalCount = response.total || response.pagination?.total_count || newReceipts.length;
       
       console.log('📝 Full receipts response:', JSON.stringify(response, null, 2));
       console.log(`📝 Loaded ${newReceipts.length} receipts`);
       console.log(`📝 Page: ${currentPageNum} of ${totalPages}`);
+      console.log(`📝 Total count: ${totalCount}`);
+      
+      // Update total count from API response
+      setTotalReceiptCount(totalCount);
       
       if (append) {
         setReceipts(prev => [...prev, ...newReceipts]);
@@ -125,6 +132,7 @@ export default function ReceiptsScreen() {
         const offlineReceipts = await offlineStorage.getReceipts();
         setReceipts(offlineReceipts);
         setFilteredReceipts(offlineReceipts);
+        setTotalReceiptCount(offlineReceipts.length); // Set total count for offline fallback
       }
     } finally {
       setIsLoading(false);
@@ -169,7 +177,7 @@ export default function ReceiptsScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Receipts</Text>
         <Text style={styles.headerSubtitle}>
-          {receipts.length} receipt{receipts.length !== 1 ? 's' : ''} tracked
+          {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
         </Text>
       </View>
 

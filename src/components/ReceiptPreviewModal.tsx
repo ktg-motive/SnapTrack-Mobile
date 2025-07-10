@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -9,39 +9,380 @@ import {
   Dimensions,
   SafeAreaView,
   StatusBar,
+  ScrollView,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Receipt } from '../types';
-import { theme } from '../styles/theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../styles/theme';
 
 interface ReceiptPreviewModalProps {
   receipt: Receipt | null;
   isVisible: boolean;
   onClose: () => void;
+  onEdit?: (receipt: Receipt) => void;
+  onDelete?: (receipt: Receipt) => void;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
-  receipt,
-  isVisible,
-  onClose,
-}) => {
-  if (!receipt) return null;
+// Smart Image Display Component
+const ReceiptImageSection: React.FC<{
+  imageUri: string | undefined;
+  onZoom: () => void;
+}> = ({ imageUri, onZoom }) => {
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [loading, setLoading] = useState(true);
+  const screenWidth = SCREEN_WIDTH;
+  const maxImageHeight = screenWidth * 1.4; // Increased for portrait receipts
 
+  useEffect(() => {
+    if (imageUri) {
+      setLoading(true);
+      
+      Image.getSize(
+        imageUri,
+        (originalWidth, originalHeight) => {
+          // Calculate optimal display size maintaining aspect ratio
+          const aspectRatio = originalHeight / originalWidth;
+          const availableWidth = screenWidth - (spacing.md * 2);
+          
+          // For portrait receipts (aspect ratio > 1), limit height
+          // For landscape receipts (aspect ratio < 1), limit width
+          let displayWidth = availableWidth;
+          let displayHeight = displayWidth * aspectRatio;
+          
+          // If the calculated height is too tall, constrain by height instead
+          if (displayHeight > maxImageHeight) {
+            displayHeight = maxImageHeight;
+            displayWidth = displayHeight / aspectRatio;
+          }
+          
+          setImageSize({
+            width: displayWidth,
+            height: displayHeight,
+          });
+          setLoading(false);
+        },
+        (error) => {
+          console.error('Failed to get image size:', error);
+          // Fallback to default size
+          const fallbackWidth = screenWidth - (spacing.md * 2);
+          setImageSize({
+            width: fallbackWidth,
+            height: fallbackWidth * 1.2, // Assume portrait aspect ratio
+          });
+          setLoading(false);
+        }
+      );
+    }
+  }, [imageUri, screenWidth, maxImageHeight]);
+
+  if (!imageUri) {
+    return (
+      <View style={styles.noImageContainer}>
+        <Ionicons name="document-outline" size={64} color={colors.textMuted} />
+        <Text style={styles.noImageText}>No receipt image available</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.imageContainer}>
+        <View style={[styles.loadingImageContainer, { height: maxImageHeight }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingImageText}>Loading receipt image...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.imageContainer}>
+      <ScrollView 
+        style={[styles.imageScrollView, { 
+          height: imageSize.height || maxImageHeight,
+          width: '100%'
+        }]}
+        contentContainerStyle={[styles.imageScrollContent, {
+          width: imageSize.width,
+          height: imageSize.height,
+        }]}
+        minimumZoomScale={1}
+        maximumZoomScale={3}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        centerContent={true}
+        bouncesZoom={true}
+        pinchGestureEnabled={true}
+        scrollEnabled={true}
+        onScroll={(event) => {
+          // Track zoom level for smooth interaction
+          const { zoomScale } = event.nativeEvent;
+          // Could add zoom level state here if needed for UI feedback
+        }}
+        scrollEventThrottle={16}
+      >
+        <Image
+          source={{ uri: imageUri }}
+          style={{
+            width: imageSize.width,
+            height: imageSize.height,
+          }}
+          resizeMode="stretch"
+          onLoad={() => {/* Image loaded successfully */}}
+          onError={(error) => console.error('Image load error:', error)}
+        />
+      </ScrollView>
+      
+      <View style={styles.zoomHint}>
+        <Ionicons name="search" size={16} color={colors.textMuted} />
+        <Text style={styles.zoomHintText}>Pinch to zoom</Text>
+      </View>
+    </View>
+  );
+};
+
+// Detail Row Component
+const DetailRow: React.FC<{
+  icon: string;
+  label: string;
+  value: string;
+  confidence?: number;
+  isHighlight?: boolean;
+  badgeColor?: string;
+}> = ({ icon, label, value, confidence, isHighlight, badgeColor }) => {
+  // Extra defensive value processing
+  let safeValue = '';
+  try {
+    if (value === null || value === undefined) {
+      safeValue = '';
+    } else if (typeof value === 'string') {
+      safeValue = value;
+    } else if (typeof value === 'number') {
+      safeValue = String(value);
+    } else if (typeof value === 'boolean') {
+      safeValue = String(value);
+    } else if (Array.isArray(value)) {
+      safeValue = value.join(', ');
+    } else {
+      safeValue = String(value);
+    }
+  } catch (error) {
+    console.error('DetailRow value conversion error:', error, value);
+    safeValue = 'Invalid value';
+  }
+
+  const safeLabel = String(label || '');
+  const safeIcon = String(icon || 'help-outline');
+  
+  return (
+    <View style={styles.detailRow}>
+      <View style={styles.detailLeft}>
+        <Ionicons name={safeIcon as any} size={16} color={colors.textSecondary} />
+        <Text style={styles.detailLabel}>{safeLabel}:</Text>
+      </View>
+      <View style={styles.detailRight}>
+        <Text style={[
+          styles.detailValue,
+          isHighlight && styles.detailValueHighlight
+        ]}>
+          {safeValue}
+        </Text>
+        {badgeColor ? (
+          <View style={[styles.entityBadge, { backgroundColor: badgeColor }]} />
+        ) : null}
+        {(confidence && typeof confidence === 'number' && confidence < 85) ? (
+          <Ionicons name="warning-outline" size={14} color={colors.warning} />
+        ) : null}
+      </View>
+    </View>
+  );
+};
+
+// Confidence Indicator Component
+const ConfidenceIndicator: React.FC<{ overall: number }> = ({ overall }) => {
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.85) return theme.colors.success;
-    if (confidence >= 0.70) return theme.colors.warning;
-    return theme.colors.error;
+    if (confidence >= 85) return colors.success;
+    if (confidence >= 70) return colors.warning;
+    return colors.error;
   };
 
-  const getConfidenceText = (confidence: number) => {
-    if (confidence >= 0.85) return 'High Confidence';
-    if (confidence >= 0.70) return 'Medium Confidence';
-    return 'Low Confidence';
+  const getConfidenceLabel = (confidence: number) => {
+    if (confidence >= 85) return 'High';
+    if (confidence >= 70) return 'Medium';
+    return 'Low';
+  };
+
+  // Ensure overall is a valid number
+  const safeOverall = typeof overall === 'number' && !isNaN(overall) ? overall : 0;
+  const confidencePercentage = Math.round(safeOverall * 100);
+
+  return (
+    <View style={styles.confidenceCard}>
+      <View style={styles.confidenceHeader}>
+        <Ionicons name="analytics-outline" size={20} color={getConfidenceColor(confidencePercentage)} />
+        <Text style={styles.confidenceTitle}>OCR Confidence</Text>
+      </View>
+      
+      <View style={styles.confidenceContent}>
+        <Text style={[
+          styles.confidencePercentage,
+          { color: getConfidenceColor(confidencePercentage) }
+        ]}>
+          {confidencePercentage}%
+        </Text>
+        <Text style={[
+          styles.confidenceLabel,
+          { color: getConfidenceColor(confidencePercentage) }
+        ]}>
+          {getConfidenceLabel(confidencePercentage)}
+        </Text>
+      </View>
+      
+      {confidencePercentage < 85 ? (
+        <Text style={styles.confidenceWarning}>
+          Consider manually verifying the extracted details
+        </Text>
+      ) : null}
+    </View>
+  );
+};
+
+// Smart Actions Bar Component
+const SmartActionsBar: React.FC<{
+  receipt: Receipt;
+  onEdit?: (receipt: Receipt) => void;
+  onDelete?: (receipt: Receipt) => void;
+  onClose: () => void;
+}> = ({ receipt, onEdit, onDelete, onClose }) => {
+  const handleEdit = () => {
+    onEdit?.(receipt);
+    onClose();
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Receipt',
+      'Are you sure you want to delete this receipt? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            onDelete?.(receipt);
+            onClose();
+          }
+        }
+      ]
+    );
   };
 
   return (
+    <View style={styles.actionsContainer}>
+      {onEdit ? (
+        <TouchableOpacity style={[styles.actionButton, styles.primaryAction]} onPress={handleEdit}>
+          <Ionicons name="pencil" size={16} color="white" />
+          <Text style={styles.actionButtonText}>Edit</Text>
+        </TouchableOpacity>
+      ) : null}
+      
+      <TouchableOpacity style={[styles.actionButton, styles.secondaryAction]} onPress={onClose}>
+        <Ionicons name="close" size={16} color={colors.textPrimary} />
+        <Text style={[styles.actionButtonText, { color: colors.textPrimary }]}>Close</Text>
+      </TouchableOpacity>
+      
+      {onDelete ? (
+        <TouchableOpacity style={[styles.actionButton, styles.dangerAction]} onPress={handleDelete}>
+          <Ionicons name="trash-outline" size={16} color={colors.error} />
+          <Text style={[styles.actionButtonText, { color: colors.error }]}>Delete</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+};
+
+// Get entity color helper
+const getEntityColor = (entityName: string) => {
+  // Simple color mapping - in production this would use the same logic as the web app
+  const colors_map: { [key: string]: string } = {
+    'Personal': colors.primary,
+    'Business': '#4CAF50',
+    'Travel': '#FF9800',
+    'Family': '#9C27B0',
+  };
+  return colors_map[entityName] || colors.primary;
+};
+
+export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = (props) => {
+  // Completely avoid destructuring in parameters - extract everything inside
+  const receipt = props && props.receipt ? props.receipt : null;
+  const isVisible = props && typeof props.isVisible === 'boolean' ? props.isVisible : false;
+  const onClose = props && typeof props.onClose === 'function' ? props.onClose : () => {};
+  const onEdit = props && typeof props.onEdit === 'function' ? props.onEdit : undefined;
+  const onDelete = props && typeof props.onDelete === 'function' ? props.onDelete : undefined;
+  
+  const [imageZoomed, setImageZoomed] = useState(false);
+
+  // Component is rendering properly
+
+  // More comprehensive validation
+  if (!isVisible) {
+    return null;
+  }
+
+  if (!receipt || !receipt.id) {
+    console.log('ReceiptPreviewModal: Invalid receipt data', {
+      receipt,
+      hasReceipt: !!receipt,
+      receiptId: receipt?.id,
+      receiptKeys: receipt ? Object.keys(receipt) : 'null'
+    });
+    return (
+      <Modal
+        visible={isVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={onClose}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={onClose} 
+              style={styles.headerButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Error</Text>
+              <Text style={styles.headerSubtitle}>No receipt data available</Text>
+            </View>
+            <View style={styles.headerButton} />
+          </View>
+          <View style={styles.content}>
+            <View style={styles.noImageContainer}>
+              <Ionicons name="alert-circle-outline" size={64} color={colors.textMuted} />
+              <Text style={styles.noImageText}>Unable to load receipt</Text>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  }
+
+  const handleZoom = () => {
+    setImageZoomed(true);
+  };
+
+  // Wrap the entire render in a try-catch for debugging
+  try {
+    return (
     <Modal
       visible={isVisible}
       animationType="slide"
@@ -49,7 +390,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="black" />
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
         
         {/* Header */}
         <View style={styles.header}>
@@ -57,132 +398,148 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = ({
             onPress={onClose} 
             style={styles.headerButton}
             activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close" size={24} color="white" />
+            <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
           
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Receipt</Text>
             <Text style={styles.headerSubtitle}>
-              ${receipt.amount.toFixed(2)} • {new Date(receipt.date).toLocaleDateString()}
+              ${typeof receipt.amount === 'number' ? receipt.amount.toFixed(2) : '0.00'} • {receipt.date ? new Date(receipt.date).toLocaleDateString() : new Date().toLocaleDateString()}
             </Text>
           </View>
 
-          {/* Removed download functionality to fix build issues */}
           <View style={styles.headerButton} />
         </View>
 
-        {/* Receipt Image */}
-        <View style={styles.imageContainer}>
-          {receipt.receipt_url ? (
-            <Image 
-              source={{ uri: receipt.receipt_url }}
-              style={styles.receiptImage}
-              resizeMode="contain"
-            />
-          ) : receipt.extraction_method === 'text' ? (
-            <View style={styles.textReceiptContainer}>
-              <View style={styles.textReceiptCard}>
-                <Ionicons name="mail-outline" size={48} color={theme.colors.primary} />
-                <Text style={styles.textReceiptTitle}>Email Receipt</Text>
-                <Text style={styles.textReceiptSubtitle}>
-                  Processed from email content
-                </Text>
-                
-                {/* Email Subject */}
-                {receipt.email_subject && (
-                  <View style={styles.emailSubjectContainer}>
-                    <Text style={styles.emailSubjectLabel}>Email Subject:</Text>
-                    <Text style={styles.emailSubjectText}>{receipt.email_subject}</Text>
-                  </View>
-                )}
-                
-                {/* Receipt Summary */}
-                <View style={styles.receiptSummary}>
-                  <Text style={styles.summaryAmount}>${receipt.amount.toFixed(2)}</Text>
-                  <Text style={styles.summaryVendor}>{receipt.vendor}</Text>
-                  <Text style={styles.summaryDate}>
-                    {new Date(receipt.date).toLocaleDateString()}
-                  </Text>
-                </View>
-                
-                <View style={styles.extractionBadge}>
-                  <Text style={styles.badgeText}>Text Processing</Text>
-                </View>
-              </View>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Smart Image Display */}
+          <ReceiptImageSection 
+            imageUri={receipt.receipt_url} 
+            onZoom={handleZoom}
+          />
+
+          {/* Enhanced Details Section */}
+          <View style={styles.detailsContainer}>
+            {/* Primary Details Card */}
+            <View style={styles.detailCard}>
+              <Text style={styles.sectionTitle}>Extracted Details</Text>
+              
+              <DetailRow 
+                icon="storefront-outline"
+                label="Vendor"
+                value={String(receipt.vendor || 'Unknown')}
+                confidence={receipt.confidence_score ? receipt.confidence_score * 100 : undefined}
+              />
+              <DetailRow 
+                icon="cash-outline"
+                label="Amount"
+                value={`$${typeof receipt.amount === 'number' ? receipt.amount.toFixed(2) : '0.00'}`}
+                confidence={receipt.confidence_score ? receipt.confidence_score * 100 : undefined}
+                isHighlight
+              />
+              <DetailRow 
+                icon="calendar-outline"
+                label="Date"
+                value={receipt.date ? new Date(receipt.date).toLocaleDateString() : new Date().toLocaleDateString()}
+                confidence={receipt.confidence_score ? receipt.confidence_score * 100 : undefined}
+              />
+              {(receipt.entity && String(receipt.entity).trim()) ? (
+                <DetailRow 
+                  icon="business-outline"
+                  label="Entity"
+                  value={String(receipt.entity)}
+                  badgeColor={getEntityColor(String(receipt.entity))}
+                />
+              ) : null}
+              {(receipt.tags && Array.isArray(receipt.tags) && receipt.tags.length > 0) ? (
+                <DetailRow 
+                  icon="pricetag-outline"
+                  label="Tags"
+                  value={receipt.tags.filter(tag => tag && tag.trim()).join(", ") || 'No tags'}
+                />
+              ) : null}
+              {(receipt.notes && String(receipt.notes).trim()) ? (
+                <DetailRow 
+                  icon="document-text-outline"
+                  label="Notes"
+                  value={String(receipt.notes)}
+                />
+              ) : null}
             </View>
-          ) : (
-            <View style={styles.noImageContainer}>
-              <Ionicons name="document-outline" size={64} color={theme.colors.outline} />
-              <Text style={styles.noImageText}>No receipt image available</Text>
-            </View>
-          )}
-        </View>
 
-        {/* Receipt Details Footer */}
-        <View style={styles.footer}>
-          {/* OCR Confidence Indicator - Hidden to avoid scaring users with low confidence scores */}
-
-          {/* Receipt Metadata */}
-          <View style={styles.metadataContainer}>
-            {receipt.vendor && (
-              <View style={styles.metadataItem}>
-                <Text style={styles.metadataLabel}>Vendor:</Text>
-                <Text style={styles.metadataValue}>{receipt.vendor}</Text>
-              </View>
-            )}
-
-            {receipt.entity && (
-              <View style={styles.metadataItem}>
-                <Text style={styles.metadataLabel}>Entity:</Text>
-                <Text style={styles.metadataValue}>{receipt.entity}</Text>
-              </View>
-            )}
-
-            {receipt.tags && receipt.tags.length > 0 && (
-              <View style={styles.metadataItem}>
-                <Text style={styles.metadataLabel}>Tags:</Text>
-                <Text style={styles.metadataValue}>{receipt.tags.join(', ')}</Text>
-              </View>
-            )}
-
-            {receipt.notes && (
-              <View style={styles.metadataItem}>
-                <Text style={styles.metadataLabel}>Notes:</Text>
-                <Text style={styles.metadataValue}>{receipt.notes}</Text>
-              </View>
-            )}
+            {/* Confidence Indicator */}
+            {(receipt.confidence_score && typeof receipt.confidence_score === 'number' && receipt.confidence_score > 0) ? (
+              <ConfidenceIndicator overall={receipt.confidence_score} />
+            ) : null}
           </View>
+        </ScrollView>
 
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity onPress={onClose} style={styles.fullWidthCloseButton}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* Smart Actions Bar */}
+        <SmartActionsBar 
+          receipt={receipt}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onClose={onClose}
+        />
       </SafeAreaView>
     </Modal>
-  );
+    );
+  } catch (error) {
+    console.error('ReceiptPreviewModal render error:', error);
+    return (
+      <Modal
+        visible={isVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={onClose}
+      >
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+          <View style={styles.header}>
+            <TouchableOpacity 
+              onPress={onClose} 
+              style={styles.headerButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Error</Text>
+              <Text style={styles.headerSubtitle}>Failed to load receipt preview</Text>
+            </View>
+            <View style={styles.headerButton} />
+          </View>
+          <View style={styles.content}>
+            <View style={styles.noImageContainer}>
+              <Ionicons name="alert-circle-outline" size={64} color={colors.textMuted} />
+              <Text style={styles.noImageText}>Render error occurred</Text>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: colors.background,
   },
+  
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: colors.surface,
   },
   headerButton: {
-    padding: theme.spacing.md,
+    padding: spacing.md,
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
@@ -193,211 +550,210 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
+    ...typography.title3,
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
+    ...typography.body2,
+    color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
-  imageContainer: {
+  
+  // Content
+  content: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  
+  // Image Section
+  imageContainer: {
+    backgroundColor: colors.surface,
+    margin: spacing.md,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  imageScrollView: {
+    backgroundColor: colors.surface,
+  },
+  imageScrollContent: {
     alignItems: 'center',
-    backgroundColor: 'black',
-    borderTopLeftRadius: theme.borderRadius.lg,
-    borderTopRightRadius: theme.borderRadius.lg,
-    overflow: 'hidden', // Ensures image respects the rounded corners
+    justifyContent: 'center',
+  },
+  imageTouch: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   receiptImage: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT * 0.7,
+    alignSelf: 'center',
+  },
+  loadingImageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+  },
+  loadingImageText: {
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  zoomHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  zoomHintText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginLeft: spacing.xs,
   },
   noImageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
+    padding: spacing.xl,
+    minHeight: 200,
   },
   noImageText: {
-    fontSize: 16,
-    color: theme.colors.outline,
-    marginTop: theme.spacing.md,
+    ...typography.body,
+    color: colors.textMuted,
+    marginTop: spacing.md,
     textAlign: 'center',
-  },
-  footer: {
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.lg,
-    borderTopLeftRadius: theme.borderRadius.lg,
-    borderTopRightRadius: theme.borderRadius.lg,
-  },
-  confidenceContainer: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  confidenceIndicator: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-  },
-  confidenceText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white',
-  },
-  confidencePercentage: {
-    fontSize: 12,
-    color: 'white',
-    marginTop: 2,
-  },
-  metadataContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  metadataItem: {
-    flexDirection: 'row',
-    marginBottom: theme.spacing.sm,
-    alignItems: 'flex-start',
-  },
-  metadataLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.colors.onSurfaceVariant,
-    width: 80,
-    flexShrink: 0,
-  },
-  metadataValue: {
-    fontSize: 14,
-    color: theme.colors.onSurface,
-    flex: 1,
-    lineHeight: 20,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-  editButton: {
-    flex: 1,
-    backgroundColor: theme.colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-  },
-  editButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-    marginLeft: theme.spacing.xs,
-  },
-  closeButton: {
-    flex: 0.4,
-    backgroundColor: theme.colors.outline,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: 'white',
-  },
-  fullWidthCloseButton: {
-    width: '100%',
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
   },
   
-  // Text receipt styles
-  textReceiptContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.lg,
+  // Details Section
+  detailsContainer: {
+    padding: spacing.md,
   },
-  textReceiptCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 300,
+  detailCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    ...shadows.card,
   },
-  textReceiptTitle: {
-    fontSize: 20,
+  sectionTitle: {
+    ...typography.title3,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
     fontWeight: '600',
-    color: theme.colors.onSurface,
-    marginTop: theme.spacing.md,
-    textAlign: 'center',
   },
-  textReceiptSubtitle: {
-    fontSize: 14,
-    color: theme.colors.onSurfaceVariant,
-    marginTop: theme.spacing.xs,
-    textAlign: 'center',
-  },
-  emailSubjectContainer: {
-    marginTop: theme.spacing.lg,
-    width: '100%',
-  },
-  emailSubjectLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: theme.colors.onSurfaceVariant,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  emailSubjectText: {
-    fontSize: 14,
-    color: theme.colors.onSurface,
-    marginTop: theme.spacing.xs,
-    lineHeight: 20,
-  },
-  receiptSummary: {
-    marginTop: theme.spacing.lg,
+  
+  // Detail Rows
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surface,
   },
-  summaryAmount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    textAlign: 'center',
+  detailLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
-  summaryVendor: {
-    fontSize: 16,
+  detailLabel: {
+    ...typography.body2,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
+  },
+  detailRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailValue: {
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+  detailValueHighlight: {
+    ...typography.title3,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  entityBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: spacing.sm,
+  },
+  
+  // Confidence Indicator
+  confidenceCard: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    ...shadows.card,
+  },
+  confidenceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  confidenceTitle: {
+    ...typography.title3,
+    color: colors.textPrimary,
+    marginLeft: spacing.sm,
+  },
+  confidenceContent: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: spacing.sm,
+  },
+  confidencePercentage: {
+    ...typography.title1,
+    fontWeight: '700',
+    marginRight: spacing.sm,
+  },
+  confidenceLabel: {
+    ...typography.body,
     fontWeight: '500',
-    color: theme.colors.onSurface,
-    marginTop: theme.spacing.xs,
-    textAlign: 'center',
   },
-  summaryDate: {
-    fontSize: 14,
-    color: theme.colors.onSurfaceVariant,
-    marginTop: theme.spacing.xs,
-    textAlign: 'center',
+  confidenceWarning: {
+    ...typography.body2,
+    color: colors.warning,
+    fontStyle: 'italic',
   },
-  extractionBadge: {
-    backgroundColor: theme.colors.primaryContainer,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    marginTop: theme.spacing.lg,
+  
+  // Actions
+  actionsContainer: {
+    flexDirection: 'row',
+    padding: spacing.md,
+    gap: spacing.sm,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.surface,
   },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: theme.colors.onPrimaryContainer,
-    textAlign: 'center',
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    minHeight: 44,
+  },
+  primaryAction: {
+    backgroundColor: colors.primary,
+  },
+  secondaryAction: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surface,
+  },
+  dangerAction: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
+  actionButtonText: {
+    ...typography.body,
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: spacing.xs,
   },
 });

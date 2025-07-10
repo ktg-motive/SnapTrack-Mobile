@@ -52,21 +52,43 @@ export async function optimizeImageForOCR(
     const originalInfo = await FileSystem.getInfoAsync(imageUri);
     const originalSize = originalInfo.exists ? originalInfo.size || 0 : 0;
 
-    console.log('📸 Optimizing image for OCR:', {
-      originalUri: imageUri,
-      originalSize: `${(originalSize / 1024 / 1024).toFixed(2)}MB`,
-      config
+    // Starting image optimization for OCR processing
+
+    // Get original image dimensions first
+    const imageInfo = await ImageManipulator.manipulateAsync(imageUri, [], {
+      format: ImageManipulator.SaveFormat.JPEG,
     });
 
-    // Apply image optimization
+    // Calculate resize dimensions that maintain aspect ratio
+    const originalWidth = imageInfo.width || config.maxWidth;
+    const originalHeight = imageInfo.height || config.maxHeight;
+    const aspectRatio = originalWidth / originalHeight;
+
+    let resizeWidth = config.maxWidth;
+    let resizeHeight = config.maxHeight;
+
+    // Scale down while maintaining aspect ratio
+    if (aspectRatio > 1) {
+      // Landscape or square - constrain by width
+      resizeWidth = Math.min(originalWidth, config.maxWidth);
+      resizeHeight = resizeWidth / aspectRatio;
+    } else {
+      // Portrait - constrain by height  
+      resizeHeight = Math.min(originalHeight, config.maxHeight);
+      resizeWidth = resizeHeight * aspectRatio;
+    }
+
+    // Resize calculation complete - maintaining aspect ratio
+
+    // Apply image optimization with proper aspect ratio
     const optimizedImage = await ImageManipulator.manipulateAsync(
       imageUri,
       [
-        // Resize to max dimensions (maintains aspect ratio)
+        // Resize maintaining aspect ratio
         {
           resize: {
-            width: config.maxWidth,
-            height: config.maxHeight,
+            width: Math.round(resizeWidth),
+            height: Math.round(resizeHeight),
           }
         }
       ],
@@ -83,13 +105,7 @@ export async function optimizeImageForOCR(
     
     const compressionRatio = originalSize > 0 ? optimizedSize / originalSize : 1;
 
-    console.log('✅ Image optimization complete:', {
-      originalSize: `${(originalSize / 1024 / 1024).toFixed(2)}MB`,
-      optimizedSize: `${(optimizedSize / 1024 / 1024).toFixed(2)}MB`,
-      compressionRatio: `${(compressionRatio * 100).toFixed(1)}%`,
-      savings: `${((1 - compressionRatio) * 100).toFixed(1)}%`,
-      newUri: optimizedImage.uri
-    });
+    // Image optimization complete
 
     return {
       uri: optimizedImage.uri,
@@ -127,7 +143,6 @@ export async function getOptimalConfig(imageUri: string): Promise<ImageOptimizat
 
     // Use aggressive compression for very large files (>8MB)
     if (sizeInMB > 8) {
-      console.log('📸 Large image detected, using aggressive compression');
       return AGGRESSIVE_OPTIMIZATION_CONFIG;
     }
 

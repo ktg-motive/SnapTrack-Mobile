@@ -25,6 +25,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "prebuildCommand": "npm run pre-release",
       "android": {
         "buildType": "apk"
       },
@@ -40,6 +41,15 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "kai@motiveinc.com",
+        "ascAppId": "6740468031",
+        "sku": "snaptrack-mobile"
+      },
+      "android": {
+        "track": "internal"
+      }
+    }
   }
 }

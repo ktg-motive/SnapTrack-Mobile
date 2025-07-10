@@ -140,7 +140,11 @@ export default function HomeScreen() {
         console.log('📝 Page:', currentPageNum, 'of', totalPages);
         
         // Always reset recent receipts since we're always fetching page 1
-        setRecentReceipts(receiptsData);
+        // Deduplicate receipts by ID as extra safety measure
+        const uniqueReceipts = receiptsData.filter((receipt, index, self) => 
+          index === self.findIndex(r => r.id === receipt.id)
+        );
+        setRecentReceipts(uniqueReceipts);
         setCurrentPage(1);
         
         setHasMoreReceipts(currentPageNum < totalPages);
@@ -187,7 +191,12 @@ export default function HomeScreen() {
       console.log('📝 Loaded more receipts:', receiptsData.length, 'receipts');
       console.log('📝 Page:', currentPageNum, 'of', totalPages);
       
-      setRecentReceipts(prev => [...prev, ...receiptsData]);
+      // Deduplicate receipts by ID to prevent duplicate keys
+      setRecentReceipts(prev => {
+        const existingIds = new Set(prev.map(receipt => receipt.id));
+        const newReceipts = receiptsData.filter(receipt => !existingIds.has(receipt.id));
+        return [...prev, ...newReceipts];
+      });
       setHasMoreReceipts(currentPageNum < totalPages);
     } catch (error) {
       console.error('❌ Failed to load more receipts:', error);
@@ -320,9 +329,16 @@ export default function HomeScreen() {
             setEditModalVisible(true);
           }}
           onPreviewReceipt={(receipt) => {
-            console.log('Preview receipt:', receipt.id);
-            setSelectedReceipt(receipt);
-            setPreviewModalVisible(true);
+            console.log('Preview receipt:', receipt.id, receipt);
+            if (receipt && receipt.id) {
+              setSelectedReceipt(receipt);
+              // Use setTimeout to ensure state is set before opening modal
+              setTimeout(() => {
+                setPreviewModalVisible(true);
+              }, 100);
+            } else {
+              console.error('Invalid receipt for preview:', receipt);
+            }
           }}
           onLoadMore={handleLoadMore}
           isLoadingMore={isLoadingMore}
@@ -389,7 +405,10 @@ export default function HomeScreen() {
         isVisible={previewModalVisible}
         onClose={() => {
           setPreviewModalVisible(false);
-          setSelectedReceipt(null);
+          // Clear selected receipt after a brief delay to prevent race conditions
+          setTimeout(() => {
+            setSelectedReceipt(null);
+          }, 300);
         }}
       />
 

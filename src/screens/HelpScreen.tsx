@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../types/navigation';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
@@ -27,6 +28,7 @@ interface HelpScreenProps {
 export default function HelpScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   const { onRestartOnboarding } = (route.params as HelpScreenProps) || {};
   const [categories, setCategories] = useState<HelpCategory[]>([]);
   const [articles, setArticles] = useState<HelpArticle[]>([]);
@@ -232,29 +234,26 @@ export default function HelpScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header with back button */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          {view !== 'categories' && (
-            <TouchableOpacity onPress={goBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          )}
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>
-              {view === 'categories' ? 'Help & Support' :
-               view === 'articles' ? (categories.find(c => c.key === selectedCategory)?.title || 'Articles') :
-               currentArticle?.title || 'Article'}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              {view === 'categories' ? 'Find answers to common questions about using SnapTrack' :
-               view === 'articles' ? `${articles.length} articles available` :
-               currentArticle?.help_categories.title || ''}
-            </Text>
-          </View>
+    <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? spacing.md : 0 }]}>
+      {/* Header removed - navigation stack handles it */}
+      
+      {/* Content Header for additional context */}
+      {view === 'categories' && (
+        <View style={styles.contentHeader}>
+          <Text style={styles.contentSubtitle}>
+            Find answers to common questions about using SnapTrack
+          </Text>
         </View>
-      </View>
+      )}
+
+      {view !== 'categories' && (
+        <View style={styles.contentHeader}>
+          <TouchableOpacity onPress={goBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -404,9 +403,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  contentHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  contentSubtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    lineHeight: 24,
+  },
   backButton: {
-    marginRight: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.sm,
+  },
+  backButtonText: {
+    ...typography.body,
+    color: colors.primary,
+    marginLeft: spacing.xs,
   },
   headerTextContainer: {
     flex: 1,

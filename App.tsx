@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider as PaperProvider } from 'react-native-paper';
@@ -150,7 +150,11 @@ export default function App() {
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
         <NavigationContainer ref={navigationRef}>
-          <StatusBar style="auto" />
+          <StatusBar 
+            style="dark" 
+            backgroundColor={colors.background}
+            translucent={false}
+          />
           <Stack.Navigator 
             initialRouteName="Main"
             screenOptions={{
@@ -209,8 +213,20 @@ export default function App() {
               options={{ 
                 title: 'Account',
                 headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
+                headerBackVisible: true,
+                headerBackTitleVisible: Platform.OS === 'ios',
+                headerBackTitle: 'Main', // Only shown on iOS
+                headerStyle: { 
+                  backgroundColor: colors.background,
+                  elevation: 0, // Remove shadow on Android
+                  shadowOpacity: 0, // Remove shadow on iOS
+                },
+                headerTintColor: colors.primary,
+                headerTitleStyle: {
+                  fontSize: 20,
+                  fontWeight: '600',
+                  color: colors.textPrimary,
+                },
               }} 
             />
             <Stack.Screen 
@@ -218,8 +234,20 @@ export default function App() {
               options={{ 
                 title: 'Settings',
                 headerShown: true,
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.textPrimary,
+                headerBackVisible: true,
+                headerBackTitleVisible: Platform.OS === 'ios',
+                headerBackTitle: 'Account', // Only shown on iOS
+                headerStyle: { 
+                  backgroundColor: colors.background,
+                  elevation: 0, // Remove shadow on Android
+                  shadowOpacity: 0, // Remove shadow on iOS
+                },
+                headerTintColor: colors.primary,
+                headerTitleStyle: {
+                  fontSize: 20,
+                  fontWeight: '600',
+                  color: colors.textPrimary,
+                },
               }} 
             >
               {(props) => (

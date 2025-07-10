@@ -9,9 +9,11 @@ import {
   Alert,
   SafeAreaView,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../styles/theme';
 import { authService } from '../services/authService';
 import { apiClient } from '../services/apiClient';
@@ -24,6 +26,7 @@ interface UserStats {
 
 export default function AccountScreen() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [user, setUser] = useState(authService.getCurrentUser());
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,11 +95,7 @@ export default function AccountScreen() {
   };
 
   const handleHelpAndDocs = () => {
-    // Navigate to Help tab
-    const parentNavigation = navigation.getParent();
-    if (parentNavigation) {
-      parentNavigation.navigate('HelpTab');
-    }
+    navigation.navigate('Help' as never);
   };
 
   const handleSettings = () => {
@@ -154,13 +153,10 @@ export default function AccountScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Account</Text>
-      </View>
+      {/* Header - Removed since navigation stack handles it */}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Section */}
@@ -265,20 +261,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background,
-  },
-  headerTitle: {
-    ...typography.title2,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
   content: {
     flex: 1,
+    // Platform-specific top padding adjustment
+    paddingTop: Platform.OS === 'android' ? spacing.md : 0,
   },
   profileSection: {
     alignItems: 'center',

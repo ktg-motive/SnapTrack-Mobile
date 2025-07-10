@@ -163,13 +163,13 @@ export default function ReviewScreen() {
   const createPreviewReceipt = (): Receipt => {
     return {
       id: uploadedReceipt?.id || 'preview',
-      vendor: expenseData.vendor,
+      vendor: String(expenseData.vendor || 'Unknown'),
       amount: parseFloat(expenseData.amount) || 0,
-      date: expenseData.date,
-      entity: expenseData.entity,
+      date: String(expenseData.date || new Date().toISOString()),
+      entity: String(expenseData.entity || ''),
       category: '',
       tags: normalizeTagsToArray(expenseData.tags),
-      notes: expenseData.notes,
+      notes: String(expenseData.notes || ''),
       confidence_score: expenseData.confidence_score || 0,
       receipt_url: getImageUrl(),
       created_at: new Date().toISOString(),
@@ -370,15 +370,17 @@ export default function ReviewScreen() {
         uploadedReceipt = {
           id: `sim_${Date.now()}`,
           expense: {
-            id: Math.floor(Math.random() * 10000), // Random real-looking ID
+            id: Math.floor(Math.random() * 10000).toString(), // Random real-looking ID
             vendor: 'Test Vendor',
             amount: 25.50,
             date: new Date().toISOString().split('T')[0],
-            tags: 'test, simulator',
-            confidence_score: 0.85,
-            ai_validated: true,
-            ai_reasoning: "Simulator fallback validated by AI"
+            entity: 'personal',
+            image_url: imageUri,
+            status: 'complete'
           },
+          confidence_score: 0.85,
+          ai_validated: true,
+          ai_reasoning: "Simulator fallback validated by AI",
           ai_validation: {
             validated: true,
             reasoning: "Simulator fallback validated by AI"
@@ -443,33 +445,33 @@ export default function ReviewScreen() {
       // Check for data in ALL possible locations in the response
       // Primary: Check the expense object from database (most reliable)
       // Secondary: Check extracted/corrected data from AI validation
-      const vendor = extractedData.vendor || 
-                     extractedData.corrected_vendor || 
-                     extractedData.parsed_vendor || 
-                     extractedData.vendor_name || 
-                     extractedData.business_name || 
-                     extractedData.merchant || '';
+      const vendor = (extractedData as any).vendor || 
+                     (extractedData as any).corrected_vendor || 
+                     (extractedData as any).parsed_vendor || 
+                     (extractedData as any).vendor_name || 
+                     (extractedData as any).business_name || 
+                     (extractedData as any).merchant || '';
                      
-      const amount = extractedData.amount || 
-                     extractedData.corrected_amount || 
-                     extractedData.parsed_amount || 
-                     extractedData.total_amount || 
-                     extractedData.total || 
-                     extractedData.price || '';
+      const amount = (extractedData as any).amount || 
+                     (extractedData as any).corrected_amount || 
+                     (extractedData as any).parsed_amount || 
+                     (extractedData as any).total_amount || 
+                     (extractedData as any).total || 
+                     (extractedData as any).price || '';
                      
-      const date = extractedData.expense_date || 
-                   extractedData.date || 
-                   extractedData.corrected_date || 
-                   extractedData.parsed_date || 
-                   extractedData.receipt_date || 
-                   extractedData.transaction_date || 
+      const date = (extractedData as any).expense_date || 
+                   (extractedData as any).date || 
+                   (extractedData as any).corrected_date || 
+                   (extractedData as any).parsed_date || 
+                   (extractedData as any).receipt_date || 
+                   (extractedData as any).transaction_date || 
                    new Date().toISOString().split('T')[0];
-      const tags = normalizeTagsToString(extractedData.tags || extractedData.parsed_tags || '');
-      const confidence = uploadedReceipt.confidence?.amount || extractedData.confidence_score || extractedData.validation_confidence || extractedData.confidence || 0;
+      const tags = normalizeTagsToString((extractedData as any).tags || (extractedData as any).parsed_tags || '');
+      const confidence = (uploadedReceipt as any).confidence?.amount || (extractedData as any).confidence_score || (extractedData as any).validation_confidence || (extractedData as any).confidence || 0;
       
       // Capture AI validation information
-      const aiValidated = uploadedReceipt.ai_validation?.validated || extractedData.ai_validated || false;
-      const aiReasoning = uploadedReceipt.ai_validation?.reasoning || extractedData.ai_reasoning || '';
+      const aiValidated = (uploadedReceipt as any).ai_validation?.validated || (extractedData as any).ai_validated || false;
+      const aiReasoning = (uploadedReceipt as any).ai_validation?.reasoning || (extractedData as any).ai_reasoning || '';
       
       console.log('🔍 Parsed values:', { vendor, amount, date, tags, confidence, aiValidated, aiReasoning });
       console.log('🔍 Setting form values - vendor:', vendor, 'amount:', amount);
