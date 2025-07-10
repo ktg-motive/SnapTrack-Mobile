@@ -173,7 +173,7 @@ get_release_type() {
     echo "2) Minor (New features)"
     echo "3) Patch (Bug fixes)"
     echo "4) Custom version"
-    echo -n "Enter choice (1-4): "
+    printf "Enter choice (1-4): "
     read -r choice
     
     case $choice in
@@ -191,7 +191,7 @@ get_platform_selection() {
     echo "1) Both iOS and Android"
     echo "2) iOS only"
     echo "3) Android only"
-    echo -n "Enter choice (1-3): "
+    printf "Enter choice (1-3): "
     read -r choice
     
     case $choice in
@@ -225,7 +225,7 @@ calculate_next_version() {
             echo "${major}.${minor}.$((patch + 1))"
             ;;
         "custom")
-            echo -n "Enter custom version (e.g., 1.2.3): "
+            printf "Enter custom version (e.g., 1.2.3): "
             read -r custom_version
             echo "$custom_version"
             ;;
