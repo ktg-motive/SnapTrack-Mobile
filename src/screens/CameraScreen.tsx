@@ -79,11 +79,17 @@ export default function CameraScreen() {
                   // Use a real receipt image for testing
                   const realReceiptImage = 'https://philip.greenspun.com/blog/wp-content/uploads/2024/04/2024-04-08-20.26.03-scaled.jpg';
                   
-                  navigation.navigate('Review', { 
-                    imageUri: realReceiptImage,
-                    source: 'camera'
-                    // Removed mockData to force real API calls in simulator
-                  });
+                  // Clear processing state before navigation
+                  setIsProcessing(false);
+                  
+                  // Small delay to ensure UI cleanup
+                  setTimeout(() => {
+                    navigation.navigate('Review', { 
+                      imageUri: realReceiptImage,
+                      source: 'camera'
+                      // Removed mockData to force real API calls in simulator
+                    });
+                  }, 100);
                 }
               }
             ]
@@ -105,15 +111,20 @@ export default function CameraScreen() {
             newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
           });
           
-          navigation.navigate('Review', { 
-            imageUri: optimizedResult.uri,
-            source: 'camera'
-          });
+          // Clear processing state before navigation
+          setIsProcessing(false);
+          
+          // Small delay to ensure UI cleanup
+          setTimeout(() => {
+            navigation.navigate('Review', { 
+              imageUri: optimizedResult.uri,
+              source: 'camera'
+            });
+          }, 100);
         }
       } catch (error) {
-        Alert.alert('Error', 'Failed to take picture. Please try again.');
-      } finally {
         setIsProcessing(false);
+        Alert.alert('Error', 'Failed to take picture. Please try again.');
       }
     }
   };
@@ -133,11 +144,14 @@ export default function CameraScreen() {
               // Use a real receipt image for testing
               const realReceiptImage = 'https://philip.greenspun.com/blog/wp-content/uploads/2024/04/2024-04-08-20.26.03-scaled.jpg';
               
-              navigation.navigate('Review', { 
-                imageUri: realReceiptImage,
-                source: 'library'
-                // Removed mockData to force real API calls in simulator
-              });
+              // Small delay to ensure UI cleanup
+              setTimeout(() => {
+                navigation.navigate('Review', { 
+                  imageUri: realReceiptImage,
+                  source: 'library'
+                  // Removed mockData to force real API calls in simulator
+                });
+              }, 100);
             }
           }
         ]
@@ -162,10 +176,13 @@ export default function CameraScreen() {
         newSize: `${(optimizedResult.optimizedSize / 1024 / 1024).toFixed(2)}MB`
       });
       
-      navigation.navigate('Review', { 
-        imageUri: optimizedResult.uri,
-        source: 'library'
-      });
+      // Small delay to ensure UI cleanup
+      setTimeout(() => {
+        navigation.navigate('Review', { 
+          imageUri: optimizedResult.uri,
+          source: 'library'
+        });
+      }, 100);
     }
   };
 

@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, shadows } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
+import { VERSION_INFO } from '../utils/version';
 
 export default function AboutScreen() {
-  // Static version info - can be updated manually or through build process
-  const appVersion = '1.0.0';
-  const buildNumber = '1';
+  // Dynamic version info from Expo config
+  const appVersion = VERSION_INFO.version;
+  const buildNumber = VERSION_INFO.buildNumber;
 
   const openURL = (url: string) => {
     Linking.openURL(url);

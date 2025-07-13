@@ -473,8 +473,18 @@ export default function ReviewScreen() {
       const aiValidated = (uploadedReceipt as any).ai_validation?.validated || (extractedData as any).ai_validated || false;
       const aiReasoning = (uploadedReceipt as any).ai_validation?.reasoning || (extractedData as any).ai_reasoning || '';
       
-      console.log('🔍 Parsed values:', { vendor, amount, date, tags, confidence, aiValidated, aiReasoning });
+      // Extract notes field (including AI-generated notes)
+      const notes = (extractedData as any).notes || 
+                    (extractedData as any).ai_notes || 
+                    (extractedData as any).generated_notes ||
+                    (extractedData as any).description ||
+                    '';
+      
+      console.log('🔍 Parsed values:', { vendor, amount, date, tags, confidence, aiValidated, aiReasoning, notes });
       console.log('🔍 Setting form values - vendor:', vendor, 'amount:', amount);
+      if (notes) {
+        console.log('🤖 AI-generated notes detected:', notes);
+      }
       
       // Additional validation logging
       if (!vendor) {
@@ -492,6 +502,7 @@ export default function ReviewScreen() {
         amount: amount?.toString() || '',
         date: date,
         tags: tags || '',
+        notes: notes || '',
         confidence_score: confidence,
         ai_validated: aiValidated,
         ai_reasoning: aiReasoning,
