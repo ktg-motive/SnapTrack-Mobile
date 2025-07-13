@@ -16,24 +16,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../styles/theme';
 import { authService } from '../services/authService';
-import { apiClient } from '../services/apiClient';
-
-interface UserStats {
-  totalReceipts: number;
-  totalAmount: number;
-  currentMonthReceipts: number;
-}
 
 export default function AccountScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [user, setUser] = useState(authService.getCurrentUser());
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadUserStats();
-  }, []);
 
   // Refresh user data when screen comes into focus
   useFocusEffect(
@@ -41,29 +28,6 @@ export default function AccountScreen() {
       setUser(authService.getCurrentUser());
     }, [])
   );
-
-  const loadUserStats = async () => {
-    try {
-      setLoading(true);
-      const quickStats = await apiClient.getQuickStats();
-      
-      setUserStats({
-        totalReceipts: quickStats.receipt_count,
-        totalAmount: quickStats.total_amount,
-        currentMonthReceipts: quickStats.monthly_count,
-      });
-    } catch (error) {
-      console.error('Failed to load user stats:', error);
-      // Set fallback stats
-      setUserStats({
-        totalReceipts: 0,
-        totalAmount: 0,
-        currentMonthReceipts: 0,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfile' as never);
@@ -145,13 +109,6 @@ export default function AccountScreen() {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
@@ -173,21 +130,6 @@ export default function AccountScreen() {
           
           <Text style={styles.userName}>{user?.displayName || user?.email?.split('@')[0] || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
-          
-          {/* Stats */}
-          {!loading && userStats && (
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Ionicons name="receipt" size={16} color={colors.primary} />
-                <Text style={styles.statText}>{userStats.totalReceipts} receipts</Text>
-              </View>
-              <Text style={styles.statSeparator}>•</Text>
-              <View style={styles.statItem}>
-                <Ionicons name="trending-up" size={16} color={colors.success} />
-                <Text style={styles.statText}>{formatCurrency(userStats.totalAmount)} tracked</Text>
-              </View>
-            </View>
-          )}
 
           <TouchableOpacity style={styles.editProfileButton} onPress={handleEditProfile}>
             <Text style={styles.editProfileText}>Edit profile</Text>
@@ -300,27 +242,7 @@ const styles = StyleSheet.create({
   userEmail: {
     ...typography.body,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: spacing.lg,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginLeft: spacing.xs,
-    fontWeight: '500',
-  },
-  statSeparator: {
-    ...typography.caption,
-    color: colors.textMuted,
-    marginHorizontal: spacing.sm,
   },
   editProfileButton: {
     backgroundColor: colors.surface,
