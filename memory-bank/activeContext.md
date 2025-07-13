@@ -1,10 +1,23 @@
 # Active Context
 
-**Last Updated:** 2025-07-13 - Mobile Bug Fixes & Stats Accuracy - Impacts: [User Experience, Data Analytics, Navigation]
-**Previous Update:** 2025-07-10 21:45:00 - Statistics Screen to Dashboard Conversion & Entity Normalization
-**Session Context:** Fixed all critical mobile bugs reported from TestFlight testing, improved stats accuracy with proper pagination
+**Last Updated:** 2025-07-13 15:30:00 - Navigation Restoration & Final Stats Fix - Impacts: [User Experience, Navigation Design, Data Accuracy]
+**Previous Update:** 2025-07-13 - Mobile Bug Fixes & Stats Accuracy
+**Session Context:** Restored center camera button navigation from v1.3.0, fixed final QuickStats calculation issue
 
-## Current Work Focus - Session July 13, 2025
+## Current Work Focus - Session July 13, 2025 (Afternoon)
+
+- ✅ **COMPLETED:** Navigation Design Restoration (July 13, 2025)
+  - **CENTER CAMERA BUTTON:** Restored protruding camera button navigation from v1.3.0 branch
+  - **5-TAB LAYOUT:** Home → Stats → Camera (center) → Receipts → Help
+  - **HOME SCREEN CLEANUP:** Removed large capture button to free vertical space
+  - **VERSION MERGE:** Applied v1.3.2 version numbers while keeping v1.3.0 features
+  - **QUICKSTATS FIX:** Final fix for "All Time" total amount calculation
+    - API's total_amount only includes first 1000 receipts
+    - Now calculates from full receipts array like Statistics screen
+    - Receipt count still uses accurate API value
+  - **CONSISTENCY:** QuickStats and Statistics screens now show identical totals
+
+## Previous Work Focus - Session July 13, 2025 (Morning)
 
 - ✅ **COMPLETED:** Critical Mobile Bug Fixes (July 13, 2025)
   - **CONFIDENCE DISPLAY FIX:** Fixed showing 9500% instead of 95% - backend sends percentage values not decimals
