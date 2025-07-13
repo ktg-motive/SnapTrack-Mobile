@@ -116,11 +116,10 @@ export default function HomeScreen() {
 
   const loadDashboardData = async (resetData = true) => {
     try {
-      // Load data in parallel - get more receipts for stats calculations
-      const [statsPromise, receiptsPromise, allReceiptsPromise] = await Promise.allSettled([
+      // Load recent receipts and stats first
+      const [statsPromise, receiptsPromise] = await Promise.allSettled([
         apiClient.getQuickStats(),
-        apiClient.getReceipts({ limit: 3, page: 1 }), // Always use page 1 for recent receipts display
-        apiClient.getReceipts({ limit: 1000, page: 1 }) // All receipts for cycling stats calculation
+        apiClient.getReceipts({ limit: 3, page: 1 }) // Always use page 1 for recent receipts display
       ]);
 
       if (statsPromise.status === 'fulfilled') {
@@ -153,13 +152,34 @@ export default function HomeScreen() {
         setRecentReceipts([]); // Set empty array as fallback
       }
 
-      // Handle all receipts for stats
-      if (allReceiptsPromise.status === 'fulfilled') {
-        const allReceiptsData = allReceiptsPromise.value.data || [];
-        console.log('📊 Loaded all receipts for stats:', allReceiptsData.length);
-        setAllReceipts(allReceiptsData);
-      } else {
-        console.error('❌ Failed to load all receipts for stats:', allReceiptsPromise.reason);
+      // Load ALL receipts for accurate stats (using pagination like StatisticsScreen)
+      try {
+        const allReceipts: Receipt[] = [];
+        let page = 1;
+        let hasMorePages = true;
+        
+        console.log('📊 Loading all receipts for stats with pagination...');
+        
+        while (hasMorePages && page <= 10) { // Safety limit
+          const receiptResponse = await apiClient.getReceipts({ 
+            page: page,
+            limit: 100
+          });
+          
+          const pageReceipts = receiptResponse?.data || [];
+          allReceipts.push(...pageReceipts);
+          
+          console.log(`📊 Loaded page ${page}: ${pageReceipts.length} receipts`);
+          
+          // Check if there are more pages
+          hasMorePages = receiptResponse?.pagination?.has_next_page || false;
+          page++;
+        }
+        
+        console.log('📊 Total receipts loaded for stats:', allReceipts.length);
+        setAllReceipts(allReceipts);
+      } catch (error) {
+        console.error('❌ Failed to load all receipts for stats:', error);
         setAllReceipts([]);
       }
     } catch (error) {
