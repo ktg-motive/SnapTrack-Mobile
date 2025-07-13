@@ -222,11 +222,7 @@ export default function CameraScreen() {
               <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
             
-            <Text style={[typography.body, styles.instructionText]}>
-              Position receipt in frame
-            </Text>
-            
-            <View style={{ width: 80 }} />
+            <View style={{ flex: 1 }} />
           </View>
 
           {/* Center Scanning Frame */}
@@ -239,7 +235,7 @@ export default function CameraScreen() {
             </View>
             
             <Text style={[typography.caption, styles.frameText]}>
-              Align receipt within the frame
+              Position receipt anywhere in view
             </Text>
           </View>
 
@@ -339,16 +335,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scanFrame: {
-    width: '90%',
-    height: '60%',
+    width: '95%',      // Increased from 90%
+    height: '85%',     // Increased from 60%
     position: 'relative',
-    maxWidth: 450,
-    maxHeight: 600,
+    maxWidth: 600,     // Increased from 450
+    maxHeight: 800,    // Increased from 600
   },
   corner: {
     position: 'absolute',
-    width: 20,
-    height: 20,
+    width: 24,           // Increased from 20
+    height: 24,          // Increased from 20
     borderColor: colors.neonBlue,
     borderWidth: 3,
   },
