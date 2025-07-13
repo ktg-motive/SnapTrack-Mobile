@@ -7,7 +7,9 @@ import {
   ScrollView,
   RefreshControl,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -172,33 +174,36 @@ export default function ReceiptsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Receipts</Text>
-        <Text style={styles.headerSubtitle}>
-          {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
-        </Text>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search receipts..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={colors.textMuted}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Receipts</Text>
+          <Text style={styles.headerSubtitle}>
+            {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
+          </Text>
         </View>
-      </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search receipts..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={colors.textMuted}
+              returnKeyType="search"
+              blurOnSubmit={true}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
       {/* Connection Status */}
       {!isConnected && (
@@ -286,7 +291,8 @@ export default function ReceiptsScreen() {
           setSelectedReceipt(null);
         }}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 }
 

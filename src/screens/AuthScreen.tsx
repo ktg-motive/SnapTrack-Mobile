@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { colors, typography, spacing, borderRadius } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
@@ -52,11 +53,9 @@ export default function AuthScreen() {
     try {
       if (isSignUp) {
         await authService.signUp({ email, password });
-        Alert.alert(
-          'Account Created!', 
-          'Your account has been created successfully. You can now sign in.',
-          [{ text: 'OK', onPress: () => setIsSignUp(false) }]
-        );
+        // After successful signup, trigger onboarding immediately
+        setShowEmailModal(false);
+        navigation.navigate('Onboarding' as never);
       } else {
         await authService.signIn({ email, password });
         // Show success feedback before navigation
@@ -83,16 +82,25 @@ export default function AuthScreen() {
     setIsLoading(true);
 
     try {
-      await authService.signInWithGoogle();
-      // Show success feedback before navigation
-      Alert.alert(
-        'Sign In Successful!',
-        'Welcome to SnapTrack!',
-        [{ 
-          text: 'Continue', 
-          onPress: () => navigation.navigate('Main' as never)
-        }]
-      );
+      const user = await authService.signInWithGoogle();
+      
+      // Check if this is a new user by checking if onboarding has been completed
+      const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
+      
+      if (!onboardingCompleted) {
+        // New user - navigate to onboarding
+        navigation.navigate('Onboarding' as never);
+      } else {
+        // Existing user - show success and navigate to main
+        Alert.alert(
+          'Sign In Successful!',
+          'Welcome back to SnapTrack!',
+          [{ 
+            text: 'Continue', 
+            onPress: () => navigation.navigate('Main' as never)
+          }]
+        );
+      }
     } catch (error: any) {
       Alert.alert('Google Sign-In Error', error.message);
     } finally {
@@ -104,16 +112,25 @@ export default function AuthScreen() {
     setIsLoading(true);
 
     try {
-      await authService.signInWithApple();
-      // Show success feedback before navigation
-      Alert.alert(
-        'Sign In Successful!',
-        'Welcome to SnapTrack!',
-        [{ 
-          text: 'Continue', 
-          onPress: () => navigation.navigate('Main' as never)
-        }]
-      );
+      const user = await authService.signInWithApple();
+      
+      // Check if this is a new user by checking if onboarding has been completed
+      const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
+      
+      if (!onboardingCompleted) {
+        // New user - navigate to onboarding
+        navigation.navigate('Onboarding' as never);
+      } else {
+        // Existing user - show success and navigate to main
+        Alert.alert(
+          'Sign In Successful!',
+          'Welcome back to SnapTrack!',
+          [{ 
+            text: 'Continue', 
+            onPress: () => navigation.navigate('Main' as never)
+          }]
+        );
+      }
     } catch (error: any) {
       Alert.alert('Apple Sign-In Error', error.message);
     } finally {

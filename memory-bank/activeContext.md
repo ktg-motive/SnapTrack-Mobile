@@ -1,10 +1,22 @@
 # Active Context
 
-**Last Updated:** 2025-07-10 21:45:00 - Statistics Screen to Dashboard Conversion & Entity Normalization - Impacts: [Navigation, Data Analytics, Entity Management]
-**Previous Update:** 2025-07-10 19:30:00
-**Session Context:** Completed statistics screen implementation as Dashboard, fixed pagination for complete data loading, addressed entity normalization
+**Last Updated:** 2025-07-13 - Mobile Bug Fixes & Stats Accuracy - Impacts: [User Experience, Data Analytics, Navigation]
+**Previous Update:** 2025-07-10 21:45:00 - Statistics Screen to Dashboard Conversion & Entity Normalization
+**Session Context:** Fixed all critical mobile bugs reported from TestFlight testing, improved stats accuracy with proper pagination
 
-## Current Work Focus - Session July 10, 2025 (Evening)
+## Current Work Focus - Session July 13, 2025
+
+- ✅ **COMPLETED:** Critical Mobile Bug Fixes (July 13, 2025)
+  - **CONFIDENCE DISPLAY FIX:** Fixed showing 9500% instead of 95% - backend sends percentage values not decimals
+  - **QUICK STATS FIX:** Implemented full pagination to load ALL receipts (was only loading first 1000)
+  - **STATS ACCURACY:** Now showing correct totals - $4,641.17 for 46 receipts (matches Statistics screen)
+  - **DATE FIELD FIX:** Corrected date field extraction after API transformation (expense_date → date)
+  - **HELP NAVIGATION FIX:** Added Help screen to root Stack Navigator to fix navigation error
+  - **CAMERA LIFECYCLE FIX:** Implemented useFocusEffect to properly deactivate camera when not in use
+  - **UI POLISH:** Added comma formatting for expense amounts (e.g., $4,641.17)
+  - **PERFORMANCE:** Improved date filtering with string comparison (timezone-safe)
+
+## Previous Work Focus - Session July 10, 2025 (Evening)
 
 - ✅ **COMPLETED:** Statistics Screen Implementation as Dashboard (July 10, 2025)
   - **NAVIGATION:** Replaced Help tab with Statistics tab in bottom navigation
@@ -241,6 +253,16 @@
 
 ## Recent Changes
 
+**2025-07-13** - CRITICAL BUG FIXES FROM TESTFLIGHT FEEDBACK: Production Polish Complete:
+- **FIX 1:** Confidence display showing 9500% → Fixed to show 95% (removed percentage multiplication)
+- **FIX 2:** Quick stats showing $0 for today → Fixed date field extraction and timezone handling
+- **FIX 3:** Stats total $1,259.87 vs $4,641.17 → Fixed with full pagination (was only loading 1000 receipts)
+- **FIX 4:** Help navigation error → Added Help screen to root Stack Navigator
+- **FIX 5:** Camera staying active → Implemented proper lifecycle with useFocusEffect
+- **POLISH:** Added comma formatting for expense amounts using formatNumber utility
+- **TECHNICAL:** HomeScreen now uses same pagination logic as StatisticsScreen for accurate totals
+- **RESULT:** All TestFlight reported bugs fixed, ready for v1.3.1 release
+
 **2025-07-10 22:15:00** - TYPESCRIPT ERRORS FIXED: Quality Gates Passed:
 - **FIX:** Removed `elevation` property from headerStyle (not valid on iOS)
 - **FIX:** Removed `shadowOpacity` from headerStyle (not part of ViewStyle)
@@ -337,29 +359,29 @@
 
 ## Next Steps
 
-**Priority 1 (Parse API Backend Update):**
-- Update Parse API to set entity='Unassigned' for all email-forwarded receipts
-- Remove default entity='personal' from email parsing logic
-- Test email receipt flow shows 'Unassigned' entity in mobile app
-- Ensure users can reassign 'Unassigned' receipts to proper entities
+**Priority 1 (Immediate - v1.3.1 Release):**
+- Build and deploy v1.3.1 to TestFlight with all bug fixes
+- Synchronize Android release to v1.3.1 on Firebase App Distribution
+- Monitor beta tester feedback for any remaining issues
+- Prepare release notes highlighting fixes and improvements
 
-**Priority 2 (TestFlight Deployment):**
-- Run `npx expo prebuild --clean` to regenerate native projects
-- Execute `eas build --platform ios` to build for TestFlight
-- Test Dashboard screen with all entity data loading correctly
-- Verify navigation changes (Help in Account tab) work in production
+**Priority 2 (This Week - App Store Submission):**
+- Finalize App Store listing with screenshots and descriptions
+- Update privacy policy and terms of service if needed
+- Ensure all App Store compliance requirements are met
+- Submit v1.3.1 for App Store review after beta validation
 
-**Priority 3 (Production Polish):**
-- Monitor Dashboard performance with large receipt datasets
-- Consider adding loading skeleton for Dashboard initial load
-- Test offline functionality with new Dashboard screen
-- Validate all pagination edge cases (100+ receipts)
+**Priority 3 (Backend Improvements):**
+- Update Parse API to set entity='Unassigned' for email-forwarded receipts
+- Consider returning decimal confidence scores (0.95) instead of percentages (95)
+- Optimize API response pagination for better mobile performance
+- Add server-side stats calculation endpoint for efficiency
 
 **Priority 4 (Future Enhancements):**
 - Add charts/graphs to Dashboard for visual analytics
-- Implement date range picker instead of cycling periods
-- Add export functionality for filtered Dashboard data
-- Consider entity comparison view across time periods
+- Implement pull-to-refresh on all screens for better UX
+- Add batch receipt operations (delete multiple, bulk categorize)
+- Consider offline-first architecture improvements
 
 ## Cross-Project Impact Alerts
 
