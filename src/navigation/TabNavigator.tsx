@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../styles/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CameraTabButton } from '../components/CameraTabButton';
 
 // Import screens
 import HomeScreen from '../screens/HomeScreen';
@@ -52,6 +53,14 @@ function StatisticsStackNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="StatisticsMain" component={StatisticsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function HelpStackNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HelpMain" component={HelpScreen} />
     </Stack.Navigator>
   );
 }
@@ -113,13 +122,6 @@ function AccountStackNavigator() {
           title: 'Terms of Service',
         }}
       />
-      <Stack.Screen 
-        name="Help" 
-        component={HelpScreen}
-        options={{ 
-          title: 'Help & Support',
-        }}
-      />
     </Stack.Navigator>
   );
 }
@@ -135,14 +137,17 @@ export default function TabNavigator() {
 
           if (route.name === 'HomeTab') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'CaptureTab') {
-            iconName = focused ? 'camera' : 'camera-outline';
-          } else if (route.name === 'ReceiptsTab') {
-            iconName = focused ? 'receipt' : 'receipt-outline';
           } else if (route.name === 'StatisticsTab') {
             iconName = Platform.OS === 'ios' 
               ? (focused ? 'stats-chart' : 'stats-chart-outline')
               : (focused ? 'analytics' : 'analytics-outline');
+          } else if (route.name === 'CaptureTab') {
+            // Camera tab will use custom button component
+            iconName = focused ? 'camera' : 'camera-outline';
+          } else if (route.name === 'ReceiptsTab') {
+            iconName = focused ? 'receipt' : 'receipt-outline';
+          } else if (route.name === 'HelpTab') {
+            iconName = focused ? 'help-circle' : 'help-circle-outline';
           }
 
           return <Ionicons name={iconName!} size={size} color={color} />;
@@ -150,6 +155,7 @@ export default function TabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
+          position: 'absolute',
           backgroundColor: colors.card,
           borderTopColor: colors.surface,
           borderTopWidth: 1,
@@ -160,9 +166,11 @@ export default function TabNavigator() {
           height: Platform.OS === 'ios' 
             ? 60 + Math.max(insets.bottom - 10, 15)
             : 60 + Math.max(insets.bottom + 10, 20),
+          // Important: Allow overflow for protruding button
+          overflow: 'visible',
         },
         tabBarLabelStyle: {
-          fontSize: 12, // Standard size for 4 labels
+          fontSize: 11, // Smaller size for 5 labels
           marginTop: -2,
           marginBottom: 2,
         },
@@ -175,9 +183,17 @@ export default function TabNavigator() {
         options={{ tabBarLabel: 'Home' }}
       />
       <Tab.Screen
+        name="StatisticsTab"
+        component={StatisticsStackNavigator}
+        options={{ tabBarLabel: 'Stats' }}
+      />
+      <Tab.Screen
         name="CaptureTab"
         component={CaptureStackNavigator}
-        options={{ tabBarLabel: 'Capture' }}
+        options={{
+          tabBarLabel: '',
+          tabBarButton: (props) => <CameraTabButton {...props} />,
+        }}
       />
       <Tab.Screen
         name="ReceiptsTab"
@@ -185,9 +201,9 @@ export default function TabNavigator() {
         options={{ tabBarLabel: 'Receipts' }}
       />
       <Tab.Screen
-        name="StatisticsTab"
-        component={StatisticsStackNavigator}
-        options={{ tabBarLabel: 'Stats' }}
+        name="HelpTab"
+        component={HelpStackNavigator}
+        options={{ tabBarLabel: 'Help' }}
       />
     </Tab.Navigator>
   );

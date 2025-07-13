@@ -227,10 +227,6 @@ export default function HomeScreen() {
     }
   };
 
-  const handleCapturePress = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate('CaptureTab' as never);
-  };
 
 
   // Determine the footer state based on current app state
@@ -303,24 +299,6 @@ export default function HomeScreen() {
         receipts={allReceipts}
       />
 
-      {/* Main Capture Button - Fixed */}
-      <View style={styles.captureSection}>
-        <TouchableOpacity 
-          style={styles.captureContainer}
-          onPress={handleCapturePress}
-          activeOpacity={0.9}
-        >
-          <LinearGradient
-            colors={[colors.primary, colors.secondary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.captureButton}
-          >
-            <Ionicons name="camera" size={48} color="white" />
-            <Text style={styles.captureText}>Capture Receipt</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
 
       {/* Scrollable Receipts Section */}
       <View style={styles.receiptsContainer}>
@@ -468,36 +446,6 @@ const styles = StyleSheet.create({
   },
   headerSpacer: {
     width: 40, // Same width as hamburger button to center logo
-  },
-  captureSection: {
-    paddingHorizontal: 16, // Slightly reduced for more width
-    marginTop: 8, // Reduced from 24 to 8 for tighter spacing with stats
-    marginBottom: 16, // Reduced for tighter overall layout
-  },
-  captureContainer: {
-    // Remove margin since it's now in captureSection
-  },
-  captureButton: {
-    height: 140, // Even taller - increased from 120 to 140 for more prominence
-    borderRadius: 24, // Larger radius for premium feel
-    flexDirection: 'column', // Stack icon and text vertically
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.button,
-    // Enhanced shadow for maximum prominence
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
-    // Add subtle border for definition
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  captureText: {
-    ...typography.title2, // Larger text - upgraded from title3 to title2
-    color: 'white',
-    marginTop: 8, // Space from icon above
-    fontWeight: '700',
   },
   statusIndicator: {
     marginHorizontal: 20,
