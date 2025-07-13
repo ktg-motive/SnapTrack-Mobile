@@ -175,14 +175,14 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
     <View style={styles.container}>
       <StatsCard
         title={getTimeframeLabel(timeframeState)}
-        value={`$${statsForTimeframe.totalAmount.toFixed(2)}`}
+        value={`$${formatNumber(statsForTimeframe.totalAmount, 2)}`}
         isLoading={isLoading}
         onPress={handleStatCardTap}
       />
       
       <StatsCard
         title={getTimeframeLabel(timeframeState)}
-        value={formatNumber(displayCount)}
+        value={displayCount.toString()}
         isLoading={isLoading}
         onPress={handleStatCardTap}
       />
