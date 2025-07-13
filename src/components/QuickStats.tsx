@@ -24,82 +24,79 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
     let filteredReceipts = receipts;
     
     // Debug logging for calculations
-    if (receipts.length > 0) {
-      console.log('📊 Stats calculation debug:');
-      console.log('Timeframe:', getTimeframeLabel(timeframeIndex));
+    if (timeframeIndex === 0 && receipts.length > 0) {
+      console.log('📊 Today stats calculation debug:');
       console.log('Current date:', now.toDateString());
-      console.log('Receipts count:', receipts.length);
-      console.log('First receipt:', {
-        id: receipts[0].id,
-        vendor: receipts[0].vendor,
-        amount: receipts[0].amount,
-        date: receipts[0].date,
-        entity: receipts[0].entity
+      console.log('Total receipts:', receipts.length);
+      
+      // Show receipts from today
+      const todayStr = now.toISOString().split('T')[0];
+      const todayReceipts = receipts.filter(r => r.date && r.date.startsWith(todayStr));
+      console.log(`Receipts from today (${todayStr}):`, todayReceipts.length);
+      
+      if (todayReceipts.length > 0) {
+        todayReceipts.forEach(r => {
+          console.log(`- ${r.vendor}: $${r.amount} on ${r.date}`);
+        });
+      }
+      
+      // Show last 5 receipts with dates
+      console.log('Last 5 receipts:');
+      receipts.slice(0, 5).forEach(r => {
+        console.log(`- ${r.vendor}: $${r.amount} on ${r.date || 'NO DATE'}`);
       });
     }
 
     switch (timeframeIndex) {
       case 0: // Today - Fix timezone handling
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+        
         filteredReceipts = receipts.filter(receipt => {
           // After API transformation, the date is always in the 'date' field
           const dateStr = receipt.date || '';
-          if (!dateStr) return false;
-          
-          // Handle various date formats and timezone issues
-          let receiptDate;
-          if (dateStr.includes('T')) {
-            // ISO format with time
-            receiptDate = new Date(dateStr);
-          } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            // YYYY-MM-DD format - treat as local date
-            const [year, month, day] = dateStr.split('-').map(Number);
-            receiptDate = new Date(year, month - 1, day);
-          } else {
-            // Other formats - use standard parsing
-            receiptDate = new Date(dateStr);
+          if (!dateStr) {
+            console.log('⚠️ Receipt with no date:', receipt.id, receipt.vendor);
+            return false;
           }
           
-          const receiptLocalDate = new Date(receiptDate.getFullYear(), receiptDate.getMonth(), receiptDate.getDate());
-          const matches = receiptLocalDate.getTime() === today.getTime();
+          // Check if date starts with today's date string (handles both date and datetime)
+          const matches = dateStr.startsWith(todayStr);
+          
+          if (matches && filteredReceipts.length < 5) {
+            console.log(`✅ Today match: ${receipt.vendor} - ${dateStr}`);
+          }
+          
           return matches;
         });
         break;
       case 1: // This Week
         const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
         const endOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() + 6);
+        const startWeekStr = startOfWeek.toISOString().split('T')[0];
+        const endWeekStr = endOfWeek.toISOString().split('T')[0];
+        
         filteredReceipts = receipts.filter(receipt => {
-          // After API transformation, the date is always in the 'date' field
           const dateStr = receipt.date || '';
           if (!dateStr) return false;
           
-          // Handle various date formats and timezone issues (same as Today)
-          let receiptDate;
-          if (dateStr.includes('T')) {
-            // ISO format with time
-            receiptDate = new Date(dateStr);
-          } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            // YYYY-MM-DD format - treat as local date
-            const [year, month, day] = dateStr.split('-').map(Number);
-            receiptDate = new Date(year, month - 1, day);
-          } else {
-            // Other formats - use standard parsing
-            receiptDate = new Date(dateStr);
-          }
+          // Extract just the date part for comparison
+          const receiptDateStr = dateStr.split('T')[0];
           
-          const receiptLocalDate = new Date(receiptDate.getFullYear(), receiptDate.getMonth(), receiptDate.getDate());
-          return receiptLocalDate >= startOfWeek && receiptLocalDate <= endOfWeek;
+          return receiptDateStr >= startWeekStr && receiptDateStr <= endWeekStr;
         });
         break;
       case 2: // This Month
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
+        const monthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+        
         filteredReceipts = receipts.filter(receipt => {
           const dateStr = receipt.date || '';
           if (!dateStr) return false;
-          const receiptDate = new Date(dateStr);
-          return receiptDate.getMonth() === currentMonth && 
-                 receiptDate.getFullYear() === currentYear;
+          
+          // Check if date starts with current year-month
+          return dateStr.startsWith(monthStr);
         });
         break;
       case 3: // All Time
