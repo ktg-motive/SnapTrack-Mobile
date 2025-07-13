@@ -157,12 +157,6 @@ export default function HomeScreen() {
       if (allReceiptsPromise.status === 'fulfilled') {
         const allReceiptsData = allReceiptsPromise.value.data || [];
         console.log('📊 Loaded all receipts for stats:', allReceiptsData.length);
-        
-        // Check if we got today's receipts
-        const today = new Date().toISOString().split('T')[0];
-        const todayReceipts = allReceiptsData.filter(r => r.date && r.date.startsWith(today));
-        console.log(`📊 Receipts from today (${today}):`, todayReceipts.length);
-        
         setAllReceipts(allReceiptsData);
       } else {
         console.error('❌ Failed to load all receipts for stats:', allReceiptsPromise.reason);

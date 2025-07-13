@@ -12,7 +12,7 @@ interface QuickStatsProps {
 
 export default function QuickStats({ stats, isLoading, receipts = [] }: QuickStatsProps) {
   // State for cycling timeframes: 0=Today, 1=This Week, 2=This Month, 3=All Time
-  const [timeframeState, setTimeframeState] = useState(2); // Start with "This Month" to match current behavior
+  const [timeframeState, setTimeframeState] = useState(0); // Start with "Today" to see current data
 
   // Calculate stats for different timeframes
   const calculateStats = (timeframeIndex: number) => {
@@ -23,28 +23,15 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
     const now = new Date();
     let filteredReceipts = receipts;
     
-    // Debug logging for calculations
+    // Debug logging only when there's an issue
     if (timeframeIndex === 0 && receipts.length > 0) {
-      console.log('📊 Today stats calculation debug:');
-      console.log('Current date:', now.toDateString());
-      console.log('Total receipts:', receipts.length);
-      
-      // Show receipts from today
       const todayStr = now.toISOString().split('T')[0];
       const todayReceipts = receipts.filter(r => r.date && r.date.startsWith(todayStr));
-      console.log(`Receipts from today (${todayStr}):`, todayReceipts.length);
       
-      if (todayReceipts.length > 0) {
-        todayReceipts.forEach(r => {
-          console.log(`- ${r.vendor}: $${r.amount} on ${r.date}`);
-        });
+      // Only log if we're debugging
+      if (todayReceipts.length === 0 && receipts.length > 0) {
+        console.log(`📊 No receipts from today (${todayStr}). Latest receipt: ${receipts[0].date}`);
       }
-      
-      // Show last 5 receipts with dates
-      console.log('Last 5 receipts:');
-      receipts.slice(0, 5).forEach(r => {
-        console.log(`- ${r.vendor}: $${r.amount} on ${r.date || 'NO DATE'}`);
-      });
     }
 
     switch (timeframeIndex) {
@@ -55,19 +42,10 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
         filteredReceipts = receipts.filter(receipt => {
           // After API transformation, the date is always in the 'date' field
           const dateStr = receipt.date || '';
-          if (!dateStr) {
-            console.log('⚠️ Receipt with no date:', receipt.id, receipt.vendor);
-            return false;
-          }
+          if (!dateStr) return false;
           
           // Check if date starts with today's date string (handles both date and datetime)
-          const matches = dateStr.startsWith(todayStr);
-          
-          if (matches && filteredReceipts.length < 5) {
-            console.log(`✅ Today match: ${receipt.vendor} - ${dateStr}`);
-          }
-          
-          return matches;
+          return dateStr.startsWith(todayStr);
         });
         break;
       case 1: // This Week
