@@ -157,6 +157,9 @@ export default function HomeScreen() {
       if (allReceiptsPromise.status === 'fulfilled') {
         const allReceiptsData = allReceiptsPromise.value.data || [];
         console.log('📊 Loaded all receipts for stats:', allReceiptsData.length);
+        if (allReceiptsData.length > 0) {
+          console.log('📊 Sample receipt structure:', JSON.stringify(allReceiptsData[0], null, 2));
+        }
         setAllReceipts(allReceiptsData);
       } else {
         console.error('❌ Failed to load all receipts for stats:', allReceiptsPromise.reason);

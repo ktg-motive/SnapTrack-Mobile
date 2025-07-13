@@ -54,7 +54,7 @@ export default function SettingsScreen() {
       title: 'Help & Support',
       subtitle: 'Get help using SnapTrack',
       icon: 'help-circle-outline',
-      onPress: () => navigation.navigate('Contact'),
+      onPress: () => navigation.navigate('Help'),
       showArrow: true,
     },
     {

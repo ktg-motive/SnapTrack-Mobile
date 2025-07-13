@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -6,10 +6,11 @@ import {
   StyleSheet, 
   SafeAreaView,
   Alert,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -24,8 +25,22 @@ export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(true);
   const cameraRef = useRef<CameraView>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
+  // Manage camera lifecycle based on screen focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Camera screen is focused - activate camera
+      setIsCameraActive(true);
+      
+      return () => {
+        // Camera screen is losing focus - deactivate camera
+        setIsCameraActive(false);
+      };
+    }, [])
+  );
 
   if (!permission) {
     return <View style={styles.loadingContainer} />;
@@ -196,9 +211,10 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
-        {/* Overlay UI */}
-        <SafeAreaView style={styles.overlay}>
+      {isCameraActive ? (
+        <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
+          {/* Overlay UI */}
+          <SafeAreaView style={styles.overlay}>
           {/* Top Bar */}
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.backButton} onPress={goBack}>
@@ -261,6 +277,24 @@ export default function CameraScreen() {
           </View>
         </SafeAreaView>
       </CameraView>
+      ) : (
+        <View style={styles.camera}>
+          <SafeAreaView style={styles.overlay}>
+            <View style={styles.topBar}>
+              <TouchableOpacity style={styles.backButton} onPress={goBack}>
+                <Ionicons name="chevron-back" size={28} color="white" />
+                <Text style={styles.backText}>Back</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.centerArea}>
+              <ActivityIndicator size="large" color="white" />
+              <Text style={[typography.body, { color: 'white', marginTop: 20 }]}>
+                Camera initializing...
+              </Text>
+            </View>
+          </SafeAreaView>
+        </View>
+      )}
     </View>
   );
 }

@@ -320,8 +320,6 @@ class SnapTrackApiClient {
     } else if (response.expenses && Array.isArray(response.expenses)) {
       // Backend returns { expenses: [...], pagination: {...} }
       // Transform backend format to mobile app format
-      console.log('🔄 Transforming expenses from backend format:', JSON.stringify(response.expenses[0], null, 2));
-      
       const transformedExpenses = response.expenses.map((expense: any) => {
         // Handle tags - could be string, array, or null
         let tags: string[] = [];
@@ -359,7 +357,6 @@ class SnapTrackApiClient {
           tenant_id: expense.tenant_id || ''
         };
         
-        console.log('🔄 Transformed expense:', JSON.stringify(transformed, null, 2));
         return transformed;
       });
       

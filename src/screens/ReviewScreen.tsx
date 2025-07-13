@@ -1102,7 +1102,7 @@ export default function ReviewScreen() {
                         styles.originalConfidenceText,
                         { color: getNormalizedConfidence(expenseData.confidence_score) > 0.8 ? colors.success : colors.warning }
                       ]}>
-                        {getConfidencePercentage(expenseData.confidence_score)}% confident
+                        {Math.round(expenseData.confidence_score || 0)}% confident
                       </Text>
                     </View>
                     <View style={styles.enhancedRow}>
@@ -1128,7 +1128,7 @@ export default function ReviewScreen() {
                       styles.confidenceText,
                       { color: getNormalizedConfidence(expenseData.confidence_score) > 0.8 ? colors.success : colors.warning }
                     ]}>
-                      {getConfidencePercentage(expenseData.confidence_score)}% confident
+                      {Math.round(expenseData.confidence_score || 0)}% confident
                     </Text>
                   </>
                 )}
