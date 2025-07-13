@@ -113,13 +113,15 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
   const statsForTimeframe = calculateStats(timeframeState);
   const allTimeStats = calculateStats(3); // Always calculate all-time stats for total count
   
-  // For "All Time" mode, use the actual totals from API stats instead of calculating from limited receipts array
+  // For "All Time" mode, use the actual totals
+  // Note: We use API's receipt_count which is accurate, but calculate totalAmount from the full receipts array
+  // because API's total_amount only includes first 1000 receipts
   const displayCount = timeframeState === 3 
     ? (stats?.receipt_count || allTimeStats.count) // Use API total count for All Time
     : statsForTimeframe.count;
     
   const displayAmount = timeframeState === 3
-    ? (stats?.total_amount || allTimeStats.totalAmount) // Use API total amount for All Time
+    ? allTimeStats.totalAmount // Always calculate from full receipts array for accuracy
     : statsForTimeframe.totalAmount;
   
   const StatsCard = ({ title, value, isLoading, onPress }: { title: string; value: string; isLoading: boolean; onPress: () => void }) => {
