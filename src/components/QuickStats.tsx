@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-nati
 import { colors, typography, shadows, statsCardColors, borderRadius, spacing } from '../styles/theme';
 import { QuickStats as QuickStatsType, Receipt } from '../types';
 import * as Haptics from 'expo-haptics';
+import { formatNumber } from '../utils/formatters';
 
 interface QuickStatsProps {
   stats: QuickStatsType | null;
@@ -181,7 +182,7 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
       
       <StatsCard
         title={getTimeframeLabel(timeframeState)}
-        value={displayCount.toString()}
+        value={formatNumber(displayCount)}
         isLoading={isLoading}
         onPress={handleStatCardTap}
       />
