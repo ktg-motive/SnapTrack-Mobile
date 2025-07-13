@@ -2,7 +2,7 @@ const config = {
   expo: {
     name: "SnapTrack",
     slug: "snaptrack-mobile",
-    version: "1.3.1",
+    version: "1.3.2",
     extra: {
       eas: {
         projectId: "886b28f0-e481-4ab2-aafe-bf4958623369"
@@ -21,7 +21,7 @@ const config = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.snaptrack.mobile",
-      buildNumber: "8",
+      buildNumber: "9",
       googleServicesFile: "./GoogleService-Info.plist",
       infoPlist: {
         NSCameraUsageDescription: "SnapTrack needs camera access to capture receipt images for expense tracking.",
@@ -31,7 +31,7 @@ const config = {
     },
     android: {
       package: "com.snaptrack.mobile",
-      versionCode: 8,
+      versionCode: 9,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#0a0a0a"

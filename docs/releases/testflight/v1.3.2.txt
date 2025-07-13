@@ -1,0 +1,21 @@
+SnapTrack v1.2.1 - Bug Fix Release
+
+FIXED: Receipt duplication issue on home screen
+- Pull-to-refresh on home screen now shows correct receipts without duplicates
+- Improved pagination state management for better reliability
+- Receipts tab was unaffected and continues working perfectly
+
+TECHNICAL IMPROVEMENTS:
+- Streamlined refresh logic for consistent behavior
+- Enhanced state management for better user experience
+- No impact on existing functionality or performance
+
+TESTING FOCUS:
+- Test pull-to-refresh on home screen (should show 3 recent receipts, no duplicates)
+- Verify receipts tab continues working normally
+- Confirm load-more functionality works correctly
+- Check that statistics and other features are unaffected
+
+This is a targeted bug fix release that addresses the receipt duplication issue reported by users while maintaining all existing functionality.
+
+Build: 1.2.1 | Target: iOS 13.0+ | Size: ~15MB

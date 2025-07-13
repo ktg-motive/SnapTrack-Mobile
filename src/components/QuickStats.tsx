@@ -113,10 +113,14 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
   const statsForTimeframe = calculateStats(timeframeState);
   const allTimeStats = calculateStats(3); // Always calculate all-time stats for total count
   
-  // For "All Time" mode, use the actual total count from API stats instead of receipts array length
+  // For "All Time" mode, use the actual totals from API stats instead of calculating from limited receipts array
   const displayCount = timeframeState === 3 
     ? (stats?.receipt_count || allTimeStats.count) // Use API total count for All Time
     : statsForTimeframe.count;
+    
+  const displayAmount = timeframeState === 3
+    ? (stats?.total_amount || allTimeStats.totalAmount) // Use API total amount for All Time
+    : statsForTimeframe.totalAmount;
   
   const StatsCard = ({ title, value, isLoading, onPress }: { title: string; value: string; isLoading: boolean; onPress: () => void }) => {
     const [isPressed, setIsPressed] = useState(false);
@@ -175,7 +179,7 @@ export default function QuickStats({ stats, isLoading, receipts = [] }: QuickSta
     <View style={styles.container}>
       <StatsCard
         title={getTimeframeLabel(timeframeState)}
-        value={`$${formatNumber(statsForTimeframe.totalAmount, 2)}`}
+        value={`$${formatNumber(displayAmount, 2)}`}
         isLoading={isLoading}
         onPress={handleStatCardTap}
       />
