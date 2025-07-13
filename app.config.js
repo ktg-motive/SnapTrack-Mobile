@@ -25,7 +25,8 @@ const config = {
       googleServicesFile: "./GoogleService-Info.plist",
       infoPlist: {
         NSCameraUsageDescription: "SnapTrack needs camera access to capture receipt images for expense tracking.",
-        NSPhotoLibraryUsageDescription: "SnapTrack needs photo library access to select receipt images for processing."
+        NSPhotoLibraryUsageDescription: "SnapTrack needs photo library access to select receipt images for processing.",
+        NSPhotoLibraryAddUsageDescription: "SnapTrack needs permission to save receipt images to your photo library when auto-save is enabled."
       }
     },
     android: {
@@ -40,6 +41,7 @@ const config = {
       permissions: [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
         "ACCESS_NETWORK_STATE"
       ]
     },
@@ -63,6 +65,14 @@ const config = {
         "@react-native-google-signin/google-signin",
         {
           iosUrlScheme: "com.googleusercontent.apps.925529316912-rgmp4c8ah10vig4at93a62kl0seipdgm"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          photosPermission: "SnapTrack needs permission to save receipt images to your photo library when auto-save is enabled.",
+          savePhotosPermission: "SnapTrack needs permission to save receipt images to your photo library when auto-save is enabled.",
+          isAccessMediaLocationEnabled: true
         }
       ],
       "expo-apple-authentication"

@@ -28,6 +28,7 @@ import { offlineStorage } from '../services/offlineStorage';
 import { errorReporting } from '../services/errorReporting';
 import { ReceiptPreviewModal } from '../components/ReceiptPreviewModal';
 import { authService } from '../services/authService';
+import { shareService } from '../services/shareService';
 
 interface RouteParams {
   imageUri: string;
@@ -519,6 +520,33 @@ export default function ReviewScreen() {
       });
 
       await new Promise(resolve => setTimeout(resolve, completeInfo.duration));
+      
+      // Auto-save receipt image if enabled (after successful processing)
+      try {
+        if (uploadedReceipt) {
+          const receipt: Receipt = {
+            id: uploadedReceipt.id || uploadedReceipt.expense?.id || 'temp',
+            vendor: vendor || 'Unknown Vendor',
+            amount: parseFloat(amount) || 0,
+            date: date || new Date().toISOString().split('T')[0],
+            entity: expenseData.entity || 'personal',
+            tags: normalizeTagsToArray(tags),
+            notes: notes || '',
+            receipt_url: uploadedReceipt.receipt_url || uploadedReceipt.expense?.image_url || imageUri,
+            confidence_score: confidence || 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            user_id: 'current_user',
+            tenant_id: 'current_tenant',
+          };
+          
+          await shareService.autoSaveReceiptIfEnabled(receipt);
+        }
+      } catch (autoSaveError) {
+        console.error('❌ Auto-save failed:', autoSaveError);
+        // Don't interrupt the main flow for auto-save failures
+      }
+      
       setIsProcessing(false);
 
     } catch (error) {

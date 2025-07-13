@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +22,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
 import { authService } from '../services/authService';
+import { settingsService, AppSettings } from '../services/settingsService';
+import { shareService } from '../services/shareService';
 
 interface Entity {
   id: string;
@@ -47,6 +50,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   const [entities, setEntities] = useState<Entity[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings>({});
+  const [appSettings, setAppSettings] = useState<AppSettings>({ autoSaveToCameraRoll: false });
   const [loading, setLoading] = useState(true);
   
   // Modal states
@@ -63,9 +67,10 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   const loadData = async () => {
     try {
       setLoading(true);
-      const [entitiesResponse, tagsResponse] = await Promise.allSettled([
+      const [entitiesResponse, tagsResponse, appSettingsResult] = await Promise.allSettled([
         apiClient.getEntities(),
         apiClient.getTags(),
+        settingsService.getSettings(),
       ]);
 
       if (entitiesResponse.status === 'fulfilled') {
@@ -74,6 +79,10 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
 
       if (tagsResponse.status === 'fulfilled') {
         setTags(tagsResponse.value.data || []);
+      }
+
+      if (appSettingsResult.status === 'fulfilled') {
+        setAppSettings(appSettingsResult.value);
       }
     } catch (error) {
       console.error('Failed to load settings data:', error);
@@ -174,6 +183,39 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
     } catch (error) {
       console.error('Failed to copy email:', error);
       Alert.alert('Error', 'Failed to copy email to clipboard. Please try again.');
+    }
+  };
+
+  const handleAutoSaveToggle = async (enabled: boolean) => {
+    try {
+      if (enabled) {
+        // Check permissions before enabling
+        const hasPermission = await shareService.hasMediaLibraryPermissions();
+        if (!hasPermission) {
+          const permissionGranted = await shareService.requestMediaLibraryPermissions();
+          if (!permissionGranted) {
+            return; // User denied permission
+          }
+        }
+      }
+
+      const success = await settingsService.updateSetting('autoSaveToCameraRoll', enabled);
+      if (success) {
+        setAppSettings(prev => ({ ...prev, autoSaveToCameraRoll: enabled }));
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
+        if (enabled) {
+          Alert.alert(
+            'Auto-Save Enabled',
+            'Receipt images will now be automatically saved to your photo library when you capture them.'
+          );
+        }
+      } else {
+        Alert.alert('Error', 'Failed to update setting. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Failed to toggle auto-save:', error);
+      Alert.alert('Error', 'Failed to update setting. Please try again.');
     }
   };
 
@@ -333,6 +375,26 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
           </View>
         </View>
 
+        {/* App Settings Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App Settings</Text>
+          
+          <View style={styles.preferenceItem}>
+            <View style={styles.preferenceContent}>
+              <Text style={styles.preferenceTitle}>Auto-Save to Photos</Text>
+              <Text style={styles.preferenceDescription}>
+                Automatically save receipt images to your photo library when captured
+              </Text>
+            </View>
+            <Switch
+              value={appSettings.autoSaveToCameraRoll}
+              onValueChange={handleAutoSaveToggle}
+              trackColor={{ false: colors.surface, true: colors.primary + '40' }}
+              thumbColor={appSettings.autoSaveToCameraRoll ? colors.primary : colors.textMuted}
+              ios_backgroundColor={colors.surface}
+            />
+          </View>
+        </View>
 
         {/* Help & Getting Started Section */}
         <View style={styles.section}>
@@ -631,5 +693,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
+  },
+  // App Preferences styles
+  preferenceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  preferenceContent: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  preferenceTitle: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  preferenceDescription: {
+    ...typography.body2,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
 });

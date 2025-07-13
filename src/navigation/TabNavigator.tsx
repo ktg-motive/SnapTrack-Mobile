@@ -128,6 +128,7 @@ function AccountStackNavigator() {
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const [isTabBarVisible, setIsTabBarVisible] = React.useState(true);
   
   return (
     <Tab.Navigator
@@ -154,7 +155,7 @@ export default function TabNavigator() {
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
+        tabBarStyle: isTabBarVisible ? {
           position: 'absolute',
           backgroundColor: colors.card,
           borderTopColor: colors.surface,
@@ -168,6 +169,8 @@ export default function TabNavigator() {
             : 60 + Math.max(insets.bottom + 10, 20),
           // Important: Allow overflow for protruding button
           overflow: 'visible',
+        } : {
+          display: 'none',
         },
         tabBarLabelStyle: {
           fontSize: 11, // Smaller size for 5 labels
@@ -193,6 +196,10 @@ export default function TabNavigator() {
         options={{
           tabBarLabel: '',
           tabBarButton: (props) => <CameraTabButton {...props} />,
+        }}
+        listeners={{
+          focus: () => setIsTabBarVisible(false),
+          blur: () => setIsTabBarVisible(true),
         }}
       />
       <Tab.Screen

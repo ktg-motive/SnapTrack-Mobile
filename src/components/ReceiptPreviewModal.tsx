@@ -15,8 +15,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Receipt } from '../types';
 import { colors, typography, spacing, borderRadius, shadows } from '../styles/theme';
+import { shareService } from '../services/shareService';
 
 interface ReceiptPreviewModalProps {
   receipt: Receipt | null;
@@ -32,11 +34,52 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ReceiptImageSection: React.FC<{
   imageUri: string | undefined;
   onZoom: () => void;
-}> = ({ imageUri, onZoom }) => {
+  receipt: Receipt;
+}> = ({ imageUri, onZoom, receipt }) => {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [loading, setLoading] = useState(true);
   const screenWidth = SCREEN_WIDTH;
   const maxImageHeight = screenWidth * 1.4; // Increased for portrait receipts
+
+  const handleLongPress = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      Alert.alert(
+        'Receipt Image Options',
+        'What would you like to do with this receipt image?',
+        [
+          {
+            text: 'Share Image',
+            onPress: async () => {
+              const success = await shareService.shareReceiptImage(receipt);
+              if (success) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+            }
+          },
+          {
+            text: 'Save to Photos',
+            onPress: async () => {
+              const success = await shareService.saveReceiptToCameraRoll(receipt);
+              if (success) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Alert.alert('Saved', 'Receipt image saved to your photo library');
+              } else {
+                Alert.alert('Error', 'Failed to save receipt image');
+              }
+            }
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('❌ Long press handler error:', error);
+    }
+  };
 
   useEffect(() => {
     if (imageUri) {
@@ -102,45 +145,51 @@ const ReceiptImageSection: React.FC<{
 
   return (
     <View style={styles.imageContainer}>
-      <ScrollView 
-        style={[styles.imageScrollView, { 
-          height: imageSize.height || maxImageHeight,
-          width: '100%'
-        }]}
-        contentContainerStyle={[styles.imageScrollContent, {
-          width: imageSize.width,
-          height: imageSize.height,
-        }]}
-        minimumZoomScale={1}
-        maximumZoomScale={3}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        centerContent={true}
-        bouncesZoom={true}
-        pinchGestureEnabled={true}
-        scrollEnabled={true}
-        onScroll={(event) => {
-          // Track zoom level for smooth interaction
-          const { zoomScale } = event.nativeEvent;
-          // Could add zoom level state here if needed for UI feedback
-        }}
-        scrollEventThrottle={16}
+      <TouchableOpacity 
+        activeOpacity={1.0}
+        onLongPress={handleLongPress}
+        delayLongPress={800}
       >
-        <Image
-          source={{ uri: imageUri }}
-          style={{
+        <ScrollView 
+          style={[styles.imageScrollView, { 
+            height: imageSize.height || maxImageHeight,
+            width: '100%'
+          }]}
+          contentContainerStyle={[styles.imageScrollContent, {
             width: imageSize.width,
             height: imageSize.height,
+          }]}
+          minimumZoomScale={1}
+          maximumZoomScale={3}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          centerContent={true}
+          bouncesZoom={true}
+          pinchGestureEnabled={true}
+          scrollEnabled={true}
+          onScroll={(event) => {
+            // Track zoom level for smooth interaction
+            const { zoomScale } = event.nativeEvent;
+            // Could add zoom level state here if needed for UI feedback
           }}
-          resizeMode="stretch"
-          onLoad={() => {/* Image loaded successfully */}}
-          onError={(error) => console.error('Image load error:', error)}
-        />
-      </ScrollView>
+          scrollEventThrottle={16}
+        >
+          <Image
+            source={{ uri: imageUri }}
+            style={{
+              width: imageSize.width,
+              height: imageSize.height,
+            }}
+            resizeMode="stretch"
+            onLoad={() => {/* Image loaded successfully */}}
+            onError={(error) => console.error('Image load error:', error)}
+          />
+        </ScrollView>
+      </TouchableOpacity>
       
       <View style={styles.zoomHint}>
         <Ionicons name="search" size={16} color={colors.textMuted} />
-        <Text style={styles.zoomHintText}>Pinch to zoom</Text>
+        <Text style={styles.zoomHintText}>Pinch to zoom • Long press for options</Text>
       </View>
     </View>
   );
@@ -282,6 +331,18 @@ const SmartActionsBar: React.FC<{
     );
   };
 
+  const handleShare = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const success = await shareService.shareReceiptImage(receipt);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (error) {
+      console.error('❌ Share error:', error);
+    }
+  };
+
   return (
     <View style={styles.actionsContainer}>
       {onEdit ? (
@@ -290,6 +351,11 @@ const SmartActionsBar: React.FC<{
           <Text style={styles.actionButtonText}>Edit</Text>
         </TouchableOpacity>
       ) : null}
+      
+      <TouchableOpacity style={[styles.actionButton, styles.shareAction]} onPress={handleShare}>
+        <Ionicons name="share-outline" size={16} color={colors.primary} />
+        <Text style={[styles.actionButtonText, { color: colors.primary }]}>Share</Text>
+      </TouchableOpacity>
       
       <TouchableOpacity style={[styles.actionButton, styles.secondaryAction]} onPress={onClose}>
         <Ionicons name="close" size={16} color={colors.textPrimary} />
@@ -417,6 +483,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = (props) =
           <ReceiptImageSection 
             imageUri={receipt.receipt_url} 
             onZoom={handleZoom}
+            receipt={receipt}
           />
 
           {/* Enhanced Details Section */}
@@ -739,6 +806,11 @@ const styles = StyleSheet.create({
   },
   primaryAction: {
     backgroundColor: colors.primary,
+  },
+  shareAction: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   secondaryAction: {
     backgroundColor: colors.surface,
