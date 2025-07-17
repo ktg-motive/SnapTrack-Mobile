@@ -1,0 +1,19 @@
+Version 1.3.5
+Release Date: July 16, 2025
+
+This update delivers critical payment security improvements and enhanced authentication flow reliability for seamless web-to-mobile signup experience.
+
+Enhancements:
+▸ Payment Security: Strengthened payment processing with bulletproof webhook handling and atomic user creation
+▸ Signup Flow: Improved web-to-mobile authentication handoff for smoother account creation experience
+▸ Deep Link Reliability: Enhanced deep link processing to ensure consistent payment success flow
+▸ Database Performance: Optimized user lookups and payment processing with improved indexing
+
+Bug Fixes:
+▸ Payment Verification: Fixed payment success display when users complete signup through web platform
+▸ Account Creation: Resolved edge cases where payment completion could fail during high traffic periods
+▸ Authentication Flow: Fixed inconsistencies in mobile app authentication after web payment completion
+
+Performance:
+▸ Security Infrastructure: Enterprise-grade payment processing with race condition protection
+▸ Signup Speed: Faster account creation through optimized database operations and improved error handling

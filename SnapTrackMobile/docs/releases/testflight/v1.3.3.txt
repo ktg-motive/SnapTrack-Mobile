@@ -1,0 +1,78 @@
+SnapTrack v1.3.2 (Build 9)
+January 13, 2025
+
+MAJOR USER EXPERIENCE OVERHAUL
+
+This release delivers comprehensive improvements to receipt management, navigation design, and camera functionality based on your valuable beta feedback.
+
+NEW FEATURES
+
+Receipt Export System
+Long-press any receipt image to share through your device's native sharing menu. Send receipts to email, messaging apps, cloud storage, or any compatible application with original image quality preserved.
+
+Auto-Save to Photo Library
+Enable automatic backup of captured receipts to your photo library through Settings > App Settings. Creates dedicated "SnapTrack Receipts" album for organized storage.
+
+Modern Navigation Design
+Redesigned bottom navigation with prominent center camera button following contemporary mobile app patterns. Improved one-handed accessibility and freed significant space on the home screen.
+
+Enhanced Camera Interface
+Expanded capture area to 95% of screen size with larger corner indicators. Position receipts anywhere in the view for more intuitive capture experience.
+
+IMPROVEMENTS
+
+Navigation Structure
+Streamlined to 5-tab layout (Home → Stats → Camera → Receipts → Help) with optimized touch targets and improved information architecture.
+
+Account Screen Redesign
+Simplified interface displaying only essential profile information for cleaner user experience.
+
+Statistics Accuracy
+Enhanced calculation system for daily and weekly expense totals with improved data consistency.
+
+Onboarding Flow
+New users now see welcome tour immediately after account creation for smoother first-time experience.
+
+BUG FIXES
+
+Authentication Resolution
+Fixed sign-in issues affecting Android devices with third-party authentication services.
+
+Keyboard Behavior
+Resolved issue where keyboard remained visible when tapping outside search fields on empty screens.
+
+Tab Bar Management
+Eliminated conflicts between camera interface and navigation controls for seamless user experience.
+
+Confidence Display
+Receipt processing confidence now displays correctly as percentage values (95% instead of 9500%).
+
+Help Navigation
+Resolved navigation errors when accessing help articles from various app sections.
+
+PERFORMANCE
+
+Image Export Quality
+Receipt images maintain original resolution and metadata when shared or saved to photo library.
+
+Permission Handling
+Streamlined photo library and sharing permission requests with clear user education.
+
+Camera Resource Management
+Enhanced camera lifecycle handling for improved app stability and battery efficiency.
+
+Touch Response
+Optimized interface responsiveness with improved touch target sizes and haptic feedback.
+
+TESTING FOCUS
+
+Please test the new sharing functionality by long-pressing receipt images and sharing to different apps. Try the auto-save feature in Settings > App Settings. Test the new center camera button navigation and verify the enlarged camera capture area works better.
+
+KNOWN ISSUES
+
+Export functionality currently limited to 100 receipts per operation.
+Occasional delays in cross-device synchronization under certain network conditions.
+
+Thank you for your continued participation in beta testing. Your feedback directly shapes these improvements and helps us deliver a polished expense management experience.
+
+Next: PDF receipt support for digital receipts sent as email attachments.
