@@ -7,7 +7,10 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Platform
+  Platform,
+  TextInput,
+  KeyboardAvoidingView,
+  Modal
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +25,9 @@ export default function SignUpScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [isIAPReady, setIsIAPReady] = useState(false);
+  const [showPromoCodeModal, setShowPromoCodeModal] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [processingPromoCode, setProcessingPromoCode] = useState(false);
 
   // Initialize In-App Purchases
   useEffect(() => {
@@ -98,7 +104,22 @@ export default function SignUpScreen() {
       
     } catch (error: any) {
       console.error('❌ Apple sign up error:', error);
-      if (error.message !== 'Apple sign in cancelled') {
+      
+      // Check for simulator-specific error
+      if (error.message?.includes('AuthorizationError error 1000') || 
+          error.message?.includes('authorization attempt failed')) {
+        Alert.alert(
+          'Testing on Simulator?',
+          'Apple Sign-In doesn\'t work in the iOS Simulator. To test SnapTrack:\n\n' +
+          '1. Use a real device for Apple Sign-In\n' +
+          '2. Or sign in with an existing account\n\n' +
+          'This is a simulator limitation, not an app issue.',
+          [
+            { text: 'Sign In Instead', onPress: handleSignInInstead },
+            { text: 'OK', style: 'cancel' }
+          ]
+        );
+      } else if (error.message !== 'Apple sign in cancelled') {
         Alert.alert('Sign Up Error', 'Failed to create account. Please try again.');
       }
     } finally {
@@ -142,12 +163,17 @@ export default function SignUpScreen() {
     }
   };
 
-  const processPurchase = async (product: any) => {
+  const processPurchase = async (product: any, offerCode?: string) => {
     try {
       setIsLoading(true);
       
-      // Purchase the product
-      const purchase = await iapManager.purchase(product.productId);
+      // Purchase the product with or without offer code
+      let purchase;
+      if (offerCode) {
+        purchase = await iapManager.purchaseWithOfferCode(product.productId, offerCode);
+      } else {
+        purchase = await iapManager.purchase(product.productId);
+      }
       
       if (!purchase) {
         throw new Error('Purchase cancelled');
@@ -163,7 +189,8 @@ export default function SignUpScreen() {
       // Send receipt to backend for validation and user creation
       const response = await apiClient.post<any>('/api/subscription/apple/purchase', {
         receipt_data: receipt,
-        is_sandbox: __DEV__
+        is_sandbox: __DEV__,
+        offer_code: offerCode
       });
       
       if ((response as any).data.success) {
@@ -174,7 +201,8 @@ export default function SignUpScreen() {
         (navigation as any).navigate('IAPWelcome', {
           receiptEmail: (response as any).data.user.receipt_email,
           isProxyEmail: (response as any).data.user.is_proxy_email,
-          subdomain: (response as any).data.user.subdomain
+          subdomain: (response as any).data.user.subdomain,
+          promoApplied: !!offerCode
         });
       } else {
         throw new Error((response as any).data.error || 'Failed to process subscription');
@@ -202,6 +230,31 @@ export default function SignUpScreen() {
     }
   };
 
+  const handlePromoCodeSubmit = async () => {
+    if (!promoCode.trim()) {
+      Alert.alert('Invalid Code', 'Please enter a promo code');
+      return;
+    }
+
+    if (!isIAPReady || products.length === 0) {
+      Alert.alert('Error', 'In-app purchases not available. Please try again later.');
+      return;
+    }
+
+    setProcessingPromoCode(true);
+    setShowPromoCodeModal(false);
+
+    try {
+      const product = products[0];
+      await processPurchase(product, promoCode.trim().toLowerCase());
+    } catch (error) {
+      console.error('Promo code purchase error:', error);
+    } finally {
+      setProcessingPromoCode(false);
+      setPromoCode('');
+    }
+  };
+
   const handleSignInInstead = () => {
     navigation.navigate('Auth' as never);
   };
@@ -214,6 +267,48 @@ export default function SignUpScreen() {
     'Professional exports'
   ];
 
+  // Android temporary message for testers
+  if (Platform.OS === 'android') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          {/* Logo Section */}
+          <View style={styles.logoSection}>
+            <SnapTrackLogo width={180} height={54} />
+          </View>
+
+          {/* Android Notice */}
+          <View style={styles.androidNoticeContainer}>
+            <Ionicons name="construct-outline" size={48} color={colors.primary} />
+            <Text style={styles.androidTitle}>Android Version Coming Soon!</Text>
+            <Text style={styles.androidSubtitle}>
+              We're working on bringing SnapTrack to Google Play Store.
+            </Text>
+            
+            <View style={styles.androidInfoBox}>
+              <Text style={styles.androidInfoTitle}>For Beta Testers:</Text>
+              <Text style={styles.androidInfoText}>
+                If you're a beta tester, please sign in with your existing account.
+              </Text>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.androidSignInButton}
+              onPress={handleSignInInstead}
+            >
+              <Text style={styles.androidSignInText}>Sign In to Existing Account</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.androidTimelineText}>
+              Expected launch: February 2025
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // iOS implementation
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -266,6 +361,13 @@ export default function SignUpScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity 
+            onPress={() => setShowPromoCodeModal(true)}
+            disabled={isLoading || processingPromoCode}
+          >
+            <Text style={styles.promoCodeLink}>Have a promo code?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
             onPress={handleSignInInstead}
             disabled={isLoading}
           >
@@ -273,6 +375,65 @@ export default function SignUpScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Promo Code Modal */}
+      <Modal
+        visible={showPromoCodeModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPromoCodeModal(false)}
+      >
+        <KeyboardAvoidingView 
+          style={styles.modalContainer} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <SafeAreaView style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Enter Promo Code</Text>
+              <TouchableOpacity 
+                onPress={() => setShowPromoCodeModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.modalDescription}>
+                Enter your promo code to redeem a special offer on your SnapTrack subscription.
+              </Text>
+
+              <TextInput
+                style={styles.promoCodeInput}
+                placeholder="Enter promo code"
+                placeholderTextColor="#999"
+                value={promoCode}
+                onChangeText={setPromoCode}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handlePromoCodeSubmit}
+              />
+
+              <TouchableOpacity
+                style={[styles.applyButton, !promoCode.trim() && styles.applyButtonDisabled]}
+                onPress={handlePromoCodeSubmit}
+                disabled={!promoCode.trim() || processingPromoCode}
+              >
+                {processingPromoCode ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.applyButtonText}>Apply Code</Text>
+                )}
+              </TouchableOpacity>
+
+              <Text style={styles.promoNote}>
+                Promo codes are case-insensitive. Your special offer will be applied at checkout.
+              </Text>
+            </View>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -376,5 +537,139 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 16,
     fontWeight: '500'
+  },
+  promoCodeLink: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '500',
+    textDecorationLine: 'underline'
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background
+  },
+  modalContent: {
+    flex: 1
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5'
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.textPrimary
+  },
+  closeButton: {
+    padding: 8
+  },
+  modalBody: {
+    padding: 20
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 24,
+    lineHeight: 22
+  },
+  promoCodeInput: {
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    backgroundColor: '#F8F8F8',
+    marginBottom: 20,
+    textAlign: 'center',
+    letterSpacing: 2
+  },
+  applyButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16
+  },
+  applyButtonDisabled: {
+    opacity: 0.5
+  },
+  applyButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  promoNote: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20
+  },
+  // Android-specific styles
+  androidNoticeContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20
+  },
+  androidTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginTop: 20,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  androidSubtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 32,
+    textAlign: 'center',
+    lineHeight: 22
+  },
+  androidInfoBox: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 24,
+    width: '100%'
+  },
+  androidInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 8
+  },
+  androidInfoText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20
+  },
+  androidSignInButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    height: 56,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16
+  },
+  androidSignInText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  androidTimelineText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic'
   }
 });

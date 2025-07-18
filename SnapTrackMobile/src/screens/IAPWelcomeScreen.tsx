@@ -21,6 +21,7 @@ interface RouteParams {
   receiptEmail: string;
   isProxyEmail: boolean;
   subdomain: string;
+  promoApplied?: boolean;
 }
 
 export default function IAPWelcomeScreen() {
@@ -76,6 +77,14 @@ export default function IAPWelcomeScreen() {
         {/* Welcome Message */}
         <Text style={styles.welcomeTitle}>Welcome to SnapTrack!</Text>
         <Text style={styles.welcomeSubtitle}>Your account is ready to go.</Text>
+
+        {/* Promo Applied Success */}
+        {params.promoApplied && (
+          <View style={styles.promoBanner}>
+            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+            <Text style={styles.promoText}>Promo code applied! Enjoy 6 months free.</Text>
+          </View>
+        )}
 
         {/* Warning for Hide My Email users */}
         {params.isProxyEmail && (
@@ -226,6 +235,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
     padding: 12
+  },
+  promoBanner: {
+    backgroundColor: '#e8f5e9',
+    borderRadius: 8,
+    marginBottom: 16,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8
+  },
+  promoText: {
+    color: '#2e7d32',
+    fontSize: 16,
+    fontWeight: '600'
   },
   warningText: {
     color: '#856404',

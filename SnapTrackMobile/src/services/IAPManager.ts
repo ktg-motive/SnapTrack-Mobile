@@ -88,6 +88,22 @@ class IAPManager {
     }
   }
 
+  async purchaseWithOfferCode(productId: string, offerCode: string): Promise<any> {
+    if (!this.isConnected) {
+      await this.initialize();
+    }
+
+    try {
+      console.log('💳 Starting purchase with offer code (Mock Mode):', productId, offerCode);
+      // Mock purchase with offer code - always return null for development
+      console.log('⚠️ Purchase with offer code in Mock Mode - returning null');
+      return null;
+    } catch (error: any) {
+      console.error('❌ Purchase with offer code error:', error);
+      throw new Error('Purchase with offer code not available in development mode');
+    }
+  }
+
   async getReceipt(): Promise<string | null> {
     try {
       console.log('🧾 Getting receipt (Mock Mode)...');

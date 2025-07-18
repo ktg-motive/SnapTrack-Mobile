@@ -33,6 +33,13 @@
         "resourceClass": "m-medium"
       }
     },
+    "test-only": {
+      "extends": "production",
+      "distribution": "internal",
+      "ios": {
+        "enterpriseProvisioning": "adhoc"
+      }
+    },
     "apk": {
       "android": {
         "buildType": "apk"
