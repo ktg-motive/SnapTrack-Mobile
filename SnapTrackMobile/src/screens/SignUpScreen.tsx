@@ -297,7 +297,7 @@ export default function SignUpScreen() {
           {/* Android Notice */}
           <View style={styles.androidNoticeContainer}>
             <Ionicons name="construct-outline" size={48} color={colors.primary} />
-            <Text style={styles.androidTitle}>Android Version Coming Soon!</Text>
+            <Text style={styles.androidTitle}>Android Play Store Coming Soon!</Text>
             <Text style={styles.androidSubtitle}>
               We're working on bringing SnapTrack to Google Play Store.
             </Text>
@@ -317,7 +317,7 @@ export default function SignUpScreen() {
             </TouchableOpacity>
 
             <Text style={styles.androidTimelineText}>
-              Expected launch: February 2025
+              Expected launch: August 2025
             </Text>
           </View>
         </View>
