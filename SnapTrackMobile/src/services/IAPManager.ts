@@ -40,6 +40,18 @@ class IAPManager {
       await InAppPurchases.connectAsync();
       this.isConnected = true;
       
+      // Clear any pending transactions
+      console.log('🧹 Clearing pending transactions...');
+      const history = await InAppPurchases.getPurchaseHistoryAsync();
+      if (history && history.length > 0) {
+        for (const purchase of history) {
+          if (purchase && !purchase.acknowledged) {
+            console.log('Finishing unacknowledged transaction:', purchase.productId);
+            await InAppPurchases.finishTransactionAsync(purchase, false);
+          }
+        }
+      }
+      
       // Set up purchase listener
       this.purchaseListener = InAppPurchases.setPurchaseListener(({ purchases, responseCode }) => {
         console.log('Purchase event:', responseCode, purchases);
@@ -188,6 +200,28 @@ class IAPManager {
     } catch (error) {
       console.error('❌ Restore purchases error:', error);
       throw error;
+    }
+  }
+
+  async clearPendingTransactions(): Promise<void> {
+    try {
+      console.log('🧹 Clearing all pending transactions...');
+      
+      // Get purchase history
+      const history = await InAppPurchases.getPurchaseHistoryAsync();
+      
+      if (history && history.length > 0) {
+        for (const purchase of history) {
+          console.log('Found transaction:', purchase.productId, 'acknowledged:', purchase.acknowledged);
+          // Finish all transactions, acknowledged or not
+          await InAppPurchases.finishTransactionAsync(purchase, false);
+        }
+        console.log('✅ Cleared', history.length, 'transactions');
+      } else {
+        console.log('✅ No pending transactions found');
+      }
+    } catch (error) {
+      console.error('❌ Error clearing transactions:', error);
     }
   }
 
