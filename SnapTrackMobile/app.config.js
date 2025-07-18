@@ -16,7 +16,7 @@ const config = {
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain", 
-      backgroundColor: "#0a0a0a"
+      backgroundColor: "#FFFFFF"
     },
     assetBundlePatterns: ["**/*"],
     ios: {
