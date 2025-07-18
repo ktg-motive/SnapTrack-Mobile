@@ -390,6 +390,18 @@ export default function SignUpScreen() {
           >
             <Text style={styles.signInText}>Already have an account? Sign In</Text>
           </TouchableOpacity>
+
+          {/* Temporary debug button */}
+          <TouchableOpacity 
+            onPress={async () => {
+              Alert.alert('Clearing transactions...');
+              await iapManager.clearPendingTransactions();
+              Alert.alert('Cleared!', 'Try signing up again');
+            }}
+            style={{ marginTop: 20 }}
+          >
+            <Text style={{ color: '#666', fontSize: 12 }}>Debug: Clear Stuck Purchases</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
