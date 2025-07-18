@@ -7,10 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Platform,
-  TextInput,
-  KeyboardAvoidingView,
-  Modal
+  Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,9 +22,6 @@ export default function SignUpScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [isIAPReady, setIsIAPReady] = useState(false);
-  const [showPromoCodeModal, setShowPromoCodeModal] = useState(false);
-  const [promoCode, setPromoCode] = useState('');
-  const [processingPromoCode, setProcessingPromoCode] = useState(false);
 
   // Initialize In-App Purchases
   useEffect(() => {
@@ -99,7 +93,7 @@ export default function SignUpScreen() {
       console.log('🔍 IAP Debug - Platform:', Platform.OS, 'isIAPReady:', isIAPReady, 'products.length:', products.length);
       
       if (Platform.OS === 'ios' && isIAPReady && products.length > 0) {
-        await handlePurchase(promoCode);
+        await handlePurchase();
       } else {
         // More detailed error message
         let errorDetails = `Platform: ${Platform.OS}`;
@@ -139,7 +133,7 @@ export default function SignUpScreen() {
     }
   };
 
-  const handlePurchase = async (offerCode?: string) => {
+  const handlePurchase = async () => {
     try {
       if (!isIAPReady || products.length === 0) {
         Alert.alert('Error', 'In-app purchases not available. Please try again later.');
@@ -149,9 +143,7 @@ export default function SignUpScreen() {
       const product = products[0];
       
       // Show purchase confirmation
-      const message = offerCode 
-        ? `Subscribe to SnapTrack with promo code "${offerCode.toUpperCase()}" applied.`
-        : `Subscribe to SnapTrack for ${product.priceString}/month to get started with unlimited receipt tracking.`;
+      const message = `Subscribe to SnapTrack for ${product.priceString}/month to get started with unlimited receipt tracking.`;
       
       Alert.alert(
         'Complete Your SnapTrack Signup',
@@ -167,7 +159,7 @@ export default function SignUpScreen() {
           {
             text: 'Subscribe',
             onPress: async () => {
-              await processPurchase(product, offerCode);
+              await processPurchase(product);
             }
           }
         ]
@@ -179,17 +171,12 @@ export default function SignUpScreen() {
     }
   };
 
-  const processPurchase = async (product: any, offerCode?: string) => {
+  const processPurchase = async (product: any) => {
     try {
       setIsLoading(true);
       
-      // Purchase the product with or without offer code
-      let purchase;
-      if (offerCode) {
-        purchase = await iapManager.purchaseWithOfferCode(product.productId, offerCode);
-      } else {
-        purchase = await iapManager.purchase(product.productId);
-      }
+      // Purchase the product
+      const purchase = await iapManager.purchase(product.productId);
       
       if (!purchase) {
         throw new Error('Purchase cancelled');
@@ -205,8 +192,7 @@ export default function SignUpScreen() {
       // Send receipt to backend for validation and user creation
       const response = await apiClient.post<any>('/api/subscription/apple/purchase', {
         receipt_data: receipt,
-        is_sandbox: __DEV__,
-        offer_code: offerCode
+        is_sandbox: __DEV__
       });
       
       if ((response as any).data.success) {
@@ -217,8 +203,7 @@ export default function SignUpScreen() {
         (navigation as any).navigate('IAPWelcome', {
           receiptEmail: (response as any).data.user.receipt_email,
           isProxyEmail: (response as any).data.user.is_proxy_email,
-          subdomain: (response as any).data.user.subdomain,
-          promoApplied: !!offerCode
+          subdomain: (response as any).data.user.subdomain
         });
       } else {
         throw new Error((response as any).data.error || 'Failed to process subscription');
@@ -246,31 +231,6 @@ export default function SignUpScreen() {
     }
   };
 
-  const handlePromoCodeSubmit = async () => {
-    if (!promoCode.trim()) {
-      Alert.alert('Invalid Code', 'Please enter a promo code');
-      return;
-    }
-
-    // Just close the modal and store the promo code
-    // The actual purchase will happen after Apple Sign-In
-    setShowPromoCodeModal(false);
-    
-    // Show success message
-    Alert.alert(
-      'Promo Code Ready',
-      `Your promo code "${promoCode.toUpperCase()}" will be applied during signup.`,
-      [
-        {
-          text: 'Continue',
-          onPress: () => {
-            // The promo code is already stored in state
-            // User should now tap "Sign Up with Apple"
-          }
-        }
-      ]
-    );
-  };
 
   const handleSignInInstead = () => {
     navigation.navigate('Auth' as never);
@@ -377,12 +337,6 @@ export default function SignUpScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={() => setShowPromoCodeModal(true)}
-            disabled={isLoading || processingPromoCode}
-          >
-            <Text style={styles.promoCodeLink}>Have a promo code?</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity 
             onPress={handleSignInInstead}
@@ -393,64 +347,6 @@ export default function SignUpScreen() {
         </View>
       </View>
 
-      {/* Promo Code Modal */}
-      <Modal
-        visible={showPromoCodeModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowPromoCodeModal(false)}
-      >
-        <KeyboardAvoidingView 
-          style={styles.modalContainer} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <SafeAreaView style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Enter Promo Code</Text>
-              <TouchableOpacity 
-                onPress={() => setShowPromoCodeModal(false)}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalBody}>
-              <Text style={styles.modalDescription}>
-                Enter your promo code to redeem a special offer on your SnapTrack subscription.
-              </Text>
-
-              <TextInput
-                style={styles.promoCodeInput}
-                placeholder="Enter promo code"
-                placeholderTextColor="#999"
-                value={promoCode}
-                onChangeText={setPromoCode}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handlePromoCodeSubmit}
-              />
-
-              <TouchableOpacity
-                style={[styles.applyButton, !promoCode.trim() && styles.applyButtonDisabled]}
-                onPress={handlePromoCodeSubmit}
-                disabled={!promoCode.trim() || processingPromoCode}
-              >
-                {processingPromoCode ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.applyButtonText}>Apply Code</Text>
-                )}
-              </TouchableOpacity>
-
-              <Text style={styles.promoNote}>
-                Promo codes are case-insensitive. Your special offer will be applied at checkout.
-              </Text>
-            </View>
-          </SafeAreaView>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }
