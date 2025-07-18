@@ -210,8 +210,12 @@ export default function SignUpScreen() {
     try {
       setIsLoading(true);
       
+      Alert.alert('Debug 1', 'Starting purchase...');
+      
       // Purchase the product
       const purchase = await iapManager.purchase(product.productId);
+      
+      Alert.alert('Debug 2', `Purchase result: ${purchase ? 'Success' : 'Failed'}`);
       
       if (!purchase) {
         throw new Error('Purchase cancelled');
@@ -220,19 +224,26 @@ export default function SignUpScreen() {
       // Get the receipt
       const receipt = await iapManager.getReceipt();
       
+      Alert.alert('Debug 3', `Receipt: ${receipt ? 'Found' : 'Not found'}`);
+      
       if (!receipt) {
         throw new Error('No receipt found');
       }
       
       // Send receipt to backend for validation and user creation
+      Alert.alert('Debug 4', 'Sending to backend...');
       const response = await apiClient.post<any>('/api/subscription/apple/purchase', {
         receipt_data: receipt,
         is_sandbox: __DEV__
       });
       
+      Alert.alert('Debug 5', `Backend response: ${JSON.stringify((response as any).data)}`);
+      
       if ((response as any).data.success) {
         // Acknowledge the purchase
         await iapManager.finishTransaction(purchase, false);
+        
+        Alert.alert('Debug 6', 'Navigating to welcome screen...');
         
         // Navigate to welcome screen with user details
         (navigation as any).navigate('IAPWelcome', {
