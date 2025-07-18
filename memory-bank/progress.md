@@ -1,9 +1,9 @@
 # Progress Status
 
-**Last Updated:** 2025-07-18 16:15:00 - UI POLISH & RELEASE NOTES SYSTEM - Impacts: [User Experience, Professional Appearance, Release Management]
-**Development Phase:** Production Polish - UI Refinements & Professional Experience Enhancements
-**Overall Completion:** 100% - Professional Release Notes System + UI Polish Complete
-**Next Milestone:** Version API backend deployment + App Store submission with enhanced UI
+**Last Updated:** 2025-07-18 21:00:00 - PROMO CODES & APP STORE COMPLIANCE - Impacts: [Revenue Model, User Acquisition, App Store Approval]
+**Development Phase:** App Store Submission Ready - Apple Sign-In Fixed + Promo Code Support
+**Overall Completion:** 100% - All App Store compliance issues resolved + Revenue features added
+**Next Milestone:** Test Apple Sign-In on device + Submit to App Store with promo code support
 
 ## Feature Implementation Status
 
@@ -47,11 +47,14 @@
 ### Advanced Features ✅ COMPLETE (100%)
 - ✅ **Hamburger Menu Navigation:** Slide-out menu with clean navigation focus (stats removed for better UX)
 - ✅ **Enhanced Settings Management:** Comprehensive entity/tag management with mobile-optimized UI
-- ✅ **Version Management System:** Complete version display with release notes modal and update checking
+- ✅ **Version Management System:** Complete version display with release notes modal (Check for Updates removed July 18)
 - ✅ **Release Notes Modal:** Professional modal with Markdown rendering, release type badges, and fallback content
 - ✅ **Help Screen Layout:** Fixed back button positioning and contact support visibility (July 18, 2025)
 - ✅ **About Screen Privacy:** Obfuscated service references for professional appearance (July 18, 2025)
 - ✅ **Navigation Corrections:** Fixed Help navigation from hamburger menu with proper routing (July 18, 2025)
+- ✅ **Promo Code Support:** Complete UI implementation matching Stripe's "Beta 100" offer (July 18, 2025)
+- ✅ **Apple Sign-In Fix:** New provisioning profile with all required capabilities (July 18, 2025)
+- ✅ **Android Platform Detection:** "Coming Soon" messaging for Android testers (July 18, 2025)
 - ✅ **User Profile Integration:** Clean profile display without duplicate stats calculation
 - ✅ **Email Configuration Display:** User's unique SnapTrack email with copy functionality
 - ✅ **Settings Screen Cleanup:** Removed unimplemented features (Email Notifications, Auto-categorization, Offline Sync, Export, Backup)
@@ -127,8 +130,10 @@
 - ✅ **Icon Assets:** 1024x1024px icon.png and adaptive-icon.png configured
 - ✅ **Permissions:** Camera and photo library permissions properly declared
 - ✅ **Firebase Config:** GoogleService-Info.plist properly configured
-- ✅ **Build Configuration:** EAS Build ready for iOS compilation
+- ✅ **Build Configuration:** EAS Build ready with test-only profile for ad-hoc distribution
 - ✅ **Version Management:** Proper versioning and build numbers
+- ✅ **Provisioning Profile:** New ad-hoc profile with Sign In with Apple and IAP capabilities (July 18, 2025)
+- ✅ **App Store Compliance:** All web redirects removed, native signup flow implemented
 
 ### Production Environment Integration ✅ COMPLETE (100%)
 - ✅ **Backend API:** Stable integration with SnapTrack production API

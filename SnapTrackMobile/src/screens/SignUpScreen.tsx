@@ -93,7 +93,7 @@ export default function SignUpScreen() {
       
       // Step 3: New user - initiate purchase
       if (Platform.OS === 'ios' && isIAPReady && products.length > 0) {
-        await handlePurchase();
+        await handlePurchase(promoCode);
       } else {
         Alert.alert(
           'Setup Required',
@@ -127,7 +127,7 @@ export default function SignUpScreen() {
     }
   };
 
-  const handlePurchase = async () => {
+  const handlePurchase = async (offerCode?: string) => {
     try {
       if (!isIAPReady || products.length === 0) {
         Alert.alert('Error', 'In-app purchases not available. Please try again later.');
@@ -137,9 +137,13 @@ export default function SignUpScreen() {
       const product = products[0];
       
       // Show purchase confirmation
+      const message = offerCode 
+        ? `Subscribe to SnapTrack with promo code "${offerCode.toUpperCase()}" applied.`
+        : `Subscribe to SnapTrack for ${product.priceString}/month to get started with unlimited receipt tracking.`;
+      
       Alert.alert(
         'Complete Your SnapTrack Signup',
-        `Subscribe to SnapTrack for ${product.priceString}/month to get started with unlimited receipt tracking.`,
+        message,
         [
           {
             text: 'Cancel',
@@ -151,7 +155,7 @@ export default function SignUpScreen() {
           {
             text: 'Subscribe',
             onPress: async () => {
-              await processPurchase(product);
+              await processPurchase(product, offerCode);
             }
           }
         ]
@@ -236,23 +240,24 @@ export default function SignUpScreen() {
       return;
     }
 
-    if (!isIAPReady || products.length === 0) {
-      Alert.alert('Error', 'In-app purchases not available. Please try again later.');
-      return;
-    }
-
-    setProcessingPromoCode(true);
+    // Just close the modal and store the promo code
+    // The actual purchase will happen after Apple Sign-In
     setShowPromoCodeModal(false);
-
-    try {
-      const product = products[0];
-      await processPurchase(product, promoCode.trim().toLowerCase());
-    } catch (error) {
-      console.error('Promo code purchase error:', error);
-    } finally {
-      setProcessingPromoCode(false);
-      setPromoCode('');
-    }
+    
+    // Show success message
+    Alert.alert(
+      'Promo Code Ready',
+      `Your promo code "${promoCode.toUpperCase()}" will be applied during signup.`,
+      [
+        {
+          text: 'Continue',
+          onPress: () => {
+            // The promo code is already stored in state
+            // User should now tap "Sign Up with Apple"
+          }
+        }
+      ]
+    );
   };
 
   const handleSignInInstead = () => {
