@@ -23,32 +23,45 @@ export default function SignUpScreen() {
   const [products, setProducts] = useState<any[]>([]);
   const [isIAPReady, setIsIAPReady] = useState(false);
 
-  // Initialize In-App Purchases
-  useEffect(() => {
-    const initializeIAP = async () => {
-      if (Platform.OS !== 'ios') {
-        return;
-      }
+  // Define initializeIAP outside of useEffect so it can be called elsewhere
+  const initializeIAP = async () => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
 
-      try {
+    try {
         console.log('🍎 Initializing IAP on SignUpScreen...');
+        console.log('Platform:', Platform.OS);
+        
         await iapManager.initialize();
+        console.log('✅ IAP Manager initialized');
         
         // Load products
+        console.log('Loading products...');
         const loadedProducts = await iapManager.loadProducts();
         console.log('📦 Products loaded:', loadedProducts);
-        setProducts(loadedProducts);
-        setIsIAPReady(true);
+        console.log('Product count:', loadedProducts?.length || 0);
         
-        console.log('✅ IAP initialized with products:', loadedProducts);
-      } catch (error) {
-        console.error('❌ Failed to initialize IAP:', error);
-        // Set some debug info for the user
-        setIsIAPReady(false);
-        setProducts([]);
-      }
-    };
+        if (loadedProducts && loadedProducts.length > 0) {
+          setProducts(loadedProducts);
+          setIsIAPReady(true);
+          console.log('✅ IAP ready with', loadedProducts.length, 'products');
+        } else {
+          console.error('❌ No products loaded from App Store');
+          setIsIAPReady(false);
+          setProducts([]);
+        }
+    } catch (error) {
+      console.error('❌ Failed to initialize IAP:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      // Set some debug info for the user
+      setIsIAPReady(false);
+      setProducts([]);
+    }
+  };
 
+  // Initialize In-App Purchases
+  useEffect(() => {
     initializeIAP();
 
     return () => {
@@ -103,9 +116,31 @@ export default function SignUpScreen() {
         
         Alert.alert(
           'Setup Required',
-          `A subscription is required to use SnapTrack. Debug info: ${errorDetails}. Please try again when the App Store is available.`
+          `A subscription is required to use SnapTrack. Debug info: ${errorDetails}. Please try again when the App Store is available.`,
+          [
+            {
+              text: 'Cancel',
+              onPress: () => authService.signOut(),
+              style: 'cancel'
+            },
+            {
+              text: 'Retry',
+              onPress: async () => {
+                console.log('🔄 User requested IAP retry...');
+                setIsLoading(true);
+                try {
+                  await initializeIAP();
+                  // If successful, retry the purchase
+                  if (isIAPReady && products.length > 0) {
+                    await handlePurchase();
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }
+            }
+          ]
         );
-        authService.signOut();
       }
       
     } catch (error: any) {
