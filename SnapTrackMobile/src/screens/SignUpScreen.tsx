@@ -42,12 +42,16 @@ export default function SignUpScreen() {
         
         // Load products
         const loadedProducts = await iapManager.loadProducts();
+        console.log('📦 Products loaded:', loadedProducts);
         setProducts(loadedProducts);
         setIsIAPReady(true);
         
         console.log('✅ IAP initialized with products:', loadedProducts);
       } catch (error) {
         console.error('❌ Failed to initialize IAP:', error);
+        // Set some debug info for the user
+        setIsIAPReady(false);
+        setProducts([]);
       }
     };
 
@@ -92,12 +96,20 @@ export default function SignUpScreen() {
       }
       
       // Step 3: New user - initiate purchase
+      console.log('🔍 IAP Debug - Platform:', Platform.OS, 'isIAPReady:', isIAPReady, 'products.length:', products.length);
+      
       if (Platform.OS === 'ios' && isIAPReady && products.length > 0) {
         await handlePurchase(promoCode);
       } else {
+        // More detailed error message
+        let errorDetails = `Platform: ${Platform.OS}`;
+        if (Platform.OS === 'ios') {
+          errorDetails += `, IAP Ready: ${isIAPReady}, Products: ${products.length}`;
+        }
+        
         Alert.alert(
           'Setup Required',
-          'A subscription is required to use SnapTrack. Please try again when the App Store is available.'
+          `A subscription is required to use SnapTrack. Debug info: ${errorDetails}. Please try again when the App Store is available.`
         );
         authService.signOut();
       }
