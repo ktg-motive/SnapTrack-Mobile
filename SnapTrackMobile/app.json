@@ -15,7 +15,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.motiveai.snaptrack",
+      "bundleIdentifier": "com.snaptrack.mobile",
       "buildNumber": "1.0.0",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
@@ -24,7 +24,7 @@
       }
     },
     "android": {
-      "package": "com.motiveai.snaptrack",
+      "package": "com.snaptrack.mobile",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -60,7 +60,8 @@
         {
           "iosUrlScheme": "com.googleusercontent.apps.925529316912-rgmp4c8ah10vig4at93a62kl0seipdgm"
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ]
   }
 }
