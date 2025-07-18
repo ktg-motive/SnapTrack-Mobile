@@ -342,6 +342,32 @@ export default function ReviewScreen() {
         return;
       }
 
+      // Check server health first
+      const isServerHealthy = await apiClient.checkServerHealth();
+      
+      if (!isServerHealthy) {
+        console.warn('⚠️ Server health check failed');
+        Alert.alert(
+          'Server Unavailable',
+          'The SnapTrack server is currently down for maintenance. You can continue to capture receipts offline.',
+          [
+            {
+              text: 'Go Back',
+              onPress: () => navigation.goBack(),
+              style: 'cancel'
+            },
+            {
+              text: 'Continue Offline',
+              onPress: () => {
+                // Allow manual entry with offline mode
+                setIsProcessing(false);
+              }
+            }
+          ]
+        );
+        return;
+      }
+
       // Stage 1: Upload image
       const uploadingInfo = getStageInfo('uploading', false); // AI detection happens after upload
       setProcessingState({
@@ -549,19 +575,45 @@ export default function ReviewScreen() {
       
       setIsProcessing(false);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ OCR processing failed:', error);
+      
+      // Check if this is a server error
+      const isServerError = error.status && error.status >= 500;
+      const errorMessage = error instanceof ApiError ? error.message : 'Processing failed';
       
       setProcessingState({
         stage: 'error',
         progress: 0,
-        message: error instanceof ApiError ? error.message : 'Processing failed'
+        message: errorMessage
       });
 
-      // Fall back to manual entry after showing error
-      setTimeout(() => {
-        setIsProcessing(false);
-      }, 2000);
+      // Show alert for server errors
+      if (isServerError) {
+        Alert.alert(
+          'Server Error',
+          'The SnapTrack server is temporarily unavailable. You can still capture receipts - they will be uploaded when the server is back online.',
+          [
+            {
+              text: 'Go Back',
+              onPress: () => navigation.goBack(),
+              style: 'cancel'
+            },
+            {
+              text: 'Continue Offline',
+              onPress: () => {
+                // Allow manual entry even if server is down
+                setIsProcessing(false);
+              }
+            }
+          ]
+        );
+      } else {
+        // Fall back to manual entry after showing error for other errors
+        setTimeout(() => {
+          setIsProcessing(false);
+        }, 2000);
+      }
     }
   };
 

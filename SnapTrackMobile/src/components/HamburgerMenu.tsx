@@ -13,22 +13,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../styles/theme';
 import { authService } from '../services/authService';
+import { VersionDisplay } from './VersionDisplay';
 
 interface HamburgerMenuProps {
   isVisible: boolean;
   onClose: () => void;
   navigation: any;
-  userStats?: {
-    totalReceipts: number;
-    totalAmount: number;
-    currentMonthReceipts: number;
-  };
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MENU_WIDTH = Math.min(SCREEN_WIDTH * 0.85, 320);
 
-export default function HamburgerMenu({ isVisible, onClose, navigation, userStats }: HamburgerMenuProps) {
+export default function HamburgerMenu({ isVisible, onClose, navigation }: HamburgerMenuProps) {
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const user = authService.getCurrentUser();
@@ -84,12 +80,6 @@ export default function HamburgerMenu({ isVisible, onClose, navigation, userStat
     }
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
 
   const handleAccountSettings = () => {
     onClose();
@@ -103,10 +93,7 @@ export default function HamburgerMenu({ isVisible, onClose, navigation, userStat
 
   const handleHelp = () => {
     onClose();
-    // Navigate to Help screen in the Account tab since Help is now part of the Account stack
-    navigation.navigate('AccountTab', {
-      screen: 'Help'
-    });
+    navigation.navigate('Help');
   };
 
   const handleFeedback = () => {
@@ -186,21 +173,6 @@ export default function HamburgerMenu({ isVisible, onClose, navigation, userStat
           <Text style={styles.userEmail} numberOfLines={1}>
             {user?.email}
           </Text>
-          
-          {/* Quick Stats */}
-          {userStats && (
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Ionicons name="receipt" size={14} color={colors.primary} />
-                <Text style={styles.statText}>{userStats.totalReceipts} receipts</Text>
-              </View>
-              <Text style={styles.statSeparator}>•</Text>
-              <View style={styles.statItem}>
-                <Ionicons name="trending-up" size={14} color={colors.success} />
-                <Text style={styles.statText}>{formatCurrency(userStats.totalAmount)}</Text>
-              </View>
-            </View>
-          )}
         </View>
 
         {/* Navigation Items */}
@@ -238,6 +210,15 @@ export default function HamburgerMenu({ isVisible, onClose, navigation, userStat
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           </TouchableOpacity>
           
+          {/* Version Display */}
+          <View style={styles.versionContainer}>
+            <VersionDisplay 
+              showUpdateIndicator={true}
+              showUpdateCheck={true}
+              showCompactView={false}
+              style={styles.versionDisplay}
+            />
+          </View>
         </View>
 
         {/* Logout Button */}
@@ -358,30 +339,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     alignItems: 'center'
   },
-  statItem: {
-    alignItems: 'center',
-    flexDirection: 'row'
-  },
-  statSeparator: {
-    ...typography.caption,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginHorizontal: spacing.sm
-  },
-  statText: {
-    ...typography.caption,
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: spacing.xs
-  },
-  statsContainer: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
-    flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
-  },
   userEmail: {
     ...typography.caption,
     color: 'rgba(255, 255, 255, 0.9)',
@@ -394,5 +351,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: spacing.xs,
     textAlign: 'center'
+  },
+  versionContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomColor: colors.surface,
+    borderBottomWidth: 1
+  },
+  versionDisplay: {
+    paddingVertical: 0
   }
 });

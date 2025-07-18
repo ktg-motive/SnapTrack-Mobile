@@ -19,6 +19,7 @@ import ContactScreen from './src/screens/ContactScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import HelpScreen from './src/screens/HelpScreen';
 import OnboardingFlow from './src/screens/OnboardingFlow';
 import { colors } from './src/styles/theme';
 import { authService } from './src/services/authService';
@@ -294,6 +295,16 @@ export default function App() {
               component={EditProfileScreen} 
               options={{ 
                 title: 'Edit Profile',
+                headerShown: true,
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.textPrimary,
+              }} 
+            />
+            <Stack.Screen 
+              name="Help" 
+              component={HelpScreen} 
+              options={{ 
+                title: 'Help & Support',
                 headerShown: true,
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.textPrimary,

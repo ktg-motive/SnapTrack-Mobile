@@ -78,7 +78,22 @@ class SnapTrackApiClient {
       const duration = Date.now() - startTime;
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        // Try to parse error response, but handle HTML responses (500 errors often return HTML)
+        let errorData: any = {};
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await response.json().catch(() => ({}));
+        } else {
+          // Server returned HTML (likely an error page)
+          const text = await response.text().catch(() => '');
+          console.error(`❌ Server returned non-JSON response (${response.status}):`, text.substring(0, 200));
+          errorData = {
+            message: `Server error: ${response.status} ${response.statusText}`,
+            details: 'The server encountered an error. Please try again later.',
+            isServerError: true
+          };
+        }
         
         // Handle 401 Unauthorized - attempt token refresh and retry once
         if (response.status === 401 && this.token && !this.isRefreshingToken) {
@@ -126,8 +141,20 @@ class SnapTrackApiClient {
           this.isRefreshingToken = false;
         }
         
+        // Provide user-friendly error messages
+        let errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        
+        // Add context for common errors
+        if (response.status === 500) {
+          errorMessage = 'Server error. The SnapTrack backend is having issues. Please try again in a few moments.';
+        } else if (response.status === 502 || response.status === 503) {
+          errorMessage = 'SnapTrack service is temporarily unavailable. Please try again later.';
+        } else if (response.status === 404) {
+          errorMessage = 'The requested feature is not available. Please update your app.';
+        }
+        
         const apiError = new ApiError(
-          errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+          errorMessage,
           response.status,
           errorData.code
         );
@@ -184,6 +211,30 @@ class SnapTrackApiClient {
   }
 
   // Receipt Management
+
+  /**
+   * Check if the API server is healthy
+   */
+  async checkServerHealth(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.status === 'ok' || response.status === 200;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return false;
+    }
+  }
 
   /**
    * Upload receipt image for OCR processing
@@ -347,7 +398,7 @@ class SnapTrackApiClient {
         const transformed = {
           id: expense.id.toString(),
           vendor: expense.vendor || expense.vendor_name || '',
-          amount: expense.amount || 0,
+          amount: parseFloat(expense.amount) || 0,
           date: expense.expense_date || expense.date || '',
           entity: normalizedEntity,
           tags: tags,
@@ -479,7 +530,7 @@ class SnapTrackApiClient {
     const transformedReceipt = {
       id: expense.id.toString(), // Convert numeric ID to string
       vendor: expense.vendor || expense.vendor_name || '',
-      amount: expense.amount || 0,
+      amount: parseFloat(expense.amount) || 0,
       date: expense.expense_date || expense.date || '',
       entity: normalizedEntity,
       tags: tags,
@@ -630,11 +681,30 @@ class SnapTrackApiClient {
    * Get quick stats for dashboard
    */
   async getQuickStats(): Promise<QuickStats> {
-    // Get recent receipts to calculate stats
-    const receiptsResponse = await this.getReceipts({ limit: 1000 });
-    const receipts = receiptsResponse.data || [];
-
-    console.log('📊 Stats calculation - receipts count:', receipts.length);
+    // Fetch ALL receipts across all pages to calculate accurate stats
+    let allReceipts: Receipt[] = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+    
+    while (hasMorePages) {
+      const receiptsResponse = await this.getReceipts({ limit: 25, page: currentPage }); // Use backend's max limit
+      const pageReceipts = receiptsResponse.data || [];
+      
+      allReceipts = [...allReceipts, ...pageReceipts];
+      
+      // Check if we have more pages
+      const totalPages = receiptsResponse.pages || receiptsResponse.pagination?.total_pages || 1;
+      hasMorePages = currentPage < totalPages && pageReceipts.length > 0;
+      currentPage++;
+      
+      // Safety break to prevent infinite loops
+      if (currentPage > 100) {
+        console.error('Safety break: Too many pages, stopping at 100 pages');
+        break;
+      }
+    }
+    
+    const receipts = allReceipts;
 
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -646,18 +716,24 @@ class SnapTrackApiClient {
              receiptDate.getFullYear() === currentYear;
     });
 
-    const totalAmount = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
-    const monthlyTotal = monthlyReceipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+    const totalAmount = receipts.reduce((sum, receipt) => {
+      const amount = typeof receipt.amount === 'string' ? parseFloat(receipt.amount) : receipt.amount;
+      return sum + (amount || 0);
+    }, 0);
+    
+    const monthlyTotal = monthlyReceipts.reduce((sum, receipt) => {
+      const amount = typeof receipt.amount === 'string' ? parseFloat(receipt.amount) : receipt.amount;
+      return sum + (amount || 0);
+    }, 0);
 
     const entities: { [key: string]: number } = {};
     receipts.forEach(receipt => {
-      entities[receipt.entity] = (entities[receipt.entity] || 0) + receipt.amount;
+      const amount = typeof receipt.amount === 'string' ? parseFloat(receipt.amount) : receipt.amount;
+      entities[receipt.entity] = (entities[receipt.entity] || 0) + (amount || 0);
     });
 
-    // Get the actual total count from the API response
-    const totalCount = receiptsResponse.total || receiptsResponse.pagination?.total_count || receipts.length;
-    
-    console.log('📊 Using total count from API:', totalCount, '(loaded:', receipts.length, ')');
+    // Use the total count from all loaded receipts since we fetched everything
+    const totalCount = receipts.length;
 
     return {
       total_amount: totalAmount,

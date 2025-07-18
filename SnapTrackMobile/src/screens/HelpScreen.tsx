@@ -234,9 +234,9 @@ export default function HelpScreen() {
   );
 
   return (
-    <View style={[styles.container, { paddingTop: Platform.OS === 'android' ? spacing.md : 0 }]}>
-      {/* Header removed - navigation stack handles it */}
-      
+    <View style={[styles.container, { 
+      paddingTop: Platform.OS === 'android' ? spacing.md : Math.max(insets.top, 24) 
+    }]}>
       {/* Content Header for additional context */}
       {view === 'categories' && (
         <View style={styles.contentHeader}>
@@ -247,7 +247,7 @@ export default function HelpScreen() {
       )}
 
       {view !== 'categories' && (
-        <View style={styles.contentHeader}>
+        <View style={[styles.contentHeader, { paddingTop: spacing.md }]}>
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.primary} />
             <Text style={styles.backButtonText}>Back</Text>
@@ -363,7 +363,7 @@ export default function HelpScreen() {
           )}
 
           {/* Contact Support - show in all views */}
-          <View style={styles.footer}>
+          <View style={[styles.footer, { marginBottom: Math.max(insets.bottom, 120) }]}>
             <Text style={styles.footerTitle}>Still need help?</Text>
             <Text style={styles.footerText}>
               Contact our support team for personalized assistance with your SnapTrack account.

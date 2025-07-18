@@ -22,13 +22,13 @@ export default function AboutScreen() {
       license: 'MIT'
     },
     {
-      library: 'Google Cloud Vision',
+      library: 'AI Vision Services',
       purpose: 'OCR text extraction',
       license: 'Commercial'
     },
     {
-      library: 'Supabase',
-      purpose: 'Database and backend services',
+      library: 'Cloud Database',
+      purpose: 'Data storage and backend services',
       license: 'Apache 2.0'
     }
   ];

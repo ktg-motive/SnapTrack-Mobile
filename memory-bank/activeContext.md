@@ -1,10 +1,60 @@
 # Active Context
 
-**Last Updated:** 2025-07-17 14:10:00 - MEMORY BANK UPDATE POST-RECOVERY - Impacts: [Complete Project Status Documentation]
-**Previous Update:** 2025-07-17 13:55:00
-**Session Context:** Memory bank updated to reflect complete catastrophic recovery, all features restored + Apple IAP enhancement, App Store submission ready
+**Last Updated:** 2025-07-18 16:15:00 - UI POLISH & RELEASE NOTES ENHANCEMENTS - Impacts: [Mobile App UX, Release Management, Professional Experience]
+**Previous Update:** 2025-07-17 18:30:00
+**Session Context:** Fixed Help screen layout issues, obfuscated About screen service references, corrected Help navigation, enhanced release notes with Markdown rendering
 
-## Current Work Focus - Session July 17, 2025 (Recovery & Enhancement)
+## Current Work Focus - Session July 18, 2025 (UI Polish & Release Notes Enhancement)
+
+- ✅ **COMPLETED:** Help Screen Layout Fixes (July 18, 2025)
+  - **BACK BUTTON POSITIONING:** Fixed back button appearing underneath status bar/time display
+  - **SAFE AREA HANDLING:** Added proper insets.top calculation for iOS status bar clearance
+  - **CONTACT SUPPORT VISIBILITY:** Added bottom margin (120px) to ensure button appears above tab navigation
+  - **NAVIGATION ACCESSIBILITY:** Enhanced touch targets and visual hierarchy for better UX
+
+- ✅ **COMPLETED:** About Screen Service Obfuscation (July 18, 2025)
+  - **PRIVACY ENHANCEMENT:** Changed "Google Cloud Vision" to "AI Vision Services" 
+  - **SERVICE ABSTRACTION:** Changed "Supabase" to "Cloud Database"
+  - **PROFESSIONAL APPEARANCE:** Maintained functionality while hiding specific vendor implementations
+  - **SECURITY:** Reduced exposure of backend technology stack details
+
+- ✅ **COMPLETED:** Help Navigation Fix (July 18, 2025)
+  - **ROOT CAUSE:** Hamburger menu was trying to navigate to non-existent nested route 'AccountTab' → 'Help'
+  - **SOLUTION:** Added HelpScreen as standalone route in main navigation stack
+  - **NAVIGATION:** Updated hamburger menu to use direct 'Help' navigation
+  - **RESULT:** Help & Support now works correctly from hamburger menu
+
+- ✅ **COMPLETED:** Release Notes Modal Enhancement (July 18, 2025)
+  - **ACCESSIBILITY FIX:** Made "What's New" button visible in fallback mode when backend API unavailable
+  - **MARKDOWN RENDERING:** Integrated MarkdownRenderer for professional release notes formatting
+  - **FALLBACK CONTENT:** Added comprehensive mock release notes with current version highlights
+  - **PROFESSIONAL FORMATTING:** Supports headings, bold text, bullet lists with proper typography
+  - **USER EXPERIENCE:** Seamless transition from fallback to real release notes when API available
+
+## Previous Work Focus - Session July 17, 2025 (Version System & UX Improvements)
+
+- ✅ **COMPLETED:** Version Display System Implementation (July 17, 2025)
+  - **VERSION API:** Integrated backend version API (/api/app/version) with platform detection
+  - **RELEASE NOTES:** Created ReleaseNotesModal with proper styling and release type badges
+  - **COMPONENT:** Built VersionDisplay component with update checking and fallback modes
+  - **HAMBURGER MENU:** Added centered version display with "What's New" and "Check for Updates"
+  - **ERROR HANDLING:** Graceful fallback when version API unavailable (backend not deployed yet)
+
+- ✅ **COMPLETED:** Hamburger Menu UX Cleanup (July 17, 2025)
+  - **PROBLEM:** Stats calculation was incorrect due to pagination issues (showing $1,820 instead of $6,384)
+  - **ANALYSIS:** Only loading 25 receipts from page 1, missing 38 receipts with remaining $4,563
+  - **SOLUTION:** Removed redundant quick stats from hamburger menu entirely
+  - **RATIONALE:** Stats already prominently displayed on main HomeScreen, hamburger menu should focus on navigation
+  - **RESULT:** Cleaner UX, eliminated duplicate calculations, simplified component interface
+
+- ✅ **COMPLETED:** Release Notes Modal System (July 17, 2025)
+  - **MODAL:** Full-screen modal with proper close button and scroll support
+  - **BADGES:** Color-coded release type badges (Major=orange, Minor=blue, Patch=green, Hotfix=yellow)
+  - **LAYOUT:** Key highlights section with bullet points, full content section, version details
+  - **FORMATTING:** Proper date formatting, platform detection, fallback text for offline mode
+  - **INTEGRATION:** Replaces basic Alert dialogs with professional release notes experience
+
+## Previous Work Focus - Session July 17, 2025 (Recovery & Enhancement)
 
 - ✅ **COMPLETED:** CATASTROPHIC FILE LOSS RECOVERY (July 17, 2025)
   - **INCIDENT:** Complete file loss in SnapTrackMobile directory due to git submodule conversion issue
@@ -12,6 +62,14 @@
   - **ANALYSIS:** Identified missing features from July 11-17 through archive document review
   - **RESTORATION:** Successfully implemented all missing features from archive specifications
   - **ENHANCEMENT:** Integrated today's Apple IAP Mobile Implementation Guide
+
+- ✅ **COMPLETED:** App Store Compliance Fixes (July 17, 2025)
+  - **PROBLEM:** App Store rejection for web browser redirect in signup flow (violation of Apple guidelines)
+  - **ANALYSIS:** GetStartedScreen was redirecting to web signup when IAP unavailable
+  - **SOLUTION:** Created dedicated SignUpScreen with native Apple Sign-In + IAP purchase flow
+  - **UX IMPROVEMENT:** Clear "Create Your Account" messaging with feature list and transparent pricing
+  - **NAVIGATION:** NewWelcomeScreen → SignUpScreen (signup) vs AuthScreen (signin) for clearer user flow
+  - **COMPLIANCE:** Eliminated all web browser redirects, 100% native signup experience
 
 - ✅ **COMPLETED:** Text Receipt UX Implementation (July 17, 2025)
   - **ENHANCED ReceiptPreviewModal:** Added smart text receipt display with email icon and structured view
@@ -280,6 +338,43 @@
 
 ## Recent Changes
 
+**2025-07-18 16:15:00** - UI POLISH & RELEASE NOTES ENHANCEMENTS: Professional Experience Improvements:
+- **HELP SCREEN FIXES:** Resolved back button positioning under status bar and contact support visibility issues  
+- **ABOUT SCREEN PRIVACY:** Obfuscated specific service references (Google Cloud Vision → AI Vision Services)
+- **NAVIGATION CORRECTION:** Fixed Help navigation from hamburger menu with proper route registration
+- **RELEASE NOTES ENHANCEMENT:** Integrated Markdown rendering for professional formatting with fallback content
+- **USER EXPERIENCE:** Improved accessibility, visual hierarchy, and professional appearance throughout
+
+**2025-07-17 18:30:00** - VERSION SYSTEM & UX IMPROVEMENTS: Backend API Integration & Menu Cleanup:
+- **VERSION DISPLAY:** Implemented complete version management system with backend API integration
+- **COMPONENTS:** Created VersionDisplay.tsx and ReleaseNotesModal.tsx for professional version management
+- **API INTEGRATION:** Added version utility (version.ts) with platform detection and update checking
+- **HAMBURGER MENU:** Removed problematic quick stats (pagination bug showing $1,820 vs $6,384 actual)
+- **UX IMPROVEMENT:** Centered version display and update buttons for better visual hierarchy
+- **ERROR HANDLING:** Graceful fallback when version API unavailable with local version display
+- **FILES:** New ReleaseNotesModal.tsx, enhanced VersionDisplay.tsx, updated HamburgerMenu.tsx
+- **BACKEND READY:** Mobile app ready for version API deployment (backend team working on it)
+
+**2025-07-17 16:45:00** - APP STORE COMPLIANCE FIXES: Native Signup Flow Implementation:
+- **ISSUE:** App Store rejection due to web browser redirect in signup flow (violation of Apple guidelines)
+- **ROOT CAUSE:** GetStartedScreen was calling `Linking.openURL('https://snaptrack.bot/signup')` as fallback
+- **SOLUTION:** Created dedicated SignUpScreen with clear "Create Your Account" messaging
+- **FEATURES:** Native Apple Sign-In integration with IAP purchase flow, transparent pricing display
+- **NAVIGATION:** Split signup (NewWelcomeScreen → SignUpScreen) from signin (NewWelcomeScreen → AuthScreen)
+- **FILES:** New SignUpScreen.tsx, updated NewWelcomeScreen.tsx, registered in App.tsx navigation
+- **COMPLIANCE:** Eliminated all web browser redirects, 100% native user experience
+- **USER IMPACT:** Clear user journey from App Store download → native signup → subscription → app usage
+
+**2025-07-17 14:25:00** - API ERROR HANDLING IMPROVEMENTS: Better Server Error Management:
+- **ISSUE:** SnapTrack backend returning 500 errors on /api/parse endpoint
+- **SYMPTOM:** HTML error page returned instead of JSON response
+- **FIX 1:** Enhanced apiClient error handling to detect HTML responses
+- **FIX 2:** Added user-friendly error messages for server errors
+- **FIX 3:** Implemented server health check before upload attempts
+- **FIX 4:** Improved ReviewScreen error handling with retry options
+- **WORKAROUND:** Simulator fallback mode for development testing
+- **USER IMPACT:** Clear messaging when server is down, option to continue offline
+
 **2025-07-17 14:10:00** - MEMORY BANK UPDATE COMPLETE: Project Status Documentation:
 - **DOCUMENTATION:** Updated all memory bank files to reflect current recovered state
 - **VERIFICATION:** Confirmed all July 5-17 features successfully implemented
@@ -397,11 +492,11 @@
 ## Next Steps
 
 **Priority 1 (Immediate - App Store Submission):**
-- Fix TypeScript installation issue in development environment (non-blocking for build)
+- Test new SignUpScreen flow: NewWelcomeScreen → SignUp → Apple Sign-In → IAP → IAPWelcome
+- Verify no web browser redirects anywhere in signup process 
 - Create development build with `npx expo run:ios --device` to test Apple IAP
-- Test critical user flows: Apple Sign In → IAP Purchase → IAPWelcomeScreen
-- Verify all share buttons work with native share sheet
-- Submit version 1.3.5 (build 12) to App Store Connect
+- Test that AuthScreen continues to work for existing user signin
+- Submit version 1.3.6 (build 13) to App Store Connect with compliance fixes
 
 **Commands for Development Build:**
 ```bash
@@ -438,10 +533,11 @@ eas build --platform ios --profile preview
 ## Cross-Project Impact Alerts
 
 **Outgoing Impacts:**
+- **Affects App Store Submission:** Native signup flow eliminates rejection risk - **Critical Priority** - App approval
+- **Affects User Acquisition:** Clear signup flow improves conversion rates - **High Priority** - Business growth  
+- **Affects Revenue Model:** Apple IAP compliance enables mobile monetization - **Critical Priority** - Revenue generation
 - **Affects SnapTrack Backend:** Text receipt UX requires `extraction_method` field in API responses - **High Priority** - Email receipt display
-- **Affects Portfolio:** Catastrophic recovery demonstrates crisis management and technical resilience - **High Priority** - Case study material
-- **Affects Business Operations:** Apple IAP integration enables mobile monetization - **Critical Priority** - Revenue generation
-- **Affects Documentation:** Recovery process should be documented as disaster recovery playbook - **Medium Priority** - Future prevention
+- **Affects Portfolio:** App Store compliance demonstrates platform expertise - **High Priority** - Case study material
 
 **Incoming Dependencies:**
 - **SnapTrack Backend API:** Requires extraction_method and email_subject fields for text receipts - **High Priority** - UX completeness
@@ -450,6 +546,16 @@ eas build --platform ios --profile preview
 - **Firebase Configuration:** GoogleService-Info.plist must match production settings - **High Priority** - Authentication
 
 ## Active Decisions & Considerations
+
+**Server Error Handling Strategy (2025-07-17):**
+- **ISSUE:** Backend server returning 500 errors, likely due to maintenance or deployment
+- **APPROACH:** Graceful degradation with clear user messaging
+- **FEATURES:**
+  - Pre-upload health check to avoid failed attempts
+  - HTML response detection (server errors often return HTML)
+  - User-friendly error messages instead of technical details
+  - Retry and offline options for better UX
+- **TEMPORARY:** Simulator fallback creates mock data for testing
 
 **HomeScreen Layout Decision (2025-07-03):**
 - **RESOLVED:** Made capture button the dominant visual element like camera apps

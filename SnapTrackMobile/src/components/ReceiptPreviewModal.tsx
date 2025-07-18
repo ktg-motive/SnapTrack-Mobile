@@ -20,6 +20,26 @@ import { Receipt } from '../types';
 import { colors, typography, spacing, borderRadius, shadows } from '../styles/theme';
 import { shareService } from '../services/shareService';
 
+// Helper function to format dates consistently across the app
+const formatDateConsistent = (dateString: string) => {
+  try {
+    // Fix timezone handling - treat date-only strings as local dates
+    let date: Date;
+    
+    if (dateString && dateString.includes('T')) {
+      // Already has time component, use as-is
+      date = new Date(dateString);
+    } else {
+      // Date-only string - treat as local date by appending local time
+      date = new Date(dateString + 'T00:00:00');
+    }
+    
+    return date.toLocaleDateString();
+  } catch {
+    return 'Invalid Date';
+  }
+};
+
 interface ReceiptPreviewModalProps {
   receipt: Receipt | null;
   isVisible: boolean;
@@ -148,7 +168,7 @@ const ReceiptImageSection: React.FC<{
               <Text style={styles.summaryAmount}>${receipt.amount.toFixed(2)}</Text>
               <Text style={styles.summaryVendor}>{receipt.vendor}</Text>
               <Text style={styles.summaryDate}>
-                {new Date(receipt.date).toLocaleDateString()}
+                {formatDateConsistent(receipt.date)}
               </Text>
             </View>
             
@@ -522,7 +542,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = (props) =
             <View style={styles.headerContent}>
               <Text style={styles.headerTitle}>Receipt</Text>
               <Text style={styles.headerSubtitle}>
-              ${typeof receipt.amount === 'number' ? receipt.amount.toFixed(2) : '0.00'} • {receipt.date ? new Date(receipt.date).toLocaleDateString() : new Date().toLocaleDateString()}
+              ${typeof receipt.amount === 'number' ? receipt.amount.toFixed(2) : '0.00'} • {receipt.date ? formatDateConsistent(receipt.date) : new Date().toLocaleDateString()}
               </Text>
             </View>
 
@@ -569,7 +589,7 @@ export const ReceiptPreviewModal: React.FC<ReceiptPreviewModalProps> = (props) =
                 <DetailRow 
                   icon="calendar-outline"
                   label="Date"
-                  value={receipt.date ? new Date(receipt.date).toLocaleDateString() : new Date().toLocaleDateString()}
+                  value={receipt.date ? formatDateConsistent(receipt.date) : new Date().toLocaleDateString()}
                   confidence={receipt.confidence_score ? receipt.confidence_score * 100 : undefined}
                 />
                 {(receipt.entity && String(receipt.entity).trim()) ? (

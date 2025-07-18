@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,19 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Animated,
-  Image,
-  Dimensions
+  ActivityIndicator,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import SnapTrackLogo from '../../components/SnapTrackLogo';
+import { colors } from '../../styles/theme';
 
 type RootStackParamList = {
   NewWelcome: undefined;
   GetStarted: undefined;
+  SignUp: undefined;
   SignIn: undefined;
   Auth: undefined;
 };
@@ -26,17 +30,27 @@ const { width } = Dimensions.get('window');
 const NewWelcomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Start fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true
     }).start();
+
+    // Simulate brief loading state
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSignUp = () => {
-    navigation.navigate('GetStarted');
+    // Route to dedicated SignUp screen for clearer UX
+    navigation.navigate('SignUp');
   };
 
   const handleSignIn = () => {
@@ -47,35 +61,33 @@ const NewWelcomeScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../../assets/icon.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SnapTrack</Text>
+          <SnapTrackLogo size="medium" />
         </View>
 
-        <View style={styles.headlineContainer}>
-          <Text style={styles.headline}>Snap. Track. Done.</Text>
-        </View>
+        {!isLoading && (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={styles.primaryButton}
+              onPress={handleSignUp}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.primaryButtonText}>Sign Up</Text>
+            </TouchableOpacity>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.primaryButton}
-            onPress={handleSignUp}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.primaryButtonText}>Sign Up</Text>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleSignIn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signInText}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-          <TouchableOpacity 
-            style={styles.secondaryButton}
-            onPress={handleSignIn}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.secondaryButtonText}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        )}
       </Animated.View>
     </SafeAreaView>
   );
@@ -89,63 +101,39 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: width * 0.1, // 10% of screen width
+    justifyContent: 'space-between',
+    paddingVertical: 80,
   },
   logoContainer: {
-    marginTop: 120,
     alignItems: 'center',
-  },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    marginTop: 12,
-  },
-  headlineContainer: {
-    marginTop: 80,
-    alignItems: 'center',
-  },
-  headline: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    textAlign: 'center',
-    lineHeight: 38,
+    flex: 1,
+    justifyContent: 'center',
   },
   buttonContainer: {
-    marginTop: 60,
-    width: '100%',
+    width: '80%',
+    alignItems: 'center',
+    gap: 20,
   },
   primaryButton: {
-    backgroundColor: '#009f86',
+    backgroundColor: '#000000',
     height: 56,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  secondaryButton: {
-    marginTop: 16,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: '#009f86',
-    justifyContent: 'center',
+  signInText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  loadingContainer: {
     alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  secondaryButtonText: {
-    color: '#009f86',
-    fontSize: 17,
-    fontWeight: '500',
   },
 });
 

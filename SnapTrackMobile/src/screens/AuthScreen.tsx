@@ -407,6 +407,19 @@ export default function AuthScreen() {
 
         </View>
 
+        {/* Sign Up Note */}
+        <View style={styles.signUpNoteSection}>
+          <Text style={styles.signUpNoteText}>
+            Don't have an account?{' '}
+            <Text 
+              style={styles.signUpNoteLink} 
+              onPress={() => navigation.navigate('SignUp' as never)}
+            >
+              Sign up here
+            </Text>
+          </Text>
+        </View>
+
         {/* Legal Footer */}
         <View style={styles.legalSection}>
           <Text style={styles.legalText}>
@@ -597,6 +610,20 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6
+  },
+  signUpNoteSection: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16
+  },
+  signUpNoteText: {
+    color: '#666666',
+    fontSize: 14,
+    textAlign: 'center'
+  },
+  signUpNoteLink: {
+    color: '#009f86', // SnapTrack brand teal
+    fontWeight: '600'
   },
   legalSection: {
     alignItems: 'center',

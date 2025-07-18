@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     marginRight: 8
   },
   container: {
-    padding: 16
+    // No padding - let parent component handle spacing
   },
   h1: {
     ...typography.title1,

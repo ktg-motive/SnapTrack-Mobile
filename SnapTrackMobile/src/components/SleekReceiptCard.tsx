@@ -66,7 +66,7 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
 
   const handleShare = async () => {
     try {
-      await hapticFeedback.action();
+      await hapticFeedback.buttonPress();
       const success = await shareService.shareReceiptImage(receipt);
       if (success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -79,9 +79,17 @@ export const SleekReceiptCard: React.FC<SleekReceiptCardProps> = ({
 
   const formatDate = (dateString: string) => {
     try {
-      // Fix timezone handling - parse date string properly
-      const date = new Date(dateString);
-      // Use local time instead of UTC to match user's timezone
+      // Fix timezone handling - treat date-only strings as local dates
+      let date: Date;
+      
+      if (dateString && dateString.includes('T')) {
+        // Already has time component, use as-is
+        date = new Date(dateString);
+      } else {
+        // Date-only string - treat as local date by appending local time
+        date = new Date(dateString + 'T00:00:00');
+      }
+      
       return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'

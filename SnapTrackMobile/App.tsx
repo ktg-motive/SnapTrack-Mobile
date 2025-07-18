@@ -28,6 +28,7 @@ import WelcomeBackScreen from './src/screens/onboarding/WelcomeBackScreen';
 // New onboarding screens
 import NewWelcomeScreen from './src/screens/onboarding/NewWelcomeScreen';
 import GetStartedScreen from './src/screens/onboarding/GetStartedScreen';
+import SignUpScreen from './src/screens/SignUpScreen';
 import IAPWelcomeScreen from './src/screens/IAPWelcomeScreen';
 import { colors } from './src/styles/theme';
 import { authService } from './src/services/authService';
@@ -56,6 +57,7 @@ const linking = {
       AccountCreationInProgress: 'account-creation-in-progress',
       NewWelcome: 'welcome',
       GetStarted: 'get-started',
+      SignUp: 'signup',
     }
   }
 };
@@ -339,6 +341,18 @@ export default function App() {
             <Stack.Screen 
               name="GetStarted" 
               component={GetStartedScreen}
+              options={{
+                headerShown: true,
+                headerTitle: '',
+                headerBackTitle: 'Back',
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.textPrimary,
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen 
+              name="SignUp" 
+              component={SignUpScreen}
               options={{
                 headerShown: true,
                 headerTitle: '',

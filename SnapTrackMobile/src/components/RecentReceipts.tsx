@@ -168,6 +168,8 @@ export default function RecentReceipts({
         ListFooterComponent={null}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.flatListContent}
+        style={styles.flatListStyle}
+        nestedScrollEnabled={true}
         removeClippedSubviews={true}
         maxToRenderPerBatch={3}
         windowSize={10}
@@ -201,7 +203,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.md
   },
   flatListContent: {
+    flexGrow: 1,
     paddingBottom: spacing.sm // Reduced since footer provides visual boundary
+  },
+  flatListStyle: {
+    flex: 1
   },
   footerNavText: {
     ...typography.body2,

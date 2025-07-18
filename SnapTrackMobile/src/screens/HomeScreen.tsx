@@ -415,11 +415,6 @@ export default function HomeScreen() {
         isVisible={hamburgerMenuVisible}
         onClose={() => setHamburgerMenuVisible(false)}
         navigation={navigation}
-        userStats={quickStats ? {
-          totalReceipts: quickStats.receipt_count,
-          totalAmount: quickStats.total_amount,
-          currentMonthReceipts: quickStats.monthly_count
-        } : undefined}
       />
     </SafeAreaView>
   );

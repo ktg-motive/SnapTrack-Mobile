@@ -1,0 +1,380 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Platform
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../styles/theme';
+import SnapTrackLogo from '../components/SnapTrackLogo';
+import { authService } from '../services/authService';
+import { iapManager } from '../services/IAPManager';
+import { apiClient } from '../services/apiClient';
+
+export default function SignUpScreen() {
+  const navigation = useNavigation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [isIAPReady, setIsIAPReady] = useState(false);
+
+  // Initialize In-App Purchases
+  useEffect(() => {
+    const initializeIAP = async () => {
+      if (Platform.OS !== 'ios') {
+        return;
+      }
+
+      try {
+        console.log('🍎 Initializing IAP on SignUpScreen...');
+        await iapManager.initialize();
+        
+        // Load products
+        const loadedProducts = await iapManager.loadProducts();
+        setProducts(loadedProducts);
+        setIsIAPReady(true);
+        
+        console.log('✅ IAP initialized with products:', loadedProducts);
+      } catch (error) {
+        console.error('❌ Failed to initialize IAP:', error);
+      }
+    };
+
+    initializeIAP();
+
+    return () => {
+      iapManager.disconnect();
+    };
+  }, []);
+
+  const handleAppleSignUp = async () => {
+    setIsLoading(true);
+
+    try {
+      // Step 1: Sign in with Apple
+      const user = await authService.signInWithApple();
+      
+      if (!user) {
+        throw new Error('Apple sign in cancelled');
+      }
+      
+      // Step 2: Check if user already exists and has subscription
+      try {
+        const statusResponse = await apiClient.get<any>('/api/subscription/status');
+        
+        if ((statusResponse as any).data?.has_subscription) {
+          // User already exists with active subscription
+          console.log('✅ User already has subscription, navigating to app');
+          navigation.navigate('Main' as never);
+          
+          setTimeout(() => {
+            Alert.alert(
+              'Welcome to SnapTrack!',
+              'Your account is already set up and ready to go.'
+            );
+          }, 500);
+          return;
+        }
+      } catch (error) {
+        // User doesn't exist yet or no subscription, continue to purchase
+        console.log('📱 New user signup, proceeding to purchase');
+      }
+      
+      // Step 3: New user - initiate purchase
+      if (Platform.OS === 'ios' && isIAPReady && products.length > 0) {
+        await handlePurchase();
+      } else {
+        Alert.alert(
+          'Setup Required',
+          'A subscription is required to use SnapTrack. Please try again when the App Store is available.'
+        );
+        authService.signOut();
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Apple sign up error:', error);
+      if (error.message !== 'Apple sign in cancelled') {
+        Alert.alert('Sign Up Error', 'Failed to create account. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePurchase = async () => {
+    try {
+      if (!isIAPReady || products.length === 0) {
+        Alert.alert('Error', 'In-app purchases not available. Please try again later.');
+        return;
+      }
+
+      const product = products[0];
+      
+      // Show purchase confirmation
+      Alert.alert(
+        'Complete Your SnapTrack Signup',
+        `Subscribe to SnapTrack for ${product.priceString}/month to get started with unlimited receipt tracking.`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {
+              authService.signOut();
+            }
+          },
+          {
+            text: 'Subscribe',
+            onPress: async () => {
+              await processPurchase(product);
+            }
+          }
+        ]
+      );
+      
+    } catch (error) {
+      console.error('Purchase initiation error:', error);
+      Alert.alert('Error', 'Failed to start subscription process');
+    }
+  };
+
+  const processPurchase = async (product: any) => {
+    try {
+      setIsLoading(true);
+      
+      // Purchase the product
+      const purchase = await iapManager.purchase(product.productId);
+      
+      if (!purchase) {
+        throw new Error('Purchase cancelled');
+      }
+      
+      // Get the receipt
+      const receipt = await iapManager.getReceipt();
+      
+      if (!receipt) {
+        throw new Error('No receipt found');
+      }
+      
+      // Send receipt to backend for validation and user creation
+      const response = await apiClient.post<any>('/api/subscription/apple/purchase', {
+        receipt_data: receipt,
+        is_sandbox: __DEV__
+      });
+      
+      if ((response as any).data.success) {
+        // Acknowledge the purchase
+        await iapManager.finishTransaction(purchase, false);
+        
+        // Navigate to welcome screen with user details
+        (navigation as any).navigate('IAPWelcome', {
+          receiptEmail: (response as any).data.user.receipt_email,
+          isProxyEmail: (response as any).data.user.is_proxy_email,
+          subdomain: (response as any).data.user.subdomain
+        });
+      } else {
+        throw new Error((response as any).data.error || 'Failed to process subscription');
+      }
+      
+    } catch (error: any) {
+      console.error('Purchase processing error:', error);
+      
+      if (error.code === 'E_USER_CANCELLED' || error.message === 'Purchase cancelled') {
+        await authService.signOut();
+      } else {
+        Alert.alert(
+          'Subscription Error',
+          error.message || 'Failed to process subscription. Please contact support.',
+          [
+            {
+              text: 'OK',
+              onPress: () => authService.signOut()
+            }
+          ]
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignInInstead = () => {
+    navigation.navigate('Auth' as never);
+  };
+
+  const features = [
+    'Unlimited receipt storage',
+    'AI-powered data extraction', 
+    'Multi-business organization',
+    'Email forwarding',
+    'Professional exports'
+  ];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* Logo Section */}
+        <View style={styles.logoSection}>
+          <SnapTrackLogo width={180} height={54} />
+        </View>
+
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.title}>Create Your Account</Text>
+          <Text style={styles.subtitle}>
+            Start tracking receipts like a pro with SnapTrack's AI-powered platform.
+          </Text>
+        </View>
+
+        {/* Features */}
+        <View style={styles.featuresSection}>
+          <Text style={styles.featuresTitle}>What's included:</Text>
+          {features.map((feature, index) => (
+            <View key={index} style={styles.featureItem}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+          
+          <View style={styles.pricingInfo}>
+            <Text style={styles.pricingText}>$4.99/month • Billed through Apple</Text>
+            <Text style={styles.pricingSubtext}>Cancel anytime in Settings</Text>
+          </View>
+        </View>
+
+        {/* CTA Section */}
+        <View style={styles.ctaSection}>
+          <TouchableOpacity 
+            style={[styles.primaryButton, isLoading && styles.buttonDisabled]}
+            onPress={handleAppleSignUp}
+            disabled={isLoading}
+          >
+            <View style={styles.buttonContent}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="logo-apple" size={20} color="white" />
+                  <Text style={styles.primaryButtonText}>Sign Up with Apple</Text>
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={handleSignInInstead}
+            disabled={isLoading}
+          >
+            <Text style={styles.signInText}>Already have an account? Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFFFFF',
+    flex: 1
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 32,
+    paddingTop: 40,
+    paddingBottom: 40
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 40
+  },
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 40
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000000',
+    textAlign: 'center',
+    marginBottom: 12
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 22
+  },
+  featuresSection: {
+    flex: 1,
+    marginBottom: 32
+  },
+  featuresTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 16
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12
+  },
+  featureText: {
+    fontSize: 16,
+    color: '#333333',
+    flex: 1
+  },
+  pricingInfo: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    alignItems: 'center'
+  },
+  pricingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 4
+  },
+  pricingSubtext: {
+    fontSize: 14,
+    color: '#666666'
+  },
+  ctaSection: {
+    alignItems: 'center',
+    gap: 16
+  },
+  primaryButton: {
+    backgroundColor: '#000000',
+    borderRadius: 28,
+    height: 56,
+    width: '100%'
+  },
+  buttonContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  buttonDisabled: {
+    opacity: 0.6
+  },
+  signInText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '500'
+  }
+});
