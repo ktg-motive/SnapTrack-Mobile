@@ -383,13 +383,13 @@ export default function AuthScreen() {
 
           {/* Continue with Apple */}
           <TouchableOpacity 
-            style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
+            style={[styles.appleButton, isLoading && styles.buttonDisabled]}
             onPress={handleAppleSignIn}
             disabled={isLoading}
           >
-            <View style={styles.secondaryButtonContent}>
-              <Ionicons name="logo-apple" size={20} color="#000" />
-              <Text style={styles.secondaryButtonText}>Continue with Apple</Text>
+            <View style={styles.appleButtonContent}>
+              <Ionicons name="logo-apple" size={20} color="white" />
+              <Text style={styles.appleButtonText}>Continue with Apple</Text>
             </View>
           </TouchableOpacity>
 
@@ -724,6 +724,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   modalSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  appleButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 28,
+    height: 56
+  },
+  appleButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    height: '100%',
+    justifyContent: 'center'
+  },
+  appleButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600'

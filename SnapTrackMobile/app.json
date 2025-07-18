@@ -14,7 +14,7 @@
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.motiveai.snaptrack",
       "buildNumber": "1.0.0",
       "googleServicesFile": "./GoogleService-Info.plist",

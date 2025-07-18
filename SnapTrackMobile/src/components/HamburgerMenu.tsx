@@ -214,7 +214,7 @@ export default function HamburgerMenu({ isVisible, onClose, navigation }: Hambur
           <View style={styles.versionContainer}>
             <VersionDisplay 
               showUpdateIndicator={true}
-              showUpdateCheck={true}
+              showUpdateCheck={false}
               showCompactView={false}
               style={styles.versionDisplay}
             />

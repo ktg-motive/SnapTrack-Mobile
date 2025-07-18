@@ -97,21 +97,22 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({
         content: `## What's New in Version ${versionInfo?.version || '1.0.0'}
 
 ### ✨ New Features
-- **Version Management**: Added version display with update checking
+- **Version Management**: Added version display with update notifications
 - **Release Notes**: Professional release notes viewing experience
 - **Menu Improvements**: Cleaner hamburger menu with better organization
+- **Promo Codes**: Support for special offers during signup
 
 ### 🐛 Bug Fixes
-- Improved App Store compliance for signup flow
-- Enhanced navigation between screens
-- Better error handling for offline scenarios
+- Fixed App Store compliance issues for signup flow
+- Resolved navigation problems between screens
+- Improved error handling for offline scenarios
+- Fixed help screen layout issues
 
 ### 🔧 Improvements
 - Streamlined user interface elements
 - Better accessibility support
 - Performance optimizations
-
-*Note: Version API is currently being deployed. Full release notes will be available once the backend service is online.*`
+- Platform-specific UI improvements`
       };
       
       if (onReleaseNotesPress) {
