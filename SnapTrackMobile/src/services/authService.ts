@@ -41,7 +41,6 @@ import * as Crypto from 'expo-crypto';
 import { CONFIG } from '../config';
 import { AuthCredentials, AuthUser } from '../types';
 import { apiClient } from './apiClient';
-import { setUserContext, clearUserContext } from './sentryService';
 
 class AuthService {
   private auth: Auth;
@@ -99,8 +98,7 @@ class AuthService {
         await this.storeAuthToken(token);
         apiClient.setAuthToken(token);
         
-        // Set Sentry user context
-        setUserContext(this.currentUser.uid, this.currentUser.email);
+        // User context would be set here if we had error tracking
 
       } else {
         console.log('🔐 User signed out');
@@ -108,8 +106,7 @@ class AuthService {
         await this.clearAuthToken();
         apiClient.clearAuthToken();
         
-        // Clear Sentry user context
-        clearUserContext();
+        // User context would be cleared here if we had error tracking
       }
     });
   }
@@ -144,8 +141,7 @@ class AuthService {
       this.currentUser = authUser;
       console.log('✅ Sign in successful');
       
-      // Set Sentry user context
-      setUserContext(authUser.uid, authUser.email);
+      // User context would be set here if we had error tracking
       
       return authUser;
     } catch (error: any) {
@@ -184,8 +180,7 @@ class AuthService {
       this.currentUser = authUser;
       console.log('✅ Account creation successful');
       
-      // Set Sentry user context
-      setUserContext(authUser.uid, authUser.email);
+      // User context would be set here if we had error tracking
       
       return authUser;
     } catch (error: any) {
@@ -248,8 +243,7 @@ class AuthService {
       this.currentUser = authUser;
       console.log('✅ Google sign in successful');
       
-      // Set Sentry user context
-      setUserContext(authUser.uid, authUser.email);
+      // User context would be set here if we had error tracking
       
       return authUser;
     } catch (error: any) {
@@ -404,8 +398,7 @@ class AuthService {
       await this.clearAuthToken();
       this.currentUser = null;
       
-      // Clear Sentry user context
-      clearUserContext();
+      // User context would be cleared here if we had error tracking
       
       console.log('✅ Sign out successful');
     } catch (error: any) {
