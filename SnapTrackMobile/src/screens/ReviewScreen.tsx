@@ -514,6 +514,12 @@ export default function ReviewScreen() {
       // Analyze response for AI processing
       const { hasAI, aiTriggers, confidence: aiConfidence } = analyzeProcessingType(uploadedReceipt);
       
+      // Log what we're getting from the backend
+      if (aiTriggers && aiTriggers.length > 0) {
+        console.log('🤖 AI Triggers from backend:', aiTriggers);
+        console.log('🤖 Number of triggers:', aiTriggers.length);
+      }
+      
       // Stage 2: Scanning (OCR)
       const scanningInfo = getStageInfo('scanning', hasAI);
       setProcessingState({
@@ -632,7 +638,7 @@ export default function ReviewScreen() {
         progress: completeInfo.progress,
         message: hasAI ? 'AI-enhanced processing complete!' : completeInfo.message,
         hasAI: hasAI,
-        subMessage: hasAI ? `Confidence improved to ${Math.round((confidence || aiConfidence || 0) * 100)}%` : undefined
+        subMessage: hasAI ? `Confidence improved to ${Math.round(getConfidencePercentage(confidence || aiConfidence || 0))}%` : undefined
       });
 
       await new Promise(resolve => setTimeout(resolve, completeInfo.duration));
