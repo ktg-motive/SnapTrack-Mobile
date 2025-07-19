@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import { Platform } from 'react-native';
 import { CONFIG } from '../config';
 
 // Initialize Sentry with free tier optimizations
