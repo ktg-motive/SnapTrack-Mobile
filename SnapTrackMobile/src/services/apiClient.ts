@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import { CONFIG } from '../config';
 import {
   Receipt,
@@ -343,6 +343,11 @@ class SnapTrackApiClient {
     }
     
     console.log('📦 FormData prepared with entity:', entity);
+    
+    // DEBUG: Alert to confirm upload is starting
+    if (Platform.OS === 'ios') {
+      Alert.alert('Debug API', `Uploading to: ${this.baseUrl}/api/parse`);
+    }
 
     const response = await this.makeRequest<any>(
       '/api/parse',

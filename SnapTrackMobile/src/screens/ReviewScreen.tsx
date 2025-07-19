@@ -437,13 +437,32 @@ export default function ReviewScreen() {
           notes: expenseData.notes
         });
         
-        uploadedReceipt = await apiClient.uploadReceipt(
+        // DEBUG: Show alert to confirm code is running
+        if (Platform.OS === 'ios') {
+          Alert.alert('Debug', 'Starting iOS upload...');
+        }
+        
+        // Add a manual timeout wrapper
+        const uploadPromise = apiClient.uploadReceipt(
           imageUri,
           expenseData.entity,
           expenseData.tags,
           expenseData.notes
         );
+        
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error('Upload timed out after 30 seconds'));
+          }, 30000);
+        });
+        
+        uploadedReceipt = await Promise.race([uploadPromise, timeoutPromise]);
         console.log('✅ Real API upload successful');
+        
+        // DEBUG: Confirm upload completed
+        if (Platform.OS === 'ios') {
+          Alert.alert('Debug', 'Upload completed successfully');
+        }
       } catch (uploadError: any) {
         console.error('❌ Real API upload failed');
         console.error('Error type:', uploadError.constructor.name);
