@@ -325,10 +325,27 @@ class SnapTrackApiClient {
     // iOS-specific URI handling
     if (Platform.OS === 'ios') {
       console.log('🍎 iOS detected - checking URI format');
+      console.log('🍎 Original URI:', imageUri);
+      
       // Ensure file:// prefix for local files on iOS
       if (!imageUri.startsWith('http') && !imageUri.startsWith('file://')) {
         processedUri = `file://${imageUri}`;
         console.log('🔧 Added file:// prefix for iOS');
+      }
+      
+      console.log('🍎 Processed URI:', processedUri);
+      
+      // Verify file exists (iOS specific check)
+      try {
+        const { exists } = await import('expo-file-system').then(fs => fs.default.getInfoAsync(processedUri));
+        console.log('🍎 File exists:', exists);
+        if (!exists) {
+          Alert.alert('Debug Error', 'File does not exist at processed URI!');
+          throw new Error('Image file not found');
+        }
+      } catch (error) {
+        console.error('🍎 File check error:', error);
+        Alert.alert('Debug Error', `File check failed: ${error}`);
       }
     }
     
@@ -354,9 +371,9 @@ class SnapTrackApiClient {
     
     console.log('📦 FormData prepared with entity:', entity);
     
-    // DEBUG: Alert to confirm upload is starting
+    // DEBUG: Alert to confirm upload is starting and show FormData info
     if (Platform.OS === 'ios') {
-      Alert.alert('Debug API', `Uploading to: ${this.baseUrl}/api/parse`);
+      Alert.alert('Debug FormData', `URI: ${processedUri}\nEntity: ${entity}\nHas tags: ${!!tags}\nHas notes: ${!!notes}`);
     }
 
     const response = await this.makeRequest<any>(
