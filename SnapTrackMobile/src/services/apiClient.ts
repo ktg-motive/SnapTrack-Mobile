@@ -53,16 +53,6 @@ class SnapTrackApiClient {
     const method = options.method || 'GET';
     const startTime = Date.now();
     
-    // Start Sentry transaction for API tracking
-    const apiTracker = trackApiCall(endpoint, method);
-    
-    // Add breadcrumb for API call
-    addBreadcrumb(`API ${method} ${endpoint}`, 'api', {
-      url,
-      method,
-      hasToken: !!this.token,
-    });
-    
     // Don't set Content-Type for FormData - let the runtime set it with boundary
     const isFormData = options.body instanceof FormData;
     
@@ -76,10 +66,6 @@ class SnapTrackApiClient {
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
       console.log('🔐 Auth token present, length:', this.token.length);
-      // Extra iOS debugging for Sentry issue
-      if (Platform.OS === 'ios') {
-        console.log('🍎 iOS Token first 50 chars:', this.token.substring(0, 50));
-      }
     } else {
       console.warn('⚠️ No auth token available for request');
     }
@@ -122,10 +108,8 @@ class SnapTrackApiClient {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
           const timeoutError = new ApiError('Request timed out. Please try again.', 0, 'TIMEOUT');
-          apiTracker.finish(0, timeoutError);
           throw timeoutError;
         }
-        apiTracker.finish(0, fetchError);
         throw fetchError;
       }
       
@@ -232,9 +216,6 @@ class SnapTrackApiClient {
           triedRefresh: response.status === 401
         });
         
-        // Finish Sentry transaction with error
-        apiTracker.finish(response.status, apiError);
-        
         throw apiError;
       }
 
@@ -243,9 +224,6 @@ class SnapTrackApiClient {
       
       // Log successful API request performance
       errorReporting.logApiRequest(endpoint, method, duration, true, response.status);
-      
-      // Finish Sentry transaction successfully
-      apiTracker.finish(response.status);
       
       return data;
     } catch (error) {
@@ -282,9 +260,6 @@ class SnapTrackApiClient {
       
       // Log failed API request performance
       errorReporting.logApiRequest(endpoint, method, duration, false, 0);
-      
-      // Finish Sentry transaction with network error
-      apiTracker.finish(0, networkError);
       
       throw networkError;
     }
