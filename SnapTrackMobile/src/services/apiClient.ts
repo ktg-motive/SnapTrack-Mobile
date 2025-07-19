@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { CONFIG } from '../config';
 import {
   Receipt,
@@ -64,6 +65,9 @@ class SnapTrackApiClient {
 
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
+      console.log('🔐 Auth token present, length:', this.token.length);
+    } else {
+      console.warn('⚠️ No auth token available for request');
     }
 
     const config: RequestInit = {
@@ -73,9 +77,26 @@ class SnapTrackApiClient {
 
     try {
       console.log(`📡 API Request: ${method} ${endpoint}`);
+      console.log(`🔗 Full URL: ${url}`);
+      console.log(`🔑 Has auth token: ${!!this.token}`);
+      console.log(`📱 Platform: ${Platform.OS}`);
+      if (method === 'POST' && isFormData) {
+        console.log(`📦 Sending FormData`);
+      }
+      
+      // iOS-specific debugging
+      if (Platform.OS === 'ios') {
+        console.log('🍎 iOS Network Request - checking fetch...');
+      }
       
       const response = await fetch(url, config);
       const duration = Date.now() - startTime;
+      console.log(`📡 Response received: ${response.status} in ${duration}ms`);
+      
+      // iOS-specific response debugging
+      if (Platform.OS === 'ios') {
+        console.log('🍎 iOS Response headers:', response.headers);
+      }
       
       if (!response.ok) {
         // Try to parse error response, but handle HTML responses (500 errors often return HTML)
@@ -189,8 +210,18 @@ class SnapTrackApiClient {
         throw error;
       }
       
+      // Provide more specific error messages
+      let errorMessage = 'Network error occurred. Please check your connection.';
+      if (error instanceof Error) {
+        if (error.message.includes('Network request failed')) {
+          errorMessage = 'Unable to connect to server. Please check your internet connection.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Connection failed. The server may be unavailable.';
+        }
+      }
+      
       const networkError = new ApiError(
-        'Network error occurred. Please check your connection.',
+        errorMessage,
         0,
         'NETWORK_ERROR'
       );
@@ -245,14 +276,37 @@ class SnapTrackApiClient {
     tags?: string,
     notes?: string
   ): Promise<UploadedReceipt> {
+    console.log('📤 uploadReceipt called with:', {
+      imageUri: imageUri.substring(0, 100) + '...',
+      entity,
+      tags,
+      notes
+    });
+    
     const formData = new FormData();
     
     // Create file object from image URI
+    // For React Native on iOS, we need to ensure the URI is properly formatted
+    let processedUri = imageUri;
+    
+    // iOS-specific URI handling
+    if (Platform.OS === 'ios') {
+      console.log('🍎 iOS detected - checking URI format');
+      // Ensure file:// prefix for local files on iOS
+      if (!imageUri.startsWith('http') && !imageUri.startsWith('file://')) {
+        processedUri = `file://${imageUri}`;
+        console.log('🔧 Added file:// prefix for iOS');
+      }
+    }
+    
     const imageFile = {
-      uri: imageUri,
+      uri: processedUri,
       type: 'image/jpeg',
       name: 'receipt.jpg'
     } as any;
+    
+    console.log('🖼️ Image file object:', imageFile);
+    console.log('📱 Platform:', Platform.OS);
     
     formData.append('image', imageFile);
     formData.append('entity', entity);
@@ -264,6 +318,8 @@ class SnapTrackApiClient {
     if (notes) {
       formData.append('notes', notes);
     }
+    
+    console.log('📦 FormData prepared with entity:', entity);
 
     const response = await this.makeRequest<any>(
       '/api/parse',

@@ -396,6 +396,13 @@ export default function ReviewScreen() {
       let uploadedReceipt;
       try {
         console.log('🔍 Attempting real API upload...');
+        console.log('📤 Upload params:', {
+          imageUri: imageUri.substring(0, 50) + '...',
+          entity: expenseData.entity,
+          tags: expenseData.tags,
+          notes: expenseData.notes
+        });
+        
         uploadedReceipt = await apiClient.uploadReceipt(
           imageUri,
           expenseData.entity,
@@ -403,9 +410,25 @@ export default function ReviewScreen() {
           expenseData.notes
         );
         console.log('✅ Real API upload successful');
-      } catch (uploadError) {
-        console.log('⚠️ Real API upload failed, using simulator fallback');
-        console.log('Upload error:', uploadError);
+      } catch (uploadError: any) {
+        console.error('❌ Real API upload failed');
+        console.error('Error type:', uploadError.constructor.name);
+        console.error('Error message:', uploadError.message);
+        console.error('Error status:', uploadError.status);
+        console.error('Full error:', uploadError);
+        
+        // Check if this is a network error or server error
+        if (uploadError.message?.includes('Network request failed') || uploadError.status >= 500) {
+          throw uploadError; // Re-throw to trigger error handling
+        }
+        
+        // Only use simulator fallback for simulators
+        const isSimulator = Platform.OS === 'ios' && !Platform.isPad && __DEV__;
+        if (!isSimulator) {
+          throw uploadError; // Re-throw for real devices
+        }
+        
+        console.log('⚠️ Using simulator fallback');
         
         // Create a simulated successful response to test updateReceipt
         uploadedReceipt = {
@@ -432,7 +455,14 @@ export default function ReviewScreen() {
         console.log('🔍 Created simulator fallback receipt:', uploadedReceipt);
       }
 
-      console.log('🔍 Upload response:', uploadedReceipt);
+      console.log('🔍 Upload response type:', typeof uploadedReceipt);
+      console.log('🔍 Upload response keys:', uploadedReceipt ? Object.keys(uploadedReceipt) : 'null');
+      console.log('🔍 Full upload response:', JSON.stringify(uploadedReceipt, null, 2));
+      
+      if (!uploadedReceipt) {
+        throw new Error('No response received from upload');
+      }
+      
       setUploadedReceipt(uploadedReceipt);
 
       // Analyze response for AI processing
@@ -590,11 +620,26 @@ export default function ReviewScreen() {
       setIsProcessing(false);
 
     } catch (error: any) {
-      console.error('❌ OCR processing failed:', error);
+      console.error('❌ OCR processing failed');
+      console.error('Error type:', error?.constructor?.name || 'Unknown');
+      console.error('Error message:', error?.message || 'No message');
+      console.error('Error status:', error?.status || 'No status');
+      console.error('Full error:', error);
       
       // Check if this is a server error
-      const isServerError = error.status && error.status >= 500;
-      const errorMessage = error instanceof ApiError ? error.message : 'Processing failed';
+      const isServerError = error?.status && error.status >= 500;
+      const isNetworkError = error?.message?.includes('Network request failed');
+      let errorMessage = 'Processing failed';
+      
+      if (error instanceof ApiError) {
+        errorMessage = error.message;
+      } else if (isNetworkError) {
+        errorMessage = 'Network connection failed. Please check your internet connection.';
+      } else if (isServerError) {
+        errorMessage = 'Server is temporarily unavailable. Please try again.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
       
       setProcessingState({
         stage: 'error',
