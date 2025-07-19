@@ -210,6 +210,7 @@ export default function ReviewScreen() {
   useEffect(() => {
     // Load entities first, then start OCR processing
     loadEntities();
+    processReceiptWithAPI();
     
     // Cleanup function
     return () => {
@@ -217,7 +218,6 @@ export default function ReviewScreen() {
         clearTimeout(tagBlurTimeoutRef.current);
       }
     };
-    processReceiptWithAPI();
   }, []);
 
   // Verify authentication when screen comes into focus
@@ -335,6 +335,11 @@ export default function ReviewScreen() {
   };
 
   const processReceiptWithAPI = async () => {
+    // DEBUG: Alert to confirm function is called
+    if (Platform.OS === 'ios') {
+      Alert.alert('Debug Function', 'processReceiptWithAPI called');
+    }
+    
     try {
       if (mockData) {
         // Use mock data for simulator testing
@@ -423,6 +428,11 @@ export default function ReviewScreen() {
       
       // Track upload start time for timeout detection
       uploadStartTime.current = Date.now();
+
+      // DEBUG: Alert at very start of upload process
+      if (Platform.OS === 'ios') {
+        Alert.alert('Debug Start', 'handleUpload function started');
+      }
 
       await new Promise(resolve => setTimeout(resolve, uploadingInfo.duration));
 
