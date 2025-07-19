@@ -8,10 +8,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking as LinkingExpo } from 'react-native';
 
-// Initialize Sentry before other imports
-import { initSentry } from './src/services/sentryService';
-initSentry();
-
 import TabNavigator from './src/navigation/TabNavigator';
 import ReviewScreen from './src/screens/ReviewScreen';
 import AuthScreen from './src/screens/AuthScreen';
@@ -74,6 +70,16 @@ export default function App() {
 
   // Remove duplicate auth check - let AuthScreen handle initial auth state
   useEffect(() => {
+    // Initialize Sentry after the app mounts
+    try {
+      // Temporarily disable Sentry to fix crash
+      // const { initSentry } = require('./src/services/sentryService');
+      // initSentry();
+      console.log('⚠️ Sentry initialization temporarily disabled');
+    } catch (error) {
+      console.error('❌ Failed to initialize Sentry:', error);
+    }
+    
     setIsAuthChecked(true);
   }, []);
 
