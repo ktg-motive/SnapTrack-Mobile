@@ -43,6 +43,7 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [loadingEntities, setLoadingEntities] = useState(false);
   const [showEntityDropdown, setShowEntityDropdown] = useState(false);
+  const [amountText, setAmountText] = useState('');
 
   // Initialize form data when receipt changes
   useEffect(() => {
@@ -55,6 +56,8 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
       });
       setSelectedEntity(receipt.entity || '');
       setTags(receipt.tags || []);
+      // Format amount with 2 decimal places for display
+      setAmountText(receipt.amount !== null && receipt.amount !== undefined ? receipt.amount.toFixed(2) : '');
     }
   }, [receipt]);
 
@@ -239,10 +242,23 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
                   <Text style={styles.label}>Amount</Text>
                   <TextInput
                     style={styles.textInput}
-                    value={formData.amount?.toString() || ''}
-                    onChangeText={(text) => handleInputChange('amount', parseFloat(text) || 0)}
+                    value={amountText}
+                    onChangeText={(text) => {
+                      setAmountText(text);
+                      const numValue = parseFloat(text);
+                      if (!isNaN(numValue)) {
+                        handleInputChange('amount', numValue);
+                      }
+                    }}
+                    onBlur={() => {
+                      // Format with 2 decimal places when user leaves the field
+                      const numValue = parseFloat(amountText);
+                      if (!isNaN(numValue)) {
+                        setAmountText(numValue.toFixed(2));
+                      }
+                    }}
                     placeholder="0.00"
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholderTextColor={colors.textMuted}
                   />
                 </View>
@@ -261,7 +277,7 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
             </View>
 
             {/* Entity Selection */}
-            <View style={styles.section}>
+            <View style={[styles.section, styles.dropdownSection]}>
               <Text style={styles.label}>Entity</Text>
               <TouchableOpacity 
                 style={styles.dropdownButton}
@@ -279,33 +295,40 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
               
               {showEntityDropdown && (
                 <View style={styles.dropdownList}>
-                  {loadingEntities ? (
-                    <TouchableOpacity style={styles.dropdownItem} disabled>
-                      <Text style={styles.dropdownItemTextDisabled}>Loading entities...</Text>
-                    </TouchableOpacity>
-                  ) : entities.length === 0 ? (
-                    <TouchableOpacity style={styles.dropdownItem} disabled>
-                      <Text style={styles.dropdownItemTextDisabled}>No entities found</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    entities.map((entity) => (
-                      <TouchableOpacity
-                        key={entity.id}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setSelectedEntity(entity.name);
-                          setShowEntityDropdown(false);
-                        }}
-                      >
-                        <Text style={styles.dropdownItemText}>
-                          {entity.name}
-                          {entity.description && (
-                            <Text style={styles.dropdownItemDescription}> - {entity.description}</Text>
-                          )}
-                        </Text>
+                  <ScrollView 
+                    style={styles.dropdownScroll}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {loadingEntities ? (
+                      <TouchableOpacity style={styles.dropdownItem} disabled>
+                        <Text style={styles.dropdownItemTextDisabled}>Loading entities...</Text>
                       </TouchableOpacity>
-                    ))
-                  )}
+                    ) : entities.length === 0 ? (
+                      <TouchableOpacity style={styles.dropdownItem} disabled>
+                        <Text style={styles.dropdownItemTextDisabled}>No entities found</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      entities.map((entity) => (
+                        <TouchableOpacity
+                          key={entity.id}
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            setSelectedEntity(entity.name);
+                            setShowEntityDropdown(false);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>
+                            {entity.name}
+                            {entity.description && (
+                              <Text style={styles.dropdownItemDescription}> - {entity.description}</Text>
+                            )}
+                          </Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
                 </View>
               )}
             </View>
@@ -329,7 +352,7 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
               )}
 
               {/* Tag input */}
-              <View style={styles.tagInputContainer}>
+              <View style={[styles.tagInputContainer, styles.dropdownSection]}>
                 <TextInput
                   style={[styles.textInput, styles.tagInput]}
                   value={tagInput}
@@ -362,15 +385,22 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
               {/* Tag suggestions */}
               {showSuggestions && tagSuggestions.length > 0 && tags.length < 5 && (
                 <View style={styles.suggestionsContainer}>
-                  {tagSuggestions.map((suggestion) => (
-                    <TouchableOpacity
-                      key={suggestion}
-                      style={styles.suggestion}
-                      onPress={() => handleSelectSuggestion(suggestion)}
-                    >
-                      <Text style={styles.suggestionText}>{suggestion}</Text>
-                    </TouchableOpacity>
-                  ))}
+                  <ScrollView 
+                    style={styles.dropdownScroll}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    {tagSuggestions.map((suggestion) => (
+                      <TouchableOpacity
+                        key={suggestion}
+                        style={styles.suggestion}
+                        onPress={() => handleSelectSuggestion(suggestion)}
+                      >
+                        <Text style={styles.suggestionText}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
 
@@ -529,7 +559,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: spacing.xs,
     maxHeight: 200,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
     ...shadows.card
+  },
+  dropdownScroll: {
+    flexGrow: 0
+  },
+  dropdownSection: {
+    position: 'relative',
+    zIndex: 1
   },
   dropdownText: {
     ...typography.body,
@@ -628,6 +671,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: spacing.xs,
     maxHeight: 160,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    elevation: 5,
     ...shadows.card
   },
   tag: {

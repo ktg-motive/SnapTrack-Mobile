@@ -11,8 +11,19 @@
 export const formatAmount = (amount: number, currency: string = 'USD'): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(amount);
+};
+
+/**
+ * Format a currency amount without the currency symbol
+ * @param amount - The amount to format
+ * @returns Formatted number string with 2 decimal places
+ */
+export const formatCurrency = (amount: number): string => {
+  return amount.toFixed(2);
 };
 
 /**

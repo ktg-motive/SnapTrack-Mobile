@@ -203,10 +203,18 @@ export default function ReviewScreen() {
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const tagBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Load entities first, then start OCR processing
     loadEntities();
+    
+    // Cleanup function
+    return () => {
+      if (tagBlurTimeoutRef.current) {
+        clearTimeout(tagBlurTimeoutRef.current);
+      }
+    };
     processReceiptWithAPI();
   }, []);
 
@@ -269,6 +277,12 @@ export default function ReviewScreen() {
   const selectTag = (tag: string) => {
     console.log('🏷️ Tag selected:', tag);
     console.log('🏷️ Current tags:', expenseData.tags);
+    
+    // Clear the blur timeout to prevent race condition
+    if (tagBlurTimeoutRef.current) {
+      clearTimeout(tagBlurTimeoutRef.current);
+      tagBlurTimeoutRef.current = null;
+    }
     
     const allTags = normalizeTagsToArray(expenseData.tags);
     const currentInput = (expenseData.tags || '').split(',').map(t => t.trim());
@@ -856,7 +870,7 @@ export default function ReviewScreen() {
   );
 
   const renderTagsInputField = () => (
-    <View style={styles.inputContainer}>
+    <View style={[styles.inputContainer, { position: 'relative', zIndex: 100 }]}>
       <Text style={styles.inputLabel}>Tags</Text>
       <TextInput
         style={styles.textInput}
@@ -885,7 +899,9 @@ export default function ReviewScreen() {
         }}
         onBlur={() => {
           // Delay hiding suggestions to allow selection
-          setTimeout(() => setShowTagSuggestions(false), 300);
+          tagBlurTimeoutRef.current = setTimeout(() => {
+            setShowTagSuggestions(false);
+          }, 300);
         }}
       />
       {showTagSuggestions && tagSuggestions.length > 0 && (
@@ -895,12 +911,21 @@ export default function ReviewScreen() {
               <TouchableOpacity
                 key={index}
                 style={styles.tagSuggestion}
+                onPressIn={() => {
+                  // Clear timeout immediately on press start
+                  if (tagBlurTimeoutRef.current) {
+                    clearTimeout(tagBlurTimeoutRef.current);
+                    tagBlurTimeoutRef.current = null;
+                  }
+                }}
                 onPress={() => {
                   console.log('🏷️ Tag suggestion pressed:', tag);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   selectTag(tag);
                 }}
                 activeOpacity={0.7}
                 delayPressIn={0}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Text style={styles.tagSuggestionText}>{tag}</Text>
               </TouchableOpacity>
@@ -1596,6 +1621,11 @@ const styles = StyleSheet.create({
     elevation: 1000,
     marginTop: spacing.md,
     maxHeight: 150,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
     paddingVertical: spacing.sm,
     shadowColor: colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
