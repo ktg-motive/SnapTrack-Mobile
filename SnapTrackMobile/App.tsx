@@ -70,16 +70,6 @@ export default function App() {
 
   // Remove duplicate auth check - let AuthScreen handle initial auth state
   useEffect(() => {
-    // Initialize Sentry after the app mounts
-    try {
-      // Temporarily disable Sentry to fix crash
-      // const { initSentry } = require('./src/services/sentryService');
-      // initSentry();
-      console.log('⚠️ Sentry initialization temporarily disabled');
-    } catch (error) {
-      console.error('❌ Failed to initialize Sentry:', error);
-    }
-    
     setIsAuthChecked(true);
   }, []);
 

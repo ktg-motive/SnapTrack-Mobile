@@ -41,8 +41,7 @@ import * as Crypto from 'expo-crypto';
 import { CONFIG } from '../config';
 import { AuthCredentials, AuthUser } from '../types';
 import { apiClient } from './apiClient';
-// Temporarily disable Sentry
-// import { setUserContext, clearUserContext } from './sentryService';
+import { setUserContext, clearUserContext } from './sentryService';
 
 class AuthService {
   private auth: Auth;
@@ -97,7 +96,7 @@ class AuthService {
         apiClient.setAuthToken(token);
         
         // Set Sentry user context
-        // setUserContext(this.currentUser.uid, this.currentUser.email);
+        setUserContext(this.currentUser.uid, this.currentUser.email);
 
       } else {
         console.log('🔐 User signed out');
@@ -106,7 +105,7 @@ class AuthService {
         apiClient.clearAuthToken();
         
         // Clear Sentry user context
-        // clearUserContext();
+        clearUserContext();
       }
     });
   }
@@ -142,7 +141,7 @@ class AuthService {
       console.log('✅ Sign in successful');
       
       // Set Sentry user context
-      // setUserContext(authUser.uid, authUser.email);
+      setUserContext(authUser.uid, authUser.email);
       
       return authUser;
     } catch (error: any) {
@@ -182,7 +181,7 @@ class AuthService {
       console.log('✅ Account creation successful');
       
       // Set Sentry user context
-      // setUserContext(authUser.uid, authUser.email);
+      setUserContext(authUser.uid, authUser.email);
       
       return authUser;
     } catch (error: any) {
@@ -246,7 +245,7 @@ class AuthService {
       console.log('✅ Google sign in successful');
       
       // Set Sentry user context
-      // setUserContext(authUser.uid, authUser.email);
+      setUserContext(authUser.uid, authUser.email);
       
       return authUser;
     } catch (error: any) {
@@ -402,7 +401,7 @@ class AuthService {
       this.currentUser = null;
       
       // Clear Sentry user context
-      // clearUserContext();
+      clearUserContext();
       
       console.log('✅ Sign out successful');
     } catch (error: any) {

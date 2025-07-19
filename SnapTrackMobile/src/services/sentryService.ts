@@ -27,8 +27,8 @@ export const initSentry = () => {
     maxBreadcrumbs: 50, // Capture more context for errors
     
     // Release tracking
-    release: '1.0.0', // This should match your app version
-    dist: '1', // Build number
+    release: '1.3.5', // This should match your app version
+    dist: '10', // Build number
     
     // Error filtering to conserve quota
     beforeSend(event, hint) {
