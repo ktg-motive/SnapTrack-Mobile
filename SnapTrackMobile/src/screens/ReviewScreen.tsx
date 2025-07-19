@@ -335,11 +335,6 @@ export default function ReviewScreen() {
   };
 
   const processReceiptWithAPI = async () => {
-    // DEBUG: Alert to confirm function is called
-    if (Platform.OS === 'ios') {
-      Alert.alert('Debug Function', 'processReceiptWithAPI called');
-    }
-    
     try {
       if (mockData) {
         // Use mock data for simulator testing
@@ -373,7 +368,7 @@ export default function ReviewScreen() {
         setExpenseData(prev => ({
           ...prev,
           vendor: mockData.vendor,
-          amount: mockData.amount.toString(),
+          amount: mockData.amount.toFixed(2),
           date: mockData.date,
           tags: mockData.tags,
           confidence_score: mockData.confidence_score,
@@ -429,10 +424,6 @@ export default function ReviewScreen() {
       // Track upload start time for timeout detection
       uploadStartTime.current = Date.now();
 
-      // DEBUG: Alert at very start of upload process
-      if (Platform.OS === 'ios') {
-        Alert.alert('Debug Start', 'handleUpload function started');
-      }
 
       await new Promise(resolve => setTimeout(resolve, uploadingInfo.duration));
 
@@ -447,10 +438,6 @@ export default function ReviewScreen() {
           notes: expenseData.notes
         });
         
-        // DEBUG: Show alert to confirm code is running
-        if (Platform.OS === 'ios') {
-          Alert.alert('Debug', 'Starting iOS upload...');
-        }
         
         // Add a manual timeout wrapper
         const uploadPromise = apiClient.uploadReceipt(
@@ -469,10 +456,6 @@ export default function ReviewScreen() {
         uploadedReceipt = await Promise.race([uploadPromise, timeoutPromise]);
         console.log('✅ Real API upload successful');
         
-        // DEBUG: Confirm upload completed
-        if (Platform.OS === 'ios') {
-          Alert.alert('Debug', 'Upload completed successfully');
-        }
       } catch (uploadError: any) {
         console.error('❌ Real API upload failed');
         console.error('Error type:', uploadError.constructor.name);
@@ -549,7 +532,7 @@ export default function ReviewScreen() {
           stage: 'analyzing',
           progress: analyzingInfo.progress,
           message: analyzingInfo.message,
-          subMessage: `AI detected ${aiTriggers.length} improvement opportunities`,
+          subMessage: `AI detected ${aiTriggers?.length || 0} improvement opportunities`,
           hasAI: true,
           aiProgress: 50
         });
@@ -633,7 +616,7 @@ export default function ReviewScreen() {
       setExpenseData(prev => ({
         ...prev,
         vendor: vendor,
-        amount: amount?.toString() || '',
+        amount: amount ? parseFloat(amount).toFixed(2) : '',
         date: date,
         tags: tags || '',
         notes: notes || '',
@@ -649,7 +632,7 @@ export default function ReviewScreen() {
         progress: completeInfo.progress,
         message: hasAI ? 'AI-enhanced processing complete!' : completeInfo.message,
         hasAI: hasAI,
-        subMessage: hasAI ? `Confidence improved to ${Math.round((confidence || aiConfidence) * 100)}%` : undefined
+        subMessage: hasAI ? `Confidence improved to ${Math.round((confidence || aiConfidence || 0) * 100)}%` : undefined
       });
 
       await new Promise(resolve => setTimeout(resolve, completeInfo.duration));
