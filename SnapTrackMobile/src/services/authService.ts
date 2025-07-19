@@ -41,6 +41,7 @@ import * as Crypto from 'expo-crypto';
 import { CONFIG } from '../config';
 import { AuthCredentials, AuthUser } from '../types';
 import { apiClient } from './apiClient';
+import { setUserContext, clearUserContext } from './sentryService';
 
 class AuthService {
   private auth: Auth;
@@ -93,12 +94,18 @@ class AuthService {
         const token = await firebaseUser.getIdToken();
         await this.storeAuthToken(token);
         apiClient.setAuthToken(token);
+        
+        // Set Sentry user context
+        setUserContext(this.currentUser.uid, this.currentUser.email);
 
       } else {
         console.log('🔐 User signed out');
         this.currentUser = null;
         await this.clearAuthToken();
         apiClient.clearAuthToken();
+        
+        // Clear Sentry user context
+        clearUserContext();
       }
     });
   }
@@ -132,6 +139,9 @@ class AuthService {
 
       this.currentUser = authUser;
       console.log('✅ Sign in successful');
+      
+      // Set Sentry user context
+      setUserContext(authUser.uid, authUser.email);
       
       return authUser;
     } catch (error: any) {
@@ -169,6 +179,9 @@ class AuthService {
 
       this.currentUser = authUser;
       console.log('✅ Account creation successful');
+      
+      // Set Sentry user context
+      setUserContext(authUser.uid, authUser.email);
       
       return authUser;
     } catch (error: any) {
@@ -230,6 +243,9 @@ class AuthService {
 
       this.currentUser = authUser;
       console.log('✅ Google sign in successful');
+      
+      // Set Sentry user context
+      setUserContext(authUser.uid, authUser.email);
       
       return authUser;
     } catch (error: any) {
@@ -383,6 +399,10 @@ class AuthService {
       await signOut(this.auth);
       await this.clearAuthToken();
       this.currentUser = null;
+      
+      // Clear Sentry user context
+      clearUserContext();
+      
       console.log('✅ Sign out successful');
     } catch (error: any) {
       console.error('❌ Sign out failed:', error.message);

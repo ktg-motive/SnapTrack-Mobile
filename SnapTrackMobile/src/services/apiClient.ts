@@ -15,6 +15,7 @@ import {
   HelpArticlesResponse
 } from '../types';
 import { errorReporting } from './errorReporting';
+import { trackApiCall, addBreadcrumb, trackReceiptUpload, Sentry } from './sentryService';
 
 export class ApiError extends Error {
   constructor(
@@ -52,6 +53,16 @@ class SnapTrackApiClient {
     const url = `${this.baseUrl}${endpoint}`;
     const method = options.method || 'GET';
     const startTime = Date.now();
+    
+    // Start Sentry transaction for API tracking
+    const apiTracker = trackApiCall(endpoint, method);
+    
+    // Add breadcrumb for API call
+    addBreadcrumb(`API ${method} ${endpoint}`, 'api', {
+      url,
+      method,
+      hasToken: !!this.token,
+    });
     
     // Don't set Content-Type for FormData - let the runtime set it with boundary
     const isFormData = options.body instanceof FormData;
@@ -107,8 +118,11 @@ class SnapTrackApiClient {
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
-          throw new ApiError('Request timed out. Please try again.', 0, 'TIMEOUT');
+          const timeoutError = new ApiError('Request timed out. Please try again.', 0, 'TIMEOUT');
+          apiTracker.finish(0, timeoutError);
+          throw timeoutError;
         }
+        apiTracker.finish(0, fetchError);
         throw fetchError;
       }
       
@@ -215,6 +229,9 @@ class SnapTrackApiClient {
           triedRefresh: response.status === 401
         });
         
+        // Finish Sentry transaction with error
+        apiTracker.finish(response.status, apiError);
+        
         throw apiError;
       }
 
@@ -223,6 +240,9 @@ class SnapTrackApiClient {
       
       // Log successful API request performance
       errorReporting.logApiRequest(endpoint, method, duration, true, response.status);
+      
+      // Finish Sentry transaction successfully
+      apiTracker.finish(response.status);
       
       return data;
     } catch (error) {
@@ -259,6 +279,9 @@ class SnapTrackApiClient {
       
       // Log failed API request performance
       errorReporting.logApiRequest(endpoint, method, duration, false, 0);
+      
+      // Finish Sentry transaction with network error
+      apiTracker.finish(0, networkError);
       
       throw networkError;
     }
@@ -306,7 +329,11 @@ class SnapTrackApiClient {
       notes
     });
     
-    const formData = new FormData();
+    // Start Sentry tracking for receipt upload
+    const uploadTracker = trackReceiptUpload(entity);
+    
+    try {
+      const formData = new FormData();
     
     // Create file object from image URI
     // For React Native on iOS, we need to ensure the URI is properly formatted
@@ -316,26 +343,16 @@ class SnapTrackApiClient {
     if (Platform.OS === 'ios') {
       console.log('🍎 iOS detected - checking URI format');
       console.log('🍎 Original URI:', imageUri);
+      uploadTracker.addBreadcrumb('iOS URI processing', { originalUri: imageUri });
       
       // Ensure file:// prefix for local files on iOS
       if (!imageUri.startsWith('http') && !imageUri.startsWith('file://')) {
         processedUri = `file://${imageUri}`;
         console.log('🔧 Added file:// prefix for iOS');
+        uploadTracker.addBreadcrumb('Added file:// prefix', { processedUri });
       }
       
       console.log('🍎 Processed URI:', processedUri);
-      
-      // Verify file exists (iOS specific check)
-      try {
-        const { exists } = await import('expo-file-system').then(fs => fs.default.getInfoAsync(processedUri));
-        console.log('🍎 File exists:', exists);
-        if (!exists) {
-          throw new Error('Image file not found');
-        }
-      } catch (error) {
-        console.error('🍎 File check error:', error);
-        throw error;
-      }
     }
     
     const imageFile = {
@@ -410,21 +427,34 @@ class SnapTrackApiClient {
         status: (response.expense.status === 'completed' ? 'complete' : 'analyzing') as 'uploading' | 'scanning' | 'analyzing' | 'extracting' | 'complete' | 'error'
       };
       console.log('✅ Transformed response:', JSON.stringify(transformedResponse, null, 2));
+      uploadTracker.finish(true);
       return transformedResponse;
     }
     
     // Handle legacy response formats
     if (response.extracted_data) {
       console.log('🔍 Legacy format detected');
+      uploadTracker.finish(true);
       return response;
     } else if (response.data && response.data.extracted_data) {
+      uploadTracker.finish(true);
       return response.data;
     } else if (response.data) {
+      uploadTracker.finish(true);
       return response.data;
     }
 
     console.log('⚠️ Unknown response format, returning as-is');
+    
+    // Mark upload as successful
+    uploadTracker.finish(true);
+    
     return response;
+    } catch (error) {
+      // Log upload failure to Sentry
+      uploadTracker.finish(false, error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
   }
 
   /**
