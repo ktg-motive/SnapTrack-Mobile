@@ -1,10 +1,36 @@
 # Active Context
 
-**Last Updated:** 2025-07-18 21:00:00 - PROMO CODES & BUILD FIXES - Impacts: [IAP Revenue, App Store Compliance, User Acquisition]
-**Previous Update:** 2025-07-18 16:15:00
-**Session Context:** Implemented promo code UI, fixed Apple Sign-In provisioning, added Android platform detection, polished UI elements
+**Last Updated:** 2025-07-19 00:30:00 - APPLE SIGN-IN & REVENUECAT FIXES - Impacts: [Authentication Flow, Payment Processing, Welcome Emails]
+**Previous Update:** 2025-07-18 21:00:00
+**Session Context:** Fixed loading states, updated RevenueCat endpoint, incremented build numbers, investigated welcome email issue
 
-## Current Work Focus - Session July 18, 2025 (UI Polish & Release Notes Enhancement)
+## Current Work Focus - Session July 19, 2025 (Apple Sign-In & RevenueCat Integration)
+
+- ✅ **COMPLETED:** Apple Sign-In Loading State Fix (July 19, 2025)
+  - **ISSUE:** Loading spinner appearing on wrong button during authentication
+  - **ROOT CAUSE:** Global isLoading state affecting all buttons simultaneously
+  - **SOLUTION:** Added separate loading states (isGoogleLoading, isAppleLoading) for each auth method
+  - **RESULT:** Correct button shows spinner during its respective authentication flow
+
+- ✅ **COMPLETED:** RevenueCat Endpoint Integration (July 19, 2025)
+  - **ISSUE:** Mobile app calling old Apple IAP endpoint instead of RevenueCat endpoint
+  - **FIX:** Updated AuthScreen to call `/api/subscription/process-mobile-purchase`
+  - **PARAMETERS:** Corrected request structure with app_user_id, active_subscriptions, entitlements
+  - **IMPACT:** Enables proper RevenueCat purchase processing and welcome email sending
+
+- ✅ **COMPLETED:** Splash Screen Build Increment (July 19, 2025)
+  - **ISSUE:** Old splash screen persisting despite new logo file
+  - **CAUSE:** EAS build caching splash assets
+  - **FIX:** Incremented build numbers to 1.0.2 (iOS) and 3 (Android)
+  - **RESULT:** Forces asset regeneration on next build
+
+- ✅ **COMPLETED:** Welcome Email Investigation (July 19, 2025)
+  - **FINDING:** Backend has complete email system with SendGrid integration
+  - **ISSUE:** Mobile app not calling correct endpoint (using old build)
+  - **WEBHOOK ISSUE:** RevenueCat webhooks failing auth (string comparison bug)
+  - **SOLUTION:** New build required to use RevenueCat endpoint that triggers emails
+
+## Previous Work Focus - Session July 18, 2025 (UI Polish & Release Notes Enhancement)
 
 - ✅ **COMPLETED:** Help Screen Layout Fixes (July 18, 2025)
   - **BACK BUTTON POSITIONING:** Fixed back button appearing underneath status bar/time display
@@ -338,6 +364,16 @@
 
 ## Recent Changes
 
+**2025-07-19 00:30:00** - APPLE SIGN-IN & REVENUECAT INTEGRATION FIXES: Authentication & Payment Flow:
+- **LOADING STATES:** Fixed spinner appearing on wrong button by adding separate isGoogleLoading/isAppleLoading states
+- **REVENUECAT ENDPOINT:** Updated mobile app to call correct `/api/subscription/process-mobile-purchase` endpoint
+- **REQUEST STRUCTURE:** Fixed parameters to match backend expectations (app_user_id, entitlements, etc.)
+- **SPLASH SCREEN:** Incremented build numbers to force new splash screen asset generation
+- **WELCOME EMAILS:** Identified issue - mobile app using old build without RevenueCat endpoint integration
+- **WEBHOOK AUTH:** Discovered RevenueCat webhook authorization string comparison issue in backend
+- **FILES:** Updated AuthScreen.tsx, app.json build numbers
+- **NEXT STEP:** Build new version with `eas build --platform ios --profile preview` to test all fixes
+
 **2025-07-18 16:15:00** - UI POLISH & RELEASE NOTES ENHANCEMENTS: Professional Experience Improvements:
 - **HELP SCREEN FIXES:** Resolved back button positioning under status bar and contact support visibility issues  
 - **ABOUT SCREEN PRIVACY:** Obfuscated specific service references (Google Cloud Vision → AI Vision Services)
@@ -491,24 +527,18 @@
 
 ## Next Steps
 
-**Priority 1 (Immediate - App Store Submission):**
-- Test new SignUpScreen flow: NewWelcomeScreen → SignUp → Apple Sign-In → IAP → IAPWelcome
-- Verify no web browser redirects anywhere in signup process 
-- Create development build with `npx expo run:ios --device` to test Apple IAP
-- Test that AuthScreen continues to work for existing user signin
-- Submit version 1.3.6 (build 13) to App Store Connect with compliance fixes
+**Priority 1 (Immediate - New Build Required):**
+- Build new version with RevenueCat endpoint fixes: `eas build --platform ios --profile preview`
+- Test complete flow: Apple Sign-In → RevenueCat purchase → Welcome email delivery
+- Verify loading spinners appear on correct buttons during authentication
+- Confirm new splash screen with updated SnapTrack logo appears
+- Check RevenueCat webhook authorization issue with backend team
 
-**Commands for Development Build:**
-```bash
-# Clean and rebuild the native iOS project
-npx expo prebuild --clean
-
-# Build for physical device (required for Apple IAP testing)
-npx expo run:ios --device
-
-# Alternative: Create IPA for TestFlight
-eas build --platform ios --profile preview
-```
+**Expected Results After New Build:**
+- Welcome emails should send automatically after successful Apple Sign-In
+- Loading spinner should appear only on the button being pressed
+- New splash screen should show updated SnapTrack logo
+- RevenueCat endpoint will properly process purchases and trigger emails
 
 **Priority 2 (Development Build Testing):**
 - Test Apple IAP purchase flow on real device

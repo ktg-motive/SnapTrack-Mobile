@@ -66,70 +66,62 @@ export default function IAPWelcomeScreen() {
     navigation.navigate('Main' as never);
   };
 
+  const features = [
+    'Snap receipts with your camera',
+    'AI-powered data extraction',
+    'Forward receipts via email',
+    'Organize by business entities',
+    'Export for tax preparation'
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <SnapTrackLogo width={80} height={80} />
+        {/* Logo Section */}
+        <View style={styles.logoSection}>
+          <SnapTrackLogo width={180} height={54} />
         </View>
 
-        {/* Welcome Message */}
-        <Text style={styles.welcomeTitle}>Welcome to SnapTrack!</Text>
-        <Text style={styles.welcomeSubtitle}>Your account is ready to go.</Text>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.title}>You're all set!</Text>
+          <Text style={styles.subtitle}>
+            You're ready to begin snapping and tracking your receipts like a pro.
+          </Text>
+        </View>
 
-        {/* Promo Applied Success */}
-        {params.promoApplied && (
-          <View style={styles.promoBanner}>
-            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-            <Text style={styles.promoText}>Promo code applied! Enjoy 6 months free.</Text>
-          </View>
-        )}
+        {/* Features Section */}
+        <View style={styles.featuresSection}>
+          <Text style={styles.featuresTitle}>What you can do:</Text>
+          {features.map((feature, index) => (
+            <View key={index} style={styles.featureItem}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+              <Text style={styles.featureText}>{feature}</Text>
+            </View>
+          ))}
+        </View>
 
-        {/* Warning for Hide My Email users */}
-        {params.isProxyEmail && (
-          <View style={styles.warningBanner}>
-            <Text style={styles.warningText}>⚠️ Important: Save This Email! ⚠️</Text>
-          </View>
-        )}
-
-        {/* Email Container */}
-        <View style={styles.emailContainer}>
-          <Text style={styles.emailLabel}>📧 Your Receipt Email:</Text>
-          <View style={styles.emailBox}>
-            <Text style={styles.email} selectable>
-              expense@{params.subdomain}.snaptrack.bot
+        {/* Email Tip Section (Minimized) */}
+        <View style={styles.emailTipSection}>
+          <TouchableOpacity onPress={handleCopyEmail} style={styles.emailTip}>
+            <Ionicons name="mail-outline" size={16} color={colors.primary} />
+            <Text style={styles.emailTipText}>
+              Tip: You can also forward receipts to expense@{params.subdomain}.snaptrack.bot
             </Text>
-            <TouchableOpacity onPress={handleCopyEmail} style={styles.copyButton}>
-              <Ionicons 
-                name={emailCopied ? 'checkmark' : 'copy-outline'} 
-                size={20} 
-                color={emailCopied ? '#4CAF50' : colors.primary} 
-              />
-              <Text style={[styles.copyText, emailCopied && styles.copiedText]}>
-                {emailCopied ? 'Copied!' : 'Copy'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+            <Ionicons 
+              name={emailCopied ? 'checkmark' : 'copy-outline'} 
+              size={16} 
+              color={emailCopied ? '#4CAF50' : colors.primary} 
+            />
+          </TouchableOpacity>
         </View>
 
-        {/* Email to Me button for Hide My Email users */}
-        {params.isProxyEmail && (
-          <TouchableOpacity onPress={handleEmailToMe} style={styles.emailToMeButton}>
-            <Ionicons name="mail-outline" size={20} color="#000" />
-            <Text style={styles.emailToMeText}>Email to Me</Text>
+        {/* CTA Section */}
+        <View style={styles.ctaSection}>
+          <TouchableOpacity style={styles.primaryButton} onPress={handleContinue}>
+            <Text style={styles.primaryButtonText}>Start Tracking Receipts</Text>
           </TouchableOpacity>
-        )}
-
-        {/* Instructions */}
-        <Text style={styles.instruction}>
-          Forward email receipts to this address and they'll appear in your app.
-        </Text>
-
-        {/* Continue Button */}
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Continue to App</Text>
-        </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -142,132 +134,88 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60
+    paddingHorizontal: 32,
+    paddingTop: 40,
+    paddingBottom: 40
   },
-  continueButton: {
+  logoSection: {
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    bottom: 40,
-    left: 20,
-    paddingVertical: 16,
-    position: 'absolute',
-    right: 20
+    marginBottom: 40
   },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600'
-  },
-  copiedText: {
-    color: '#4CAF50'
-  },
-  copyButton: {
+  heroSection: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    flexDirection: 'row',
-    marginLeft: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8
+    marginBottom: 40
   },
-  copyText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000000',
+    textAlign: 'center',
+    marginBottom: 12,
+    fontFamily: 'System'
   },
-  email: {
-    color: colors.primary,
-    flex: 1,
-    fontFamily: 'Menlo',
-    fontSize: 18
-  },
-  emailBox: {
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderColor: colors.primary,
-    borderRadius: 12,
-    borderWidth: 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16
-  },
-  emailContainer: {
-    marginBottom: 24
-  },
-  emailLabel: {
-    color: '#1a1a1a',
+  subtitle: {
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 12
-  },
-  emailToMeButton: {
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10
-  },
-  emailToMeText: {
-    color: '#1a1a1a',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4
-  },
-  instruction: {
     color: '#666666',
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 32,
-    textAlign: 'center'
+    textAlign: 'center',
+    lineHeight: 22,
+    fontFamily: 'System'
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 24
+  featuresSection: {
+    flex: 1,
+    marginBottom: 32
   },
-  warningBanner: {
-    backgroundColor: '#fff3cd',
-    borderRadius: 8,
+  featuresTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
     marginBottom: 16,
-    padding: 12
+    fontFamily: 'System'
   },
-  promoBanner: {
-    backgroundColor: '#e8f5e9',
-    borderRadius: 8,
-    marginBottom: 16,
-    padding: 12,
+  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 12,
+    gap: 12
+  },
+  featureText: {
+    fontSize: 16,
+    color: '#333333',
+    flex: 1,
+    fontFamily: 'System'
+  },
+  emailTipSection: {
+    marginBottom: 24
+  },
+  emailTip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    padding: 16,
+    borderRadius: 12,
     gap: 8
   },
-  promoText: {
-    color: '#2e7d32',
-    fontSize: 16,
-    fontWeight: '600'
-  },
-  warningText: {
-    color: '#856404',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center'
-  },
-  welcomeSubtitle: {
+  emailTipText: {
+    flex: 1,
+    fontSize: 14,
     color: '#666666',
-    fontSize: 16,
-    marginBottom: 32,
-    textAlign: 'center'
+    fontFamily: 'System'
   },
-  welcomeTitle: {
-    color: '#1a1a1a',
-    fontSize: 24,
+  ctaSection: {
+    alignItems: 'center'
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 28,
+    height: 56,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center'
+    fontFamily: 'System'
   }
 });

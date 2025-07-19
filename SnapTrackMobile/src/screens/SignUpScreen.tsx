@@ -29,32 +29,31 @@ export default function SignUpScreen() {
       return;
     }
 
+    // Prevent double initialization
+    if (isIAPReady) {
+      return;
+    }
+
     try {
-        console.log('🍎 Initializing IAP on SignUpScreen...');
-        console.log('Platform:', Platform.OS);
-        
         await iapManager.initialize();
-        console.log('✅ IAP Manager initialized');
         
-        // Load products
-        console.log('Loading products...');
-        const loadedProducts = await iapManager.loadProducts();
-        console.log('📦 Products loaded:', loadedProducts);
-        console.log('Product count:', loadedProducts?.length || 0);
+        // Load products with retry
+        let loadedProducts = await iapManager.loadProducts();
+        
+        // If no products, wait and retry once
+        if (!loadedProducts || loadedProducts.length === 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          loadedProducts = await iapManager.loadProducts();
+        }
         
         if (loadedProducts && loadedProducts.length > 0) {
           setProducts(loadedProducts);
           setIsIAPReady(true);
-          console.log('✅ IAP ready with', loadedProducts.length, 'products');
         } else {
-          console.error('❌ No products loaded from App Store');
           setIsIAPReady(false);
           setProducts([]);
         }
     } catch (error) {
-      console.error('❌ Failed to initialize IAP:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
-      // Set some debug info for the user
       setIsIAPReady(false);
       setProducts([]);
     }
@@ -80,13 +79,15 @@ export default function SignUpScreen() {
         throw new Error('Apple sign in cancelled');
       }
       
+      
       // Step 2: Check if user already exists and has subscription
       try {
         const statusResponse = await apiClient.get<any>('/api/subscription/status');
         
-        if ((statusResponse as any).data?.has_subscription) {
+        // Check if response has the expected structure
+        const statusData = statusResponse?.data || statusResponse;
+        if (statusData?.has_subscription) {
           // User already exists with active subscription
-          console.log('✅ User already has subscription, navigating to app');
           navigation.navigate('Main' as never);
           
           setTimeout(() => {
@@ -99,11 +100,9 @@ export default function SignUpScreen() {
         }
       } catch (error) {
         // User doesn't exist yet or no subscription, continue to purchase
-        console.log('📱 New user signup, proceeding to purchase');
       }
       
       // Step 3: New user - initiate purchase
-      console.log('🔍 IAP Debug - Platform:', Platform.OS, 'isIAPReady:', isIAPReady, 'products.length:', products.length);
       
       if (Platform.OS === 'ios' && isIAPReady && products.length > 0) {
         await handlePurchase();
@@ -116,7 +115,7 @@ export default function SignUpScreen() {
         
         Alert.alert(
           'Setup Required',
-          `A subscription is required to use SnapTrack. Debug info: ${errorDetails}. Please try again when the App Store is available.`,
+          'A subscription is required to use SnapTrack. Please try again when the App Store is available.',
           [
             {
               text: 'Cancel',
@@ -126,12 +125,17 @@ export default function SignUpScreen() {
             {
               text: 'Retry',
               onPress: async () => {
-                console.log('🔄 User requested IAP retry...');
                 setIsLoading(true);
                 try {
-                  await initializeIAP();
-                  // If successful, retry the purchase
-                  if (isIAPReady && products.length > 0) {
+                  // Re-initialize only if not ready
+                  if (!isIAPReady) {
+                    await initializeIAP();
+                  }
+                  // Check latest state after potential initialization
+                  const currentProducts = iapManager.getProducts();
+                  if (currentProducts.length > 0) {
+                    setProducts(currentProducts);
+                    setIsIAPReady(true);
                     await handlePurchase();
                   }
                 } finally {
@@ -144,7 +148,6 @@ export default function SignUpScreen() {
       }
       
     } catch (error: any) {
-      console.error('❌ Apple sign up error:', error);
       
       // Check for simulator-specific error
       if (error.message?.includes('AuthorizationError error 1000') || 
@@ -201,7 +204,6 @@ export default function SignUpScreen() {
       );
       
     } catch (error) {
-      console.error('Purchase initiation error:', error);
       Alert.alert('Error', 'Failed to start subscription process');
     }
   };
@@ -210,53 +212,64 @@ export default function SignUpScreen() {
     try {
       setIsLoading(true);
       
-      Alert.alert('Debug 1', 'Starting purchase...');
-      
       // Purchase the product
-      const purchase = await iapManager.purchase(product.productId);
-      
-      Alert.alert('Debug 2', `Purchase result: ${purchase ? 'Success' : 'Failed'}`);
+      let purchase;
+      try {
+        purchase = await iapManager.purchase(product.productId);
+      } catch (purchaseError: any) {
+        throw purchaseError;
+      }
       
       if (!purchase) {
         throw new Error('Purchase cancelled');
       }
       
-      // Get the receipt
-      const receipt = await iapManager.getReceipt();
+      // Get customer info from RevenueCat
+      const customerInfo = await iapManager.getReceipt();
       
-      Alert.alert('Debug 3', `Receipt: ${receipt ? 'Found' : 'Not found'}`);
-      
-      if (!receipt) {
-        throw new Error('No receipt found');
+      if (!customerInfo) {
+        throw new Error('No customer info found');
       }
       
-      // Send receipt to backend for validation and user creation
-      Alert.alert('Debug 4', 'Sending to backend...');
-      const response = await apiClient.post<any>('/api/subscription/apple/purchase', {
-        receipt_data: receipt,
-        is_sandbox: __DEV__
-      });
+      // Parse the customer info
+      const parsedInfo = JSON.parse(customerInfo);
       
-      Alert.alert('Debug 5', `Backend response: ${JSON.stringify((response as any).data)}`);
-      
-      if ((response as any).data.success) {
+      // Send to backend for user creation
+      try {
+        // Log the request payload
+        const requestPayload = {
+          app_user_id: parsedInfo.appUserID,
+          active_subscriptions: parsedInfo.activeSubscriptions,
+          entitlements: parsedInfo.entitlements,
+          product_id: product.productId,
+          transaction_id: purchase.transactionId,
+          is_sandbox: __DEV__
+        };
+        const response = await apiClient.post<any>('/api/subscription/process-mobile-purchase', requestPayload);
+        
+        // The response IS the data (makeRequest returns data directly, not wrapped)
+        const responseData = response;
+        const isSuccess = responseData?.success || (responseData?.user && !responseData?.error);
+        
+        if (isSuccess) {
         // Acknowledge the purchase
         await iapManager.finishTransaction(purchase, false);
         
-        Alert.alert('Debug 6', 'Navigating to welcome screen...');
-        
         // Navigate to welcome screen with user details
+        const userData = responseData.user || responseData;
         (navigation as any).navigate('IAPWelcome', {
-          receiptEmail: (response as any).data.user.receipt_email,
-          isProxyEmail: (response as any).data.user.is_proxy_email,
-          subdomain: (response as any).data.user.subdomain
+          receiptEmail: userData.receipt_email,
+          isProxyEmail: userData.is_proxy_email,
+          subdomain: userData.subdomain
         });
       } else {
-        throw new Error((response as any).data.error || 'Failed to process subscription');
+        throw new Error(responseData?.error || 'Failed to process subscription');
+      }
+      } catch (backendError: any) {
+        throw backendError;
       }
       
     } catch (error: any) {
-      console.error('Purchase processing error:', error);
       
       if (error.code === 'E_USER_CANCELLED' || error.message === 'Purchase cancelled') {
         await authService.signOut();
@@ -391,17 +404,6 @@ export default function SignUpScreen() {
             <Text style={styles.signInText}>Already have an account? Sign In</Text>
           </TouchableOpacity>
 
-          {/* Temporary debug button */}
-          <TouchableOpacity 
-            onPress={async () => {
-              Alert.alert('Clearing transactions...');
-              await iapManager.clearPendingTransactions();
-              Alert.alert('Cleared!', 'Try signing up again');
-            }}
-            style={{ marginTop: 20 }}
-          >
-            <Text style={{ color: '#666', fontSize: 12 }}>Debug: Clear Stuck Purchases</Text>
-          </TouchableOpacity>
         </View>
       </View>
 

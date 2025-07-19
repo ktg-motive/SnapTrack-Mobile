@@ -27,6 +27,8 @@ import { apiClient } from '../services/apiClient';
 export default function AuthScreen() {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -48,7 +50,6 @@ export default function AuthScreen() {
       if (authService.isAuthenticated()) {
         const hasPaidAccount = await authService.checkPaidAccountStatus();
         if (hasPaidAccount) {
-          console.log('✅ AuthScreen: User authenticated with paid account, navigating to Main');
           navigation.navigate('Main' as never);
         }
       }
@@ -65,17 +66,13 @@ export default function AuthScreen() {
       }
 
       try {
-        console.log('🍎 Initializing IAP on AuthScreen...');
         await iapManager.initialize();
         
         // Load products
         const loadedProducts = await iapManager.loadProducts();
         setProducts(loadedProducts);
         setIsIAPReady(true);
-        
-        console.log('✅ IAP initialized with products:', loadedProducts);
       } catch (error) {
-        console.error('❌ Failed to initialize IAP:', error);
         // IAP not available, but don't block auth - user can use web payment
       }
     };
@@ -134,26 +131,19 @@ export default function AuthScreen() {
   };
 
   const handleGoogleSignIn = async () => {
-    console.log('🚀 handleGoogleSignIn started');
-    setIsLoading(true);
+    setIsGoogleLoading(true);
 
     try {
-      console.log('🔐 Calling authService.signInWithGoogle()');
       const user = await authService.signInWithGoogle();
-      console.log('✅ Google sign-in successful, user:', user.email);
       
       // Check if user has paid account
-      console.log('💳 Checking paid account status...');
       const hasPaidAccount = await authService.checkPaidAccountStatus();
-      console.log('💳 Has paid account:', hasPaidAccount);
       
       if (!hasPaidAccount) {
         // New user or unpaid - redirect to paid account required
-        console.log('❌ No paid account, navigating to NewWelcome');
         navigation.navigate('NewWelcome' as never);
       } else {
         // Existing paid user - navigate immediately
-        console.log('✅ Has paid account, navigating to Main');
         navigation.navigate('Main' as never);
         
         // Show success message after navigation
@@ -165,16 +155,17 @@ export default function AuthScreen() {
         }, 500);
       }
     } catch (error: any) {
-      console.error('❌ Google Sign-In Error:', error);
-      Alert.alert('Google Sign-In Error', error.message);
+      // Only show alert if it's not a cancellation
+      if (error.code !== 'SIGN_IN_CANCELLED' && error.message !== 'Sign in was cancelled') {
+        Alert.alert('Google Sign-In Error', error.message);
+      }
     } finally {
-      setIsLoading(false);
-      console.log('🏁 handleGoogleSignIn completed');
+      setIsGoogleLoading(false);
     }
   };
 
   const handleAppleSignIn = async () => {
-    setIsLoading(true);
+    setIsAppleLoading(true);
 
     try {
       // Step 1: Sign in with Apple
@@ -188,9 +179,11 @@ export default function AuthScreen() {
       try {
         const statusResponse = await apiClient.get<any>('/api/subscription/status');
         
-        if ((statusResponse as any).data?.has_subscription) {
+        // Check if response has the expected structure (same fix as SignUpScreen)
+        const statusData = statusResponse?.data || statusResponse;
+        
+        if (statusData?.has_subscription) {
           // Existing user with active subscription
-          console.log('✅ Existing user with subscription, navigating to app');
           navigation.navigate('Main' as never);
           
           // Show success message after navigation
@@ -204,7 +197,6 @@ export default function AuthScreen() {
         }
       } catch (error) {
         // User doesn't exist yet or no subscription, continue to purchase
-        console.log('📱 New user or no subscription, proceeding to purchase');
       }
       
       // Step 3: New user - initiate purchase
@@ -212,7 +204,6 @@ export default function AuthScreen() {
         await handlePurchase();
       } else {
         // IAP not available - show error and sign out
-        console.log('❌ IAP not available');
         Alert.alert(
           'Purchase Required',
           'A subscription is required to use SnapTrack. Please try again when the App Store is available.',
@@ -229,12 +220,14 @@ export default function AuthScreen() {
       }
       
     } catch (error: any) {
-      console.error('❌ Apple sign in error:', error);
-      if (error.message !== 'Apple sign in cancelled') {
+      // Only show alert if it's not a cancellation
+      if (error.message !== 'Apple sign in cancelled' && 
+          error.code !== 'ERR_REQUEST_CANCELED' && 
+          error.message !== 'Sign in was cancelled') {
         Alert.alert('Sign In Error', 'Failed to sign in with Apple. Please try again.');
       }
     } finally {
-      setIsLoading(false);
+      setIsAppleLoading(false);
     }
   };
 
@@ -270,7 +263,6 @@ export default function AuthScreen() {
       );
       
     } catch (error) {
-      console.error('Purchase initiation error:', error);
       Alert.alert('Error', 'Failed to start purchase process');
     }
   };
@@ -294,10 +286,15 @@ export default function AuthScreen() {
         throw new Error('No receipt found');
       }
       
-      // Send receipt to backend for validation and user creation
-      const response = await apiClient.post<any>('/api/subscription/apple/purchase', {
-        receipt_data: receipt,
-        is_sandbox: __DEV__ // Use sandbox in development
+      // Send RevenueCat data to backend for processing
+      const customerInfo = await iapManager.getCustomerInfo();
+      const response = await apiClient.post<any>('/api/subscription/process-mobile-purchase', {
+        app_user_id: customerInfo.originalAppUserId,
+        active_subscriptions: customerInfo.activeSubscriptions,
+        entitlements: customerInfo.entitlements.active,
+        product_id: product.productId,
+        transaction_id: purchase.transactionId,
+        is_sandbox: __DEV__
       });
       
       if ((response as any).data.success) {
@@ -315,7 +312,6 @@ export default function AuthScreen() {
       }
       
     } catch (error: any) {
-      console.error('Purchase processing error:', error);
       
       if (error.code === 'E_USER_CANCELLED' || error.message === 'Purchase cancelled') {
         // User cancelled, sign them out
@@ -365,12 +361,12 @@ export default function AuthScreen() {
         <View style={styles.buttonsSection}>
           {/* Continue with Google */}
           <TouchableOpacity 
-            style={[styles.primaryButton, isLoading && styles.buttonDisabled]}
+            style={[styles.primaryButton, (isLoading || isGoogleLoading || isAppleLoading) && styles.buttonDisabled]}
             onPress={handleGoogleSignIn}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading || isAppleLoading}
           >
             <View style={styles.primaryButtonContent}>
-              {isLoading ? (
+              {isGoogleLoading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
                 <>
@@ -383,21 +379,27 @@ export default function AuthScreen() {
 
           {/* Continue with Apple */}
           <TouchableOpacity 
-            style={[styles.appleButton, isLoading && styles.buttonDisabled]}
+            style={[styles.appleButton, (isLoading || isGoogleLoading || isAppleLoading) && styles.buttonDisabled]}
             onPress={handleAppleSignIn}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading || isAppleLoading}
           >
             <View style={styles.appleButtonContent}>
-              <Ionicons name="logo-apple" size={20} color="white" />
-              <Text style={styles.appleButtonText}>Continue with Apple</Text>
+              {isAppleLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <>
+                  <Ionicons name="logo-apple" size={20} color="white" />
+                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                </>
+              )}
             </View>
           </TouchableOpacity>
 
           {/* Continue with Email */}
           <TouchableOpacity 
-            style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
+            style={[styles.secondaryButton, (isLoading || isGoogleLoading || isAppleLoading) && styles.buttonDisabled]}
             onPress={() => setShowEmailModal(true)}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading || isAppleLoading}
           >
             <View style={styles.secondaryButtonContent}>
               <Ionicons name="mail-outline" size={20} color="#000" />
