@@ -60,10 +60,10 @@ class SnapTrackApiClient {
     
     // Add breadcrumb for API call
     // addBreadcrumb(`API ${method} ${endpoint}`, 'api', {
-      url,
-      method,
-      hasToken: !!this.token,
-    });
+    //   url,
+    //   method,
+    //   hasToken: !!this.token,
+    // });
     
     // Don't set Content-Type for FormData - let the runtime set it with boundary
     const isFormData = options.body instanceof FormData;
