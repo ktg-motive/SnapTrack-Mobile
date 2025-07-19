@@ -92,6 +92,10 @@ class AuthService {
 
         // Get and store auth token
         const token = await firebaseUser.getIdToken();
+        console.log('🔐 Firebase token obtained, length:', token.length);
+        if (Platform.OS === 'ios') {
+          console.log('🍎 iOS: Setting auth token after Firebase auth state change');
+        }
         await this.storeAuthToken(token);
         apiClient.setAuthToken(token);
         

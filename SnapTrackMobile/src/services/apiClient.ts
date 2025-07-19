@@ -77,6 +77,10 @@ class SnapTrackApiClient {
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
       console.log('🔐 Auth token present, length:', this.token.length);
+      // Extra iOS debugging for Sentry issue
+      if (Platform.OS === 'ios') {
+        console.log('🍎 iOS Token first 50 chars:', this.token.substring(0, 50));
+      }
     } else {
       console.warn('⚠️ No auth token available for request');
     }

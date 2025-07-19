@@ -84,7 +84,7 @@ export const initSentry = () => {
       // Capture console logs as breadcrumbs
       Sentry.breadcrumbsIntegration({
         console: true,
-        fetch: true,
+        fetch: Platform.OS === 'ios' ? false : true, // Disable fetch tracking on iOS
         navigation: true,
       }),
       
