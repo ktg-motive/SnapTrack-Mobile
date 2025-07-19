@@ -1,11 +1,11 @@
 import * as Sentry from '@sentry/react-native';
 import { Platform } from 'react-native';
-import { CONFIG } from '../config';
 
 // Initialize Sentry with free tier optimizations
 export const initSentry = () => {
-  Sentry.init({
-    dsn: 'https://254bbe4264d311f0aa2e7640a9c25708@o4509696760872960.ingest.us.sentry.io/4509696760872960',
+  try {
+    Sentry.init({
+      dsn: 'https://254bbe4264d311f0aa2e7640a9c25708@o4509696760872960.ingest.us.sentry.io/4509696760872960',
     
     // Environment configuration
     environment: __DEV__ ? 'development' : 'production',
@@ -89,27 +89,35 @@ export const initSentry = () => {
       }),
       
       // React Navigation integration
-      Sentry.reactNavigationIntegration(),
+      // Commenting out temporarily to debug crash
+      // Sentry.reactNavigationIntegration(),
       
       // React Native specific integrations
       Sentry.nativeCrashIntegration(),
-      Sentry.touchEventBoundaryIntegration(),
+      // Sentry.touchEventBoundaryIntegration(),
       
       // Screenshot integration (only on crash)
-      Sentry.screenshotIntegration({
-        attachScreenshot: true,
-      }),
+      // Commenting out temporarily - might be causing crash
+      // Sentry.screenshotIntegration({
+      //   attachScreenshot: true,
+      // }),
     ],
     
     // Attachments (be careful with size to stay in free tier)
-    attachScreenshot: true,
-    attachViewHierarchy: true,
+    // Commenting out temporarily - might be causing crash
+    // attachScreenshot: true,
+    // attachViewHierarchy: true,
     
     // Offline caching
     transportOptions: {
       shouldStore: true,
     },
   });
+    console.log('Sentry initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Sentry:', error);
+    // Don't throw - app should still work without Sentry
+  }
 };
 
 // Helper functions for manual tracking

@@ -1,10 +1,32 @@
 # Active Context
 
-**Last Updated:** 2025-07-15 17:00:00 - Paid-Only Signup Implementation COMPLETE & READY FOR RELEASE - Impacts: [App Store Compliance, Business Model, User Onboarding, Production Deployment]
-**Previous Update:** 2025-07-15 16:30:00 - Paid-Only Signup Implementation Complete
-**Session Context:** Finalized paid-only signup flow + cleaned up misleading version displays - Implementation complete, memory bank updated, ready for DevOps release deployment to Firebase App Distribution and TestFlight
+**Last Updated:** 2025-07-19 15:45:00 - Sentry Error Tracking Implementation + iOS Upload Bug Fixes - Impacts: [Error Monitoring, App Stability, iOS Performance]
+**Previous Update:** 2025-07-15 17:00:00 - Paid-Only Signup Implementation COMPLETE & READY FOR RELEASE
+**Session Context:** Fixed critical iOS upload issues, implemented Sentry error tracking with free tier optimizations, fixed React Native crashes and formatting regressions
 
-## Current Work Focus - Session July 15, 2025 (Paid Signup Implementation - READY FOR RELEASE)
+## Current Work Focus - Session July 19, 2025 (iOS Bug Fixes & Sentry Implementation)
+
+- ✅ **COMPLETED:** Critical iOS Upload Bug Fixes (July 19, 2025)
+  - **CRITICAL BUG:** processReceiptWithAPI() was unreachable due to placement after return statement in useEffect
+  - **ROOT CAUSE:** Function was placed after cleanup return in ReviewScreen.tsx useEffect hook
+  - **SOLUTION:** Moved function call before return statement - first upload now works
+  - **REGRESSION FIX:** Dollar amounts showing "12" instead of "12.00" - fixed with parseFloat().toFixed(2)
+  - **CONFIDENCE FIX:** AI confidence showing "9,500%" instead of "95%" - fixed percentage calculation
+  - **CRASH FIX:** Template strings with undefined values causing React Native crashes - added null checks
+  - **FILE CHECK REMOVED:** Removed problematic expo-file-system dynamic import that was causing crashes
+  - **USER FEEDBACK:** "First upload worked, second one timed out, app crashed"
+
+- ✅ **COMPLETED:** Sentry Error Tracking Implementation (July 19, 2025)
+  - **INTEGRATION:** Added @sentry/react-native SDK with free tier optimizations
+  - **CONFIGURATION:** 10% performance sampling, production-only error reporting
+  - **API TRACKING:** All API calls tracked with performance monitoring and breadcrumbs
+  - **UPLOAD TRACKING:** Special tracking for receipt upload operations with iOS-specific breadcrumbs
+  - **USER CONTEXT:** Automatic user ID/email tracking on login, cleared on logout
+  - **FREE TIER:** Optimized for 10K events/month limit with smart filtering
+  - **CRASH FIX:** Fixed missing Platform import that caused app crash on launch
+  - **CROSS-PLATFORM:** Works for both iOS and Android with platform-specific tracking
+
+## Previous Work Focus - Session July 15, 2025 (Paid Signup Implementation - READY FOR RELEASE)
 
 - ✅ **COMPLETED:** Paid-Only Signup Flow Implementation (July 15, 2025) - PRODUCTION READY
 - ✅ **COMPLETED:** Memory Bank Documentation Updated (July 15, 2025)
@@ -315,6 +337,17 @@
    - Critical for accurate statistics and entity breakdowns
 
 ## Recent Changes
+
+**2025-07-19** - iOS BUG FIXES & SENTRY IMPLEMENTATION: Enhanced Error Tracking:
+- **FIX 1:** processReceiptWithAPI() unreachable → Moved before return statement in useEffect
+- **FIX 2:** Dollar amounts showing "12" → Fixed with parseFloat().toFixed(2) for "12.00"
+- **FIX 3:** AI confidence showing "9,500%" → Fixed percentage calculation logic
+- **FIX 4:** React Native crash on undefined → Added null checks for template strings
+- **FIX 5:** expo-file-system import crash → Removed problematic dynamic import
+- **FEATURE:** Sentry error tracking → Integrated with free tier optimizations (10K events/month)
+- **FEATURE:** API performance monitoring → All requests tracked with breadcrumbs
+- **FEATURE:** User context tracking → Automatic user ID/email on auth state changes
+- **RESULT:** iOS upload issues resolved, comprehensive error tracking enabled
 
 **2025-07-13** - CRITICAL BUG FIXES FROM TESTFLIGHT FEEDBACK: Production Polish Complete:
 - **FIX 1:** Confidence display showing 9500% → Fixed to show 95% (removed percentage multiplication)

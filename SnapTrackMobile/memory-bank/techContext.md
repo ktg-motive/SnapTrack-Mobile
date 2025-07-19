@@ -1,6 +1,6 @@
 # Technical Context
 
-**Last Updated:** 2025-07-15 11:47:00 - Emergency Android Crash Fix - Impacts: [Android Stability, API Reliability, Cross-Platform Compatibility]
+**Last Updated:** 2025-07-19 15:45:00 - Sentry Error Tracking Integration - Impacts: [Error Monitoring, App Stability, Developer Experience]
 
 ## Technical Architecture
 
@@ -11,12 +11,47 @@
 - **Firebase Authentication** with Google OAuth, Apple Sign-In, and email/password support
 - **expo-apple-authentication** for native iOS Apple Sign-In integration
 - **AsyncStorage** for offline data persistence and queue management
+- **@sentry/react-native** for error tracking and performance monitoring (Added July 19, 2025)
+
+### Error Monitoring & Observability (July 19, 2025)
+- **Sentry Integration** with free tier optimizations (10K events/month)
+- **Performance Monitoring** with 10% sampling rate (50% for critical operations)
+- **User Context Tracking** with automatic session management
+- **Breadcrumb Tracking** for user journey before errors
+- **Platform-Specific Tracking** for iOS and Android differences
+- **Smart Filtering** to conserve event quota (production only, no dev errors)
 
 ### Backend Integration
 - **SnapTrack API** for receipt processing and OCR functionality
 - **Multipart Form Data** uploads for receipt images with progress tracking
 - **RESTful API Client** with comprehensive error handling and retry logic
 - **Offline-First Architecture** with automatic sync when network restored
+
+### Critical iOS Bug Fixes (July 19, 2025)
+
+#### processReceiptWithAPI Unreachable Code Fix
+**Issue**: iOS upload working on first attempt but timing out on second attempt
+**Root Cause**: processReceiptWithAPI() was placed after return statement in useEffect hook
+**Solution**: Moved function call before return statement in ReviewScreen.tsx
+**Impact**: Fixed iOS upload reliability issues
+
+#### React Native Crash Fixes
+**Issue**: App crashing with "Text strings must be rendered within a <Text> component"
+**Root Cause**: Template strings with undefined values (e.g., aiTriggers?.length)
+**Solution**: Added null checks for all template string variables
+**Files Modified**: `src/screens/ReviewScreen.tsx`
+
+#### Formatting Regressions
+**Issue 1**: Dollar amounts showing "12" instead of "12.00"
+**Solution**: Changed from .toString() to parseFloat().toFixed(2)
+**Issue 2**: AI confidence showing "9,500%" instead of "95%"
+**Solution**: Fixed percentage calculation using getConfidencePercentage() helper
+
+#### expo-file-system Crash
+**Issue**: App crashing on launch with "cannot read property 'getInfoAsync' of undefined"
+**Root Cause**: Dynamic import of expo-file-system was failing
+**Solution**: Removed the file existence check entirely (was added for debugging)
+**Impact**: App launches successfully without crashes
 
 ### Emergency Technical Fixes (v1.3.3 - July 15, 2025)
 
