@@ -13,7 +13,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  AppState
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -204,6 +205,7 @@ export default function ReviewScreen() {
   const [showImageModal, setShowImageModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const tagBlurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const uploadStartTime = useRef<number | null>(null);
 
   useEffect(() => {
     // Load entities first, then start OCR processing
@@ -230,6 +232,35 @@ export default function ReviewScreen() {
       }
     }, [navigation])
   );
+  
+  // Handle app state changes (background/foreground) during upload
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      console.log('📱 App state changed to:', nextAppState);
+      
+      // If we're processing and app goes to background, warn user
+      if (nextAppState === 'background' && isProcessing) {
+        console.warn('⚠️ Upload in progress while app going to background');
+      }
+      
+      // If returning from background while stuck in upload, show error
+      if (nextAppState === 'active' && isProcessing && processingState.stage === 'uploading') {
+        const uploadDuration = Date.now() - (uploadStartTime.current || Date.now());
+        if (uploadDuration > 15000) { // Stuck for more than 15 seconds
+          console.error('❌ Upload appears stuck after returning from background');
+          setProcessingState({
+            stage: 'error',
+            progress: 0,
+            message: 'Upload interrupted. Please try again.'
+          });
+          setIsProcessing(false);
+        }
+      }
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [isProcessing, processingState.stage]);
 
   const loadEntities = async () => {
     try {
@@ -389,6 +420,9 @@ export default function ReviewScreen() {
         progress: 0,
         message: uploadingInfo.message
       });
+      
+      // Track upload start time for timeout detection
+      uploadStartTime.current = Date.now();
 
       await new Promise(resolve => setTimeout(resolve, uploadingInfo.duration));
 

@@ -89,7 +89,30 @@ class SnapTrackApiClient {
         console.log('🍎 iOS Network Request - checking fetch...');
       }
       
-      const response = await fetch(url, config);
+      // Add timeout to prevent hanging requests (especially important on iOS)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error('⏰ Request timeout after 30 seconds');
+        controller.abort();
+      }, CONFIG.API_TIMEOUT || 30000);
+      
+      const configWithTimeout = {
+        ...config,
+        signal: controller.signal
+      };
+      
+      let response;
+      try {
+        response = await fetch(url, configWithTimeout);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new ApiError('Request timed out. Please try again.', 0, 'TIMEOUT');
+        }
+        throw fetchError;
+      }
+      
+      clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
       console.log(`📡 Response received: ${response.status} in ${duration}ms`);
       
