@@ -103,7 +103,17 @@ class SnapTrackApiClient {
       
       let response;
       try {
+        // DEBUG: Alert before fetch
+        if (Platform.OS === 'ios' && endpoint === '/api/parse') {
+          Alert.alert('Debug Fetch', 'About to call fetch()...');
+        }
+        
         response = await fetch(url, configWithTimeout);
+        
+        // DEBUG: Alert after fetch
+        if (Platform.OS === 'ios' && endpoint === '/api/parse') {
+          Alert.alert('Debug Fetch', `Response received: ${response.status}`);
+        }
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
         if (fetchError.name === 'AbortError') {
