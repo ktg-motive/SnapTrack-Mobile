@@ -58,7 +58,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
   const [entityName, setEntityName] = useState('');
   
-  const user = authService.getCurrentUser();
+  const [user, setUser] = useState<any>(authService.getCurrentUser());
 
   useEffect(() => {
     loadData();
@@ -67,10 +67,25 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   const loadData = async () => {
     try {
       setLoading(true);
+      
+      // Load user profile first to get username data
+      const profilePromise = apiClient.get('/api/user/profile').then(response => {
+        if (response.success && response.user) {
+          const basicUser = authService.getCurrentUser();
+          setUser({
+            ...basicUser,
+            ...response.user,
+            email: response.user.email || basicUser?.email,
+            displayName: response.user.full_name || basicUser?.displayName
+          });
+        }
+      }).catch(err => console.log('Profile load error:', err));
+      
       const [entitiesResponse, tagsResponse, appSettingsResult] = await Promise.allSettled([
         apiClient.getEntities(),
         apiClient.getTags(),
-        settingsService.getSettings()
+        settingsService.getSettings(),
+        profilePromise // Include profile loading
       ]);
 
       if (entitiesResponse.status === 'fulfilled') {

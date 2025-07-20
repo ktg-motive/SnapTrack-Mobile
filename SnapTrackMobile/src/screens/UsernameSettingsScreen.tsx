@@ -44,9 +44,18 @@ export default function UsernameSettingsScreen() {
         setLoginEmail(user.email);
       }
 
-      // Load current username
+      // Load current username from API
+      console.log('📱 Loading username data from API...');
       const currentResponse = await apiClient.get('/api/username/current');
+      console.log('📱 Username API response:', JSON.stringify(currentResponse, null, 2));
+      
       if (currentResponse.success) {
+        setCurrentUsername(currentResponse.username || '');
+        setEmailAddress(currentResponse.email_address || '');
+        setCanChange(currentResponse.can_change !== false);
+        setNextChangeAllowed(currentResponse.next_change_allowed || null);
+      } else if (currentResponse.username !== undefined) {
+        // Handle case where success flag might be missing but data exists
         setCurrentUsername(currentResponse.username || '');
         setEmailAddress(currentResponse.email_address || '');
         setCanChange(currentResponse.can_change !== false);

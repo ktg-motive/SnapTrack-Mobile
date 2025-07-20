@@ -1,10 +1,23 @@
 # Active Context
 
-**Last Updated:** 2025-07-20 18:00:00 - PHASE 3 AUTHENTICATION COMPLETE - Impacts: [UUID Auth, App Store Deployment, Cross-Platform Coordination]
-**Previous Update:** 2025-07-20 14:00:00
-**Session Context:** Phase 3 UUID authentication implementation complete, username/email collection screens deployed, App Store submission ready
+**Last Updated:** 2025-07-20 18:30:00 - User Profile Display Fix - Impacts: [Username Display, Account Screen, Settings Screen]
+**Previous Update:** 2025-07-20 18:00:00
+**Session Context:** Fixed user profile data loading to properly display username and email address across screens
 
-## Current Work Focus - Session July 20, 2025 (Phase 3 Authentication Complete)
+## Current Work Focus - Session July 20, 2025 (User Profile Display Fix)
+
+- ✅ **COMPLETED:** User Profile Display Fix (July 20, 2025, 18:30)
+  - **ISSUE:** Username/email not displaying in mobile app despite being set on web
+  - **ROOT CAUSE:** Legacy auth compatibility layer only returning basic user fields (uid, email, displayName) without username fields
+  - **SOLUTION:** Updated AccountScreen and EnhancedSettingsScreen to fetch full profile from /api/user/profile endpoint
+  - **CHANGES:** 
+    - AccountScreen now loads full profile data on focus
+    - EnhancedSettingsScreen loads profile data during initialization
+    - Both screens merge profile data with basic auth user for complete user object
+  - **RESULT:** Username and email address now properly display in account menu and settings
+  - **DEBUGGING:** Added console logs to track profile API responses
+
+## Previous Work Focus - Session July 20, 2025 (Phase 3 Authentication Complete)
 
 - ✅ **COMPLETED:** Phase 3 UUID Authentication Implementation (July 20, 2025)
   - **FEATURE:** Complete UUID-based authentication system implementation

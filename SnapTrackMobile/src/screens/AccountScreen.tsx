@@ -24,17 +24,43 @@ import { apiClient } from '../services/apiClient';
 export default function AccountScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [user, setUser] = useState(authService.getCurrentUser());
+  const [user, setUser] = useState<any>(authService.getCurrentUser());
   const [isRestoring, setIsRestoring] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
 
   // Refresh user data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      setUser(authService.getCurrentUser());
+      // Load both basic user and full profile
+      loadUserProfile();
       loadSubscriptionStatus();
     }, [])
   );
+
+  const loadUserProfile = async () => {
+    try {
+      // Get basic user first
+      const basicUser = authService.getCurrentUser();
+      setUser(basicUser);
+      
+      // Then fetch full profile with username data
+      const profileResponse = await apiClient.get('/api/user/profile');
+      console.log('👤 User profile loaded:', JSON.stringify(profileResponse, null, 2));
+      
+      if (profileResponse.success && profileResponse.user) {
+        // Merge the profile data with basic user data
+        setUser({
+          ...basicUser,
+          ...profileResponse.user,
+          email: profileResponse.user.email || basicUser?.email,
+          displayName: profileResponse.user.full_name || basicUser?.displayName
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+      // Keep basic user data if profile fetch fails
+    }
+  };
 
   const loadSubscriptionStatus = async () => {
     try {
