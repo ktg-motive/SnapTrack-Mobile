@@ -58,6 +58,8 @@ class UUIDAuthService {
   private currentUser: User | null = null;
   private userEmails: UserEmail[] = [];
   private authVersion: 1 | 2 = 2;
+  private authStatePromise: Promise<void> | null = null;
+  private authStateResolve: ((value: void) => void) | null = null;
 
   constructor() {
     // Initialize Firebase if not already initialized
@@ -90,12 +92,23 @@ class UUIDAuthService {
 
   private initializeAuthListener() {
     onAuthStateChanged(this.auth, async (firebaseUser) => {
+      // Create new promise for auth state processing
+      this.authStatePromise = new Promise((resolve) => {
+        this.authStateResolve = resolve;
+      });
+
       if (firebaseUser) {
         console.log('🔐 User signed in:', firebaseUser.email || firebaseUser.uid);
         await this.handleFirebaseUser(firebaseUser);
       } else {
         console.log('🔐 User signed out');
         await this.handleSignOut();
+      }
+
+      // Resolve the promise after processing
+      if (this.authStateResolve) {
+        this.authStateResolve();
+        this.authStateResolve = null;
       }
     });
   }
@@ -110,7 +123,9 @@ class UUIDAuthService {
       apiClient.setAuthToken(idToken);
       
       // Get user data from our backend
+      console.log('📡 Fetching user profile from backend...');
       const userData = await apiClient.get('/api/user/profile');
+      console.log('✅ User profile received:', userData);
       
       // The enhanced profile now includes username fields
       this.currentUser = {
@@ -132,8 +147,14 @@ class UUIDAuthService {
         await AsyncStorage.setItem('needs_username_selection', 'true');
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to get user profile:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.status
+      });
+      
       // For new users or if profile doesn't exist, create basic user object
       this.currentUser = {
         id: firebaseUser.uid,
@@ -192,8 +213,17 @@ class UUIDAuthService {
       const firebaseUser = userCredential.user;
       console.log('🔥 Firebase sign-in successful:', firebaseUser.email);
       
-      // Firebase auth listener will handle the rest
-      return this.currentUser!;
+      // Wait for auth state to be processed
+      if (this.authStatePromise) {
+        await this.authStatePromise;
+      }
+      
+      // Return current user or throw error
+      if (!this.currentUser) {
+        throw new Error('Failed to process user data after sign-in');
+      }
+      
+      return this.currentUser;
       
     } catch (error: any) {
       console.error('❌ Google sign in failed:', error);
@@ -285,8 +315,17 @@ class UUIDAuthService {
         await AsyncStorage.setItem('needs_username_selection', 'true');
       }
       
-      // Firebase auth listener will handle the rest
-      return this.currentUser!;
+      // Wait for auth state to be processed
+      if (this.authStatePromise) {
+        await this.authStatePromise;
+      }
+      
+      // Return current user or throw error
+      if (!this.currentUser) {
+        throw new Error('Failed to process user data after sign-in');
+      }
+      
+      return this.currentUser;
       
     } catch (error: any) {
       console.error('❌ Apple sign in failed:', error);
@@ -314,8 +353,17 @@ class UUIDAuthService {
         credentials.password
       );
 
-      // Firebase auth listener will handle the rest
-      return this.currentUser!;
+      // Wait for auth state to be processed
+      if (this.authStatePromise) {
+        await this.authStatePromise;
+      }
+      
+      // Return current user or throw error
+      if (!this.currentUser) {
+        throw new Error('Failed to process user data after sign-in');
+      }
+      
+      return this.currentUser;
     } catch (error: any) {
       console.error('❌ Sign in failed:', error.message);
       throw new Error(this.getAuthErrorMessage(error.code));
@@ -339,8 +387,17 @@ class UUIDAuthService {
       await AsyncStorage.setItem('show_onboarding', 'true');
       await AsyncStorage.setItem('needs_username_selection', 'true');
 
-      // Firebase auth listener will handle the rest
-      return this.currentUser!;
+      // Wait for auth state to be processed
+      if (this.authStatePromise) {
+        await this.authStatePromise;
+      }
+      
+      // Return current user or throw error
+      if (!this.currentUser) {
+        throw new Error('Failed to process user data after sign-up');
+      }
+      
+      return this.currentUser;
     } catch (error: any) {
       console.error('❌ Account creation failed:', error.message);
       throw new Error(this.getAuthErrorMessage(error.code));
