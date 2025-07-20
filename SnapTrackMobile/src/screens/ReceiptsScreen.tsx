@@ -174,119 +174,120 @@ export default function ReceiptsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.innerContainer}>
-          {/* Fixed Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Receipts</Text>
-            <Text style={styles.headerSubtitle}>
-              {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
-            </Text>
-          </View>
-
-          {/* Fixed Search Bar */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search receipts..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholderTextColor={colors.textMuted}
-                returnKeyType="search"
-                blurOnSubmit={true}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                  <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
+    <>
+      <SafeAreaView style={styles.container}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.innerContainer}>
+            {/* Fixed Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Receipts</Text>
+              <Text style={styles.headerSubtitle}>
+                {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
+              </Text>
             </View>
-          </View>
 
-          {/* Fixed Connection Status */}
-          {!isConnected && (
-            <View style={styles.offlineBar}>
-              <Ionicons name="cloud-offline" size={16} color={colors.warning} />
-              <Text style={styles.offlineText}>Offline - showing cached receipts</Text>
+            {/* Fixed Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search receipts..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor={colors.textMuted}
+                  returnKeyType="search"
+                  blurOnSubmit={true}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                    <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          )}
 
-          {/* Scrollable Content - Single FlatList */}
-          <RecentReceipts
-            receipts={filteredReceipts}
-            isLoading={isLoading}
-            isLoadingMore={isLoadingMore}
-            onEditReceipt={handleReceiptEdit}
-            onPreviewReceipt={handleReceiptPreview}
-            onDeleteReceipt={async (receiptId) => {
-              try {
-                await apiClient.deleteReceipt(receiptId);
-                setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
-              } catch (error) {
-                console.error('Failed to delete receipt:', error);
-                throw error;
+            {/* Fixed Connection Status */}
+            {!isConnected && (
+              <View style={styles.offlineBar}>
+                <Ionicons name="cloud-offline" size={16} color={colors.warning} />
+                <Text style={styles.offlineText}>Offline - showing cached receipts</Text>
+              </View>
+            )}
+
+            {/* Scrollable Content - Single FlatList */}
+            <RecentReceipts
+              receipts={filteredReceipts}
+              isLoading={isLoading}
+              isLoadingMore={isLoadingMore}
+              onEditReceipt={handleReceiptEdit}
+              onPreviewReceipt={handleReceiptPreview}
+              onDeleteReceipt={async (receiptId) => {
+                try {
+                  await apiClient.deleteReceipt(receiptId);
+                  setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+                } catch (error) {
+                  console.error('Failed to delete receipt:', error);
+                  throw error;
+                }
+              }}
+              refreshControl={
+                <RefreshControl 
+                  refreshing={refreshing} 
+                  onRefresh={onRefresh}
+                  tintColor={colors.primary}
+                />
               }
-            }}
-            refreshControl={
-              <RefreshControl 
-                refreshing={refreshing} 
-                onRefresh={onRefresh}
-                tintColor={colors.primary}
-              />
-            }
-            onLoadMore={loadMoreReceipts}
-            searchQuery={searchQuery}
-            searchResultsCount={filteredReceipts.length}
-          />
-        </View>
-      </TouchableWithoutFeedback>
-
-        {/* Edit Modal */}
-        <ReceiptEditModal
-          receipt={selectedReceipt}
-          isVisible={editModalVisible}
-          onClose={() => {
-            setEditModalVisible(false);
-            setSelectedReceipt(null);
-          }}
-          onSave={async (receiptId, updates) => {
-            try {
-              const updatedReceipt = await apiClient.updateReceipt(receiptId, updates);
-              setReceipts(prev => 
-                prev.map(receipt => 
-                  receipt.id === receiptId ? updatedReceipt : receipt
-                )
-              );
-            } catch (error) {
-              console.error('Failed to update receipt:', error);
-              throw error;
-            }
-          }}
-          onDelete={async (receiptId) => {
-            try {
-              await apiClient.deleteReceipt(receiptId);
-              setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
-            } catch (error) {
-              console.error('Failed to delete receipt:', error);
-              throw error;
-            }
-          }}
-        />
-
-        {/* Preview Modal */}
-        <ReceiptPreviewModal
-          receipt={selectedReceipt}
-          isVisible={previewModalVisible}
-          onClose={() => {
-            setPreviewModalVisible(false);
-            setSelectedReceipt(null);
-          }}
-        />
+              onLoadMore={loadMoreReceipts}
+              searchQuery={searchQuery}
+              searchResultsCount={filteredReceipts.length}
+            />
+          </View>
+        </TouchableWithoutFeedback>
       </SafeAreaView>
-    </TouchableWithoutFeedback>
+
+      {/* Edit Modal */}
+      <ReceiptEditModal
+        receipt={selectedReceipt}
+        isVisible={editModalVisible}
+        onClose={() => {
+          setEditModalVisible(false);
+          setSelectedReceipt(null);
+        }}
+        onSave={async (receiptId, updates) => {
+          try {
+            const updatedReceipt = await apiClient.updateReceipt(receiptId, updates);
+            setReceipts(prev => 
+              prev.map(receipt => 
+                receipt.id === receiptId ? updatedReceipt : receipt
+              )
+            );
+          } catch (error) {
+            console.error('Failed to update receipt:', error);
+            throw error;
+          }
+        }}
+        onDelete={async (receiptId) => {
+          try {
+            await apiClient.deleteReceipt(receiptId);
+            setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+          } catch (error) {
+            console.error('Failed to delete receipt:', error);
+            throw error;
+          }
+        }}
+      />
+
+      {/* Preview Modal */}
+      <ReceiptPreviewModal
+        receipt={selectedReceipt}
+        isVisible={previewModalVisible}
+        onClose={() => {
+          setPreviewModalVisible(false);
+          setSelectedReceipt(null);
+        }}
+      />
+    </>
   );
 }
 
