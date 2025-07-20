@@ -73,6 +73,7 @@ export default function AuthScreen() {
         setProducts(loadedProducts);
         setIsIAPReady(true);
       } catch (error) {
+        console.error('❌ IAP initialization failed:', error);
         // IAP not available, but don't block auth - user can use web payment
       }
     };
@@ -269,6 +270,10 @@ export default function AuthScreen() {
 
   const processPurchase = async (product: any) => {
     try {
+      console.log('📱 Starting purchase process for product:', product);
+      console.log('📱 IAP Manager instance:', iapManager);
+      console.log('📱 IAP Manager purchase method:', typeof iapManager.purchase);
+      
       setIsPurchaseInProgress(true);
       setIsLoading(true);
       

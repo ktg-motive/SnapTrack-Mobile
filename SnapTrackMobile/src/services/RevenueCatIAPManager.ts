@@ -47,6 +47,8 @@ class RevenueCatIAPManager {
 
     try {
       console.log('🍎 Initializing RevenueCat...');
+      console.log('🍎 Purchases module available:', !!Purchases);
+      console.log('🍎 Purchases.configure available:', typeof Purchases.configure);
       
       // Enable debug logs
       Purchases.setLogLevel(LOG_LEVEL.DEBUG);
