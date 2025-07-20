@@ -174,47 +174,47 @@ export default function ReceiptsScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Receipts</Text>
-          <Text style={styles.headerSubtitle}>
-            {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
-          </Text>
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search receipts..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor={colors.textMuted}
-              returnKeyType="search"
-              blurOnSubmit={true}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
+    <SafeAreaView style={styles.container}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.innerContainer}>
+          {/* Fixed Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Receipts</Text>
+            <Text style={styles.headerSubtitle}>
+              {searchQuery ? filteredReceipts.length : totalReceiptCount} receipt{(searchQuery ? filteredReceipts.length : totalReceiptCount) !== 1 ? 's' : ''} {searchQuery ? 'found' : 'tracked'}
+            </Text>
           </View>
-        </View>
 
-        {/* Connection Status */}
-        {!isConnected && (
-          <View style={styles.offlineBar}>
-            <Ionicons name="cloud-offline" size={16} color={colors.warning} />
-            <Text style={styles.offlineText}>Offline - showing cached receipts</Text>
+          {/* Fixed Search Bar */}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search receipts..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="search"
+                blurOnSubmit={true}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                  <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        )}
 
-        {/* Receipts List */}
-        <View style={styles.content}>
+          {/* Fixed Connection Status */}
+          {!isConnected && (
+            <View style={styles.offlineBar}>
+              <Ionicons name="cloud-offline" size={16} color={colors.warning} />
+              <Text style={styles.offlineText}>Offline - showing cached receipts</Text>
+            </View>
+          )}
+
+          {/* Scrollable Content - Single FlatList */}
           <RecentReceipts
             receipts={filteredReceipts}
             isLoading={isLoading}
@@ -238,17 +238,11 @@ export default function ReceiptsScreen() {
               />
             }
             onLoadMore={loadMoreReceipts}
+            searchQuery={searchQuery}
+            searchResultsCount={filteredReceipts.length}
           />
-        
-          {/* Search Results */}
-          {searchQuery.length > 0 && (
-            <View style={styles.searchResults}>
-              <Text style={styles.searchResultsText}>
-                {filteredReceipts.length} result{filteredReceipts.length !== 1 ? 's' : ''} for "{searchQuery}"
-              </Text>
-            </View>
-          )}
         </View>
+      </TouchableWithoutFeedback>
 
         {/* Edit Modal */}
         <ReceiptEditModal
@@ -302,6 +296,9 @@ const styles = StyleSheet.create({
   },
   container: {
     backgroundColor: colors.background,
+    flex: 1
+  },
+  innerContainer: {
     flex: 1
   },
   content: {

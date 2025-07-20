@@ -16,6 +16,8 @@ interface RecentReceiptsProps {
   isLoadingMore?: boolean;
   hasMoreReceipts?: boolean;
   refreshControl?: React.ReactElement<any>;
+  searchQuery?: string;
+  searchResultsCount?: number;
 }
 
 export default function RecentReceipts({ 
@@ -28,7 +30,9 @@ export default function RecentReceipts({
   onLoadMore,
   isLoadingMore = false,
   hasMoreReceipts = true,
-  refreshControl
+  refreshControl,
+  searchQuery,
+  searchResultsCount
 }: RecentReceiptsProps) {
   const [localReceipts, setLocalReceipts] = useState<Receipt[]>(receipts);
 
@@ -89,6 +93,19 @@ export default function RecentReceipts({
       onPreview={handlePreviewReceipt}
     />
   );
+
+  // Render search results header
+  const renderSearchHeader = () => {
+    if (!searchQuery || searchQuery.length === 0) return null;
+    
+    return (
+      <View style={styles.searchResults}>
+        <Text style={styles.searchResultsText}>
+          {searchResultsCount || 0} result{(searchResultsCount || 0) !== 1 ? 's' : ''} for "{searchQuery}"
+        </Text>
+      </View>
+    );
+  };
 
   // Render scroll boundary footer
   const renderFooter = () => {
@@ -165,15 +182,16 @@ export default function RecentReceipts({
         keyExtractor={(item) => item.id}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={null}
+        ListHeaderComponent={renderSearchHeader}
+        ListFooterComponent={renderFooter}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.flatListContent}
         style={styles.flatListStyle}
-        nestedScrollEnabled={true}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={3}
+        removeClippedSubviews={Platform.OS === 'android'}
+        maxToRenderPerBatch={5}
         windowSize={10}
-        initialNumToRender={3}
+        initialNumToRender={5}
+        getItemLayout={undefined}
         refreshControl={refreshControl}
       />
     </View>
@@ -246,6 +264,15 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg
+  },
+  searchResults: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm
+  },
+  searchResultsText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    fontStyle: 'italic'
   },
   title: {
     ...typography.title3,

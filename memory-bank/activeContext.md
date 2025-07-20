@@ -1,10 +1,24 @@
 # Active Context
 
-**Last Updated:** 2025-07-20 13:00:00 - USERNAME MANAGEMENT FIXES - Impacts: [Username Change Functionality, Copy Email Crash Fix]
+**Last Updated:** 2025-07-20 14:00:00 - RECEIPTS SCROLL FIX - Impacts: [iOS Scrolling, Layout Hierarchy, User Experience]
 **Previous Update:** 2025-07-18 21:00:00
 **Session Context:** Fixed loading states, updated RevenueCat endpoint, incremented build numbers, investigated welcome email issue
 
-## Current Work Focus - Session July 20, 2025 (Username Management Fixes)
+## Current Work Focus - Session July 20, 2025 (iOS Scrolling Fix)
+
+- ✅ **COMPLETED:** iOS Receipts Tab Scrolling Fix (July 20, 2025)
+  - **ISSUE:** Unable to scroll on receipts tab in iOS
+  - **ROOT CAUSE:** Nested scroll view conflict between TouchableWithoutFeedback wrapper and FlatList
+  - **SOLUTION:** Restructured layout hierarchy to use single FlatList without nested scroll conflicts
+  - **CHANGES:** 
+    - Moved TouchableWithoutFeedback inside SafeAreaView instead of wrapping it
+    - Fixed header and search bar outside of scroll area 
+    - Integrated search results display into FlatList header
+    - Removed problematic `nestedScrollEnabled` property
+    - Optimized scroll performance for iOS
+  - **RESULT:** Smooth scrolling now works properly on iOS receipts tab
+
+## Previous Work Focus - Session July 20, 2025 (Username Management Fixes)
 
 - ✅ **COMPLETED:** Username Change Implementation (July 20, 2025)
   - **ISSUE:** Mobile app only showed "contact support" alert for username changes
