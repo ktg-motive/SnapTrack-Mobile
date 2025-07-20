@@ -48,7 +48,6 @@ import {
   UserEmail, 
   AuthUser, 
   AuthCredentials, 
-  AuthResponse, 
   AuthProvider,
   UsernameValidationResponse 
 } from '../types/auth';
@@ -113,22 +112,38 @@ class UUIDAuthService {
       // Get user data from our backend
       const userData = await apiClient.get('/api/user/profile');
       
-      // Get user emails (might be empty for email-optional users)
-      try {
-        const emailsData = await apiClient.get('/api/user/emails');
-        this.userEmails = emailsData.emails || [];
-      } catch (error) {
-        console.log('No emails found for user (email-optional account)');
-        this.userEmails = [];
+      // The enhanced profile now includes username fields
+      this.currentUser = {
+        id: userData.user.id || firebaseUser.uid,
+        firebase_uid: userData.user.firebase_uid || firebaseUser.uid,
+        email: userData.user.email || firebaseUser.email,
+        full_name: userData.user.full_name || firebaseUser.displayName,
+        email_username: userData.user.email_username, // NEW field
+        email_address: userData.user.email_address,   // NEW field
+        legacy_email: userData.user.legacy_email,     // For compatibility
+        auth_version: userData.user.auth_version || 2,
+        created_at: userData.user.created_at,
+        updated_at: userData.user.updated_at
+      } as User;
+      
+      // If user doesn't have a username yet, they'll need to select one
+      if (!this.currentUser.email_username) {
+        console.log('User needs to select a username');
+        await AsyncStorage.setItem('needs_username_selection', 'true');
       }
       
-      this.currentUser = userData.user;
-      this.authVersion = userData.user.auth_version || 2;
-      
     } catch (error) {
-      console.error('Failed to handle Firebase user:', error);
-      // If backend call fails, we might have a new user that needs to be created
-      // This will be handled by the universal auth endpoint
+      console.error('Failed to get user profile:', error);
+      // For new users or if profile doesn't exist, create basic user object
+      this.currentUser = {
+        id: firebaseUser.uid,
+        firebase_uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        full_name: firebaseUser.displayName,
+        auth_version: 2,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as User;
     }
   }
 
@@ -139,37 +154,6 @@ class UUIDAuthService {
     this.userEmails = [];
   }
 
-  /**
-   * Universal authentication method - handles both new and existing users
-   */
-  private async authenticateWithUniversalEndpoint(
-    provider: AuthProvider,
-    firebaseToken: string,
-    additionalData: any = {}
-  ): Promise<AuthResponse> {
-    try {
-      const response: AuthResponse = await apiClient.post('/api/auth/universal', {
-        provider,
-        firebase_token: firebaseToken,
-        ...additionalData
-      });
-
-      // Store onboarding flags for new users
-      if (response.is_new_user) {
-        await AsyncStorage.setItem('show_onboarding', 'true');
-        
-        // If no email provided, we might want to ask later
-        if (!response.user.has_email) {
-          await AsyncStorage.setItem('prompt_for_email', 'true');
-        }
-      }
-
-      return response;
-    } catch (error) {
-      console.error('Universal auth failed:', error);
-      throw error;
-    }
-  }
 
   /**
    * Sign in with Google
@@ -200,59 +184,16 @@ class UUIDAuthService {
         throw new Error('No ID token received from Google');
       }
       
-      // TEMPORARY: Use existing Supabase auth flow until backend implements /api/auth/universal
-      // This matches what the web app does
-      try {
-        // Create Firebase credential
-        const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
-        
-        // Sign in to Firebase with Google credential
-        const userCredential = await signInWithCredential(this.auth, googleCredential);
-        const firebaseUser = userCredential.user;
-        console.log('🔥 Firebase sign-in successful:', firebaseUser.email);
-        
-        // Get Firebase auth token
-        const token = await firebaseUser.getIdToken();
-        
-        // Store token for API requests
-        await this.storeAuthToken(token);
-        apiClient.setAuthToken(token);
-        
-        // For now, just use the Firebase user data directly
-        // When backend implements /api/auth/universal, uncomment the code below
-        this.currentUser = {
-          id: firebaseUser.uid,
-          firebase_uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          full_name: firebaseUser.displayName,
-          auth_version: 2,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        } as User;
-        
-        // Get user profile from backend if it exists
-        try {
-          const userData = await apiClient.get('/api/user/profile');
-          if (userData.user) {
-            this.currentUser = userData.user;
-          }
-        } catch (profileError) {
-          console.log('User profile not found, using Firebase data');
-        }
-        
-        // TODO: Uncomment when backend implements /api/auth/universal
-        // await this.authenticateWithUniversalEndpoint('google', token, {
-        //   google_user_id: userInfo.data.user?.id,
-        //   email: userInfo.data.user?.email,
-        //   name: userInfo.data.user?.name,
-        //   picture: userInfo.data.user?.photo
-        // });
-        
-        return this.currentUser!;
-      } catch (fallbackError) {
-        console.error('Fallback auth failed:', fallbackError);
-        throw fallbackError;
-      }
+      // Create Firebase credential
+      const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
+      
+      // Sign in to Firebase with Google credential
+      const userCredential = await signInWithCredential(this.auth, googleCredential);
+      const firebaseUser = userCredential.user;
+      console.log('🔥 Firebase sign-in successful:', firebaseUser.email);
+      
+      // Firebase auth listener will handle the rest
+      return this.currentUser!;
       
     } catch (error: any) {
       console.error('❌ Google sign in failed:', error);
@@ -330,24 +271,19 @@ class UUIDAuthService {
         displayName: firebaseUser.displayName
       });
       
-      // Get Firebase auth token
-      const token = await firebaseUser.getIdToken();
-      
-      // Construct display name from Apple credential if available
-      let displayName = firebaseUser.displayName;
-      if (!displayName && credential.fullName) {
+      // Update display name if we got it from Apple
+      if (!firebaseUser.displayName && credential.fullName) {
         const { givenName, familyName } = credential.fullName;
         if (givenName || familyName) {
-          displayName = [givenName, familyName].filter(Boolean).join(' ');
+          const displayName = [givenName, familyName].filter(Boolean).join(' ');
+          await updateProfile(firebaseUser, { displayName });
         }
       }
-
-      // Call universal auth endpoint with Apple data
-      await this.authenticateWithUniversalEndpoint('apple', token, {
-        apple_user: credential.user,
-        full_name: displayName,
-        email: credential.email // Might be relay or null
-      });
+      
+      // Mark that user might need username selection
+      if (!firebaseUser.email || firebaseUser.email.includes('privaterelay')) {
+        await AsyncStorage.setItem('needs_username_selection', 'true');
+      }
       
       // Firebase auth listener will handle the rest
       return this.currentUser!;
@@ -378,15 +314,7 @@ class UUIDAuthService {
         credentials.password
       );
 
-      const firebaseUser = userCredential.user;
-      const token = await firebaseUser.getIdToken();
-      
-      // For email users, we still need to call the universal endpoint
-      // to ensure they're properly set up in the new system
-      await this.authenticateWithUniversalEndpoint('email', token, {
-        email: credentials.email
-      });
-
+      // Firebase auth listener will handle the rest
       return this.currentUser!;
     } catch (error: any) {
       console.error('❌ Sign in failed:', error.message);
@@ -407,15 +335,11 @@ class UUIDAuthService {
         credentials.password
       );
 
-      const firebaseUser = userCredential.user;
-      const token = await firebaseUser.getIdToken();
-      
-      // Call universal auth endpoint for new email user
-      await this.authenticateWithUniversalEndpoint('email', token, {
-        email: credentials.email,
-        is_signup: true
-      });
+      // Mark that new user needs username selection
+      await AsyncStorage.setItem('show_onboarding', 'true');
+      await AsyncStorage.setItem('needs_username_selection', 'true');
 
+      // Firebase auth listener will handle the rest
       return this.currentUser!;
     } catch (error: any) {
       console.error('❌ Account creation failed:', error.message);
@@ -543,8 +467,12 @@ class UUIDAuthService {
    */
   async checkUsername(username: string): Promise<UsernameValidationResponse> {
     try {
-      const response = await apiClient.post('/api/auth/check-username', { username });
-      return response.data;
+      const response = await apiClient.post('/api/username/check', { username });
+      return {
+        available: response.available,
+        errors: response.errors || [],
+        suggestions: response.suggestions || []
+      };
     } catch (error) {
       console.error('Failed to check username:', error);
       throw error;
@@ -556,12 +484,17 @@ class UUIDAuthService {
    */
   async setUsername(username: string): Promise<void> {
     try {
-      await apiClient.post('/api/user/username', { username });
+      await apiClient.post('/api/username/assign', { username });
       
       // Refresh user data
       if (this.currentUser) {
         const userData = await apiClient.get('/api/user/profile');
-        this.currentUser = userData.user;
+        this.currentUser = {
+          ...this.currentUser,
+          email_username: userData.user.email_username,
+          email_address: userData.user.email_address,
+          legacy_email: userData.user.legacy_email
+        };
       }
     } catch (error) {
       console.error('Failed to set username:', error);
