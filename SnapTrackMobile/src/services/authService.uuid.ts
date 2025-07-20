@@ -132,13 +132,15 @@ class UUIDAuthService {
       const userData = response.user || response.data || response;
       
       // The enhanced profile now includes username fields
+      // Note: profile data is nested under userData.profile
       this.currentUser = {
         id: userData.id || firebaseUser.uid,
         firebase_uid: userData.firebase_uid || firebaseUser.uid,
-        email: userData.email || firebaseUser.email,
-        full_name: userData.full_name || firebaseUser.displayName,
-        email_username: userData.email_username, // NEW field
-        email_address: userData.email_address,   // NEW field
+        email: userData.profile?.email || userData.email || firebaseUser.email,
+        full_name: userData.profile?.full_name || userData.full_name || firebaseUser.displayName,
+        email_username: userData.email_username, // This is at root level
+        email_address: userData.snaptrack_emails?.new_format || userData.email_address || 
+                       (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
         legacy_email: userData.legacy_email,     // For compatibility
         auth_version: userData.auth_version || 2,
         created_at: userData.created_at,

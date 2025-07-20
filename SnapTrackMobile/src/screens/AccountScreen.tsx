@@ -50,16 +50,20 @@ export default function AccountScreen() {
       // Handle different response structures (could be response.user, response.data, or direct response)
       const userData = profileResponse.user || profileResponse.data || profileResponse;
       
-      if (userData && userData.id) {
+      if (userData && (userData.email_username || userData.profile)) {
         // Merge the profile data with basic user data
+        // Note: profile data is nested under userData.profile
         const fullUser = {
           ...basicUser,
-          ...userData,
-          email: userData.email || basicUser?.email,
-          displayName: userData.full_name || basicUser?.displayName,
-          // Ensure email_address is set if we have username
-          email_address: userData.email_address || 
-                        (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null)
+          id: userData.id || basicUser?.uid,
+          email: userData.profile?.email || userData.email || basicUser?.email,
+          displayName: userData.profile?.full_name || userData.full_name || basicUser?.displayName,
+          email_username: userData.email_username,
+          // Use snaptrack_emails.new_format if available, otherwise construct it
+          email_address: userData.snaptrack_emails?.new_format || 
+                        userData.email_address || 
+                        (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
+          full_name: userData.profile?.full_name || userData.full_name || basicUser?.displayName
         };
         console.log('👤 Full user object:', JSON.stringify(fullUser, null, 2));
         setUser(fullUser);

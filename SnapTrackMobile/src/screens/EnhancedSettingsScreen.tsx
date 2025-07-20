@@ -75,16 +75,19 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
         // Handle different response structures (could be response.user, response.data, or direct response)
         const userData = response.user || response.data || response;
         
-        if (userData && userData.id) {
+        if (userData && (userData.email_username || userData.profile)) {
           const basicUser = authService.getCurrentUser();
           const fullUser = {
             ...basicUser,
-            ...userData,
-            email: userData.email || basicUser?.email,
-            displayName: userData.full_name || basicUser?.displayName,
-            // Ensure email_address is set if we have username
-            email_address: userData.email_address || 
-                          (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null)
+            id: userData.id || basicUser?.uid,
+            email: userData.profile?.email || userData.email || basicUser?.email,
+            displayName: userData.profile?.full_name || userData.full_name || basicUser?.displayName,
+            email_username: userData.email_username,
+            // Use snaptrack_emails.new_format if available, otherwise construct it
+            email_address: userData.snaptrack_emails?.new_format || 
+                          userData.email_address || 
+                          (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
+            full_name: userData.profile?.full_name || userData.full_name || basicUser?.displayName
           };
           console.log('⚙️ Settings full user:', JSON.stringify(fullUser, null, 2));
           setUser(fullUser);
