@@ -84,11 +84,24 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
       // Get user email for email setup screen
       const user = await authService.getCurrentUser();
-      if (user?.email) {
-        // For legacy compatibility - fallback email format
+      if (user?.email_address) {
+        // Use new email format
         setOnboardingState(prev => ({
           ...prev,
-          userEmail: `expense@${user.email.split('@')[0]}.snaptrack.bot`
+          userEmail: user.email_address
+        }));
+      } else if (user?.email_username) {
+        // Generate from username
+        setOnboardingState(prev => ({
+          ...prev,
+          userEmail: `${user.email_username}@app.snaptrack.bot`
+        }));
+      } else if (user?.email) {
+        // Legacy fallback
+        const username = user.email.split('@')[0].replace(/[^a-z0-9-]/gi, '-');
+        setOnboardingState(prev => ({
+          ...prev,
+          userEmail: `expense@${username}.snaptrack.bot`
         }));
       } else {
         // For email-optional users, we'll set this after username selection

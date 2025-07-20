@@ -168,10 +168,10 @@ export default function HamburgerMenu({ isVisible, onClose, navigation }: Hambur
           </View>
           
           <Text style={styles.userName} numberOfLines={1}>
-            {user?.displayName || user?.email?.split('@')[0] || 'User'}
+            {user?.displayName || user?.full_name || user?.email_username || 'User'}
           </Text>
           <Text style={styles.userEmail} numberOfLines={1}>
-            {user?.email}
+            {user?.email_address || user?.email || 'No email set'}
           </Text>
         </View>
 

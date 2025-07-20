@@ -172,7 +172,11 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   };
 
   const handleCopyEmail = async () => {
-    const email = `expense@${user?.email?.split('@')[0] || 'user'}.snaptrack.bot`;
+    // Use new email format if available, otherwise fall back to legacy
+    const email = user?.email_address || 
+                  (user?.email_username ? `${user.email_username}@app.snaptrack.bot` : null) ||
+                  user?.legacy_email ||
+                  `expense@${user?.email?.split('@')[0] || 'user'}.snaptrack.bot`;
     try {
       await Clipboard.setStringAsync(email);
       
@@ -363,7 +367,10 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
           <View style={styles.emailConfig}>
             <Text style={styles.emailLabel}>Your SnapTrack Email:</Text>
             <Text style={styles.emailAddress}>
-              expense@{user?.email?.split('@')[0] || 'user'}.snaptrack.bot
+              {user?.email_address || 
+               (user?.email_username ? `${user.email_username}@app.snaptrack.bot` : null) ||
+               user?.legacy_email ||
+               `expense@${user?.email?.split('@')[0] || 'user'}.snaptrack.bot`}
             </Text>
             <TouchableOpacity style={styles.copyButton} onPress={handleCopyEmail}>
               <Text style={styles.copyButtonText}>Copy Email</Text>

@@ -87,8 +87,8 @@ export default function EditProfileScreen() {
           />
           
           <Text style={styles.fieldLabel}>Email</Text>
-          <Text style={styles.emailText}>{user?.email}</Text>
-          <Text style={styles.emailNote}>Email cannot be changed</Text>
+          <Text style={styles.emailText}>{user?.email_address || user?.email || 'No email set'}</Text>
+          <Text style={styles.emailNote}>{user?.email ? 'Email cannot be changed' : 'Add email in settings'}</Text>
         </View>
       </View>
     </SafeAreaView>

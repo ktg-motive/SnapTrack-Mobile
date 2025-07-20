@@ -251,8 +251,8 @@ export default function AccountScreen() {
             )}
           </View>
           
-          <Text style={styles.userName}>{user?.displayName || user?.email?.split('@')[0] || 'User'}</Text>
-          <Text style={styles.userEmail}>{user?.email}</Text>
+          <Text style={styles.userName}>{user?.displayName || user?.full_name || user?.email_username || 'User'}</Text>
+          <Text style={styles.userEmail}>{user?.email_address || user?.email || 'No email set'}</Text>
 
           <TouchableOpacity style={styles.editProfileButton} onPress={handleEditProfile}>
             <Text style={styles.editProfileText}>Edit profile</Text>

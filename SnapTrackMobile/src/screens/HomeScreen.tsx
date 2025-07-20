@@ -100,9 +100,12 @@ export default function HomeScreen() {
       const user = await authService.initializeAuth();
       if (user) {
         // Try to get better display name
-        let displayName = user.displayName;
+        let displayName = user.displayName || user.full_name;
         
-        if (!displayName && user.email) {
+        if (!displayName && user.email_username) {
+          // Use username if available
+          displayName = user.email_username;
+        } else if (!displayName && user.email) {
           // Extract from email if available
           displayName = user.email.split('@')[0];
         }
