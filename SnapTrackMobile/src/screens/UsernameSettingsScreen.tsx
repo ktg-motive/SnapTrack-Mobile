@@ -44,22 +44,50 @@ export default function UsernameSettingsScreen() {
         setLoginEmail(user.email);
       }
 
-      // Load current username from API
+      // Try to load from profile endpoint first (which we know works)
+      try {
+        console.log('📱 Loading username from profile API...');
+        const profileResponse = await apiClient.get('/api/user/profile');
+        console.log('📱 Profile response:', JSON.stringify(profileResponse, null, 2));
+        
+        const profileData = profileResponse.user || profileResponse.data || profileResponse;
+        if (profileData && profileData.email_username) {
+          setCurrentUsername(profileData.email_username);
+          setEmailAddress(profileData.snaptrack_emails?.new_format || 
+                         `${profileData.email_username}@app.snaptrack.bot`);
+          // Check if we can change username
+          setCanChange(profileData.can_change_username !== false);
+          if (profileData.email_username_changed_at) {
+            // Calculate next change allowed (24 hours from last change)
+            const lastChanged = new Date(profileData.email_username_changed_at);
+            const nextAllowed = new Date(lastChanged.getTime() + 24 * 60 * 60 * 1000);
+            setNextChangeAllowed(nextAllowed.toISOString());
+            setCanChange(new Date() >= nextAllowed);
+          }
+        }
+      } catch (profileError) {
+        console.log('📱 Profile endpoint failed, trying username endpoint...');
+      }
+      
+      // Fallback to username endpoint
       console.log('📱 Loading username data from API...');
       const currentResponse = await apiClient.get('/api/username/current');
       console.log('📱 Username API response:', JSON.stringify(currentResponse, null, 2));
       
-      if (currentResponse.success) {
-        setCurrentUsername(currentResponse.username || '');
-        setEmailAddress(currentResponse.email_address || '');
-        setCanChange(currentResponse.can_change !== false);
-        setNextChangeAllowed(currentResponse.next_change_allowed || null);
-      } else if (currentResponse.username !== undefined) {
-        // Handle case where success flag might be missing but data exists
-        setCurrentUsername(currentResponse.username || '');
-        setEmailAddress(currentResponse.email_address || '');
-        setCanChange(currentResponse.can_change !== false);
-        setNextChangeAllowed(currentResponse.next_change_allowed || null);
+      if (currentResponse.success || currentResponse.username !== undefined) {
+        // Only override if we got valid data
+        if (currentResponse.username) {
+          setCurrentUsername(currentResponse.username);
+        }
+        if (currentResponse.email_address) {
+          setEmailAddress(currentResponse.email_address);
+        }
+        if (currentResponse.can_change !== undefined) {
+          setCanChange(currentResponse.can_change !== false);
+        }
+        if (currentResponse.next_change_allowed) {
+          setNextChangeAllowed(currentResponse.next_change_allowed);
+        }
       }
 
       // Load username history

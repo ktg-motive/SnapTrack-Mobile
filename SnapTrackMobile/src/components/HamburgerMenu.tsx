@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../styles/theme';
 import { authService } from '../services/authService.compat';
+import { apiClient } from '../services/apiClient';
 import { VersionDisplay } from './VersionDisplay';
 
 interface HamburgerMenuProps {
@@ -27,7 +28,43 @@ const MENU_WIDTH = Math.min(SCREEN_WIDTH * 0.85, 320);
 export default function HamburgerMenu({ isVisible, onClose, navigation }: HamburgerMenuProps) {
   const slideAnim = useRef(new Animated.Value(-MENU_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const user = authService.getCurrentUser();
+  const [user, setUser] = useState<any>(authService.getCurrentUser());
+
+  // Load full user profile when menu becomes visible
+  useEffect(() => {
+    if (isVisible) {
+      // Load user profile data
+      loadUserProfile();
+    }
+  }, [isVisible]);
+
+  const loadUserProfile = async () => {
+    try {
+      const basicUser = authService.getCurrentUser();
+      setUser(basicUser);
+      
+      // Fetch full profile with username data
+      const profileResponse = await apiClient.get('/api/user/profile');
+      const userData = profileResponse.user || profileResponse.data || profileResponse;
+      
+      if (userData && (userData.email_username || userData.profile)) {
+        const fullUser = {
+          ...basicUser,
+          id: userData.id || basicUser?.uid,
+          email: userData.profile?.email || userData.email || basicUser?.email,
+          displayName: userData.profile?.full_name || userData.full_name || basicUser?.displayName,
+          email_username: userData.email_username,
+          email_address: userData.snaptrack_emails?.new_format || 
+                        userData.email_address || 
+                        (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
+          full_name: userData.profile?.full_name || userData.full_name || basicUser?.displayName
+        };
+        setUser(fullUser);
+      }
+    } catch (error) {
+      console.error('Failed to load user profile in menu:', error);
+    }
+  };
 
   useEffect(() => {
     if (isVisible) {
