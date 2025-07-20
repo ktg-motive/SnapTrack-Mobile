@@ -28,7 +28,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { offlineStorage } from '../services/offlineStorage';
 import { errorReporting } from '../services/errorReporting';
 import { ReceiptPreviewModal } from '../components/ReceiptPreviewModal';
-import { authService } from ../services/authService.compat';
+import { authService } from '../services/authService.compat';
 import { shareService } from '../services/shareService';
 
 interface RouteParams {

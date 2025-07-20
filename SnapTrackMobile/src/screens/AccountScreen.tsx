@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../styles/theme';
-import { authService } from ../services/authService.compat';
+import { authService } from '../services/authService.compat';
 import { iapManager } from '../services/IAPManager';
 import { apiClient } from '../services/apiClient';
 

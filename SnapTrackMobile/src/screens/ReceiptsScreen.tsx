@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../styles/theme';
 import RecentReceipts from '../components/RecentReceipts';
 import { apiClient, ApiError } from '../services/apiClient';
-import { authService } from ../services/authService.compat';
+import { authService } from '../services/authService.compat';
 import { Receipt } from '../types';
 import NetInfo from '@react-native-community/netinfo';
 import { offlineStorage } from '../services/offlineStorage';

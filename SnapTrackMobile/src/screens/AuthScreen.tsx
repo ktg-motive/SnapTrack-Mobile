@@ -20,7 +20,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { colors, typography, spacing, borderRadius } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
-import { authService } from ../services/authService.compat';
+import { authService } from '../services/authService.compat';
 import { iapManager } from '../services/IAPManager';
 import { apiClient } from '../services/apiClient';
 

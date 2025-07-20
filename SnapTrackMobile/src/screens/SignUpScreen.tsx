@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
-import { authService } from ../services/authService.compat';
+import { authService } from '../services/authService.compat';
 import { iapManager } from '../services/IAPManager';
 import { apiClient } from '../services/apiClient';
 

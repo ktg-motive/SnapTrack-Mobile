@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { theme } from '../styles/theme';
-import { authService } from ../services/authService.compat';
+import { authService } from '../services/authService.compat';
 
 // Import onboarding screens
 import WelcomeScreen from './onboarding/WelcomeScreen';
