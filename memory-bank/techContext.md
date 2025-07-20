@@ -1,6 +1,6 @@
 # Technical Context
 
-**Last Updated:** 2025-07-06 20:30:00 - Production Enhancement Session - Impacts: [Authentication, Apple Integration, UX]
+**Last Updated:** 2025-07-20 18:00:00 - Phase 3 UUID Authentication Complete - Impacts: [Cross-Platform Auth, UUID Service Integration, App Store Deployment]
 
 ## Technical Architecture
 
@@ -9,14 +9,19 @@
 - **TypeScript** with strict type checking for enhanced code quality and developer experience
 - **React Navigation 7.x** with bottom tabs and stack navigation
 - **Firebase Authentication** with Google OAuth, Apple Sign-In, and email/password support
+- **UUID Authentication Service** for cross-platform user coordination and identification
 - **expo-apple-authentication** for native iOS Apple Sign-In integration
 - **AsyncStorage** for offline data persistence and queue management
+- **Cross-Platform Sync** with real-time coordination between mobile and web platforms
 
 ### Backend Integration
 - **SnapTrack API** for receipt processing and OCR functionality
+- **UUID Authentication API** for cross-platform user management and coordination
+- **Username Validation API** for real-time availability checking and registration
 - **Multipart Form Data** uploads for receipt images with progress tracking
 - **RESTful API Client** with comprehensive error handling and retry logic
 - **Offline-First Architecture** with automatic sync when network restored
+- **Cross-Platform Data Sync** with UUID-based user identification
 
 ## Project Structure
 
@@ -33,10 +38,13 @@ SnapTrackMobile/
 │   │   ├── HomeScreen.tsx           # Main dashboard with fixed layout
 │   │   ├── CameraScreen.tsx         # Receipt capture interface
 │   │   ├── ReviewScreen.tsx         # Expense review and editing
-│   │   └── AuthScreen.tsx           # Authentication flow
+│   │   ├── AuthScreen.tsx           # Authentication flow
+│   │   ├── UsernameScreen.tsx       # Username collection and validation
+│   │   └── EmailScreen.tsx          # Email collection (optional)
 │   ├── services/            # Business logic and API clients
 │   │   ├── api.ts                   # Backend API integration
 │   │   ├── auth.ts                  # Firebase authentication
+│   │   ├── uuidAuth.ts              # UUID authentication service
 │   │   └── storage.ts               # Offline storage management
 │   ├── styles/              # Design system and theming
 │   │   └── theme.ts                 # Colors, typography, spacing
@@ -104,17 +112,23 @@ npm run ios
 
 ## Authentication Flow
 
-### Firebase Configuration
-- **GoogleService-Info.plist** configured for iOS authentication
+### UUID Authentication System
+- **UUID Service Integration** for cross-platform user identification
+- **Username Collection** with real-time availability validation
+- **Email Collection** with App Store compliant optional flow
+- **Firebase Configuration** with GoogleService-Info.plist for iOS authentication
 - **Google OAuth** for seamless sign-in experience
 - **Email/Password** fallback authentication method
 - **AsyncStorage Persistence** for session management across app launches
+- **Cross-Platform Coordination** with web platform UUID synchronization
 
 ### User Management
 ```typescript
 interface User {
   uid: string;
-  email: string;
+  uuid: string;         // Cross-platform UUID identifier
+  username: string;     // User-selected username
+  email?: string;       // Optional email (App Store compliance)
   displayName?: string;
   photoURL?: string;
   initials: string;     // Generated for avatar display
@@ -127,11 +141,30 @@ interface User {
 ### SnapTrack Backend Integration
 - **Base URL:** Production SnapTrack API endpoint
 - **Authentication:** Bearer token with automatic refresh
+- **UUID Authentication:** `/api/auth/uuid` endpoints for user management
+- **Username Validation:** `/api/auth/username/check` for availability checking
 - **Upload Endpoint:** `/api/receipts/upload` with multipart form data
 - **OCR Processing:** Real-time status polling with confidence scoring
+- **Cross-Platform Sync:** UUID-based data coordination endpoints
 
 ### Request/Response Patterns
 ```typescript
+// UUID Authentication Flow
+interface UUIDAuthResponse {
+  uuid: string;
+  username: string;
+  email?: string;
+  token: string;
+  expires_at: string;
+}
+
+// Username Validation
+interface UsernameCheckResponse {
+  available: boolean;
+  suggestions?: string[];
+  message?: string;
+}
+
 // Receipt upload with progress tracking
 interface ReceiptUploadResponse {
   id: string;
@@ -159,8 +192,11 @@ interface ReceiptUploadResponse {
 const STORAGE_KEYS = {
   PENDING_RECEIPTS: '@pending_receipts',
   USER_SESSION: '@user_session',
+  USER_UUID: '@user_uuid',
+  USERNAME: '@username',
   CACHED_ENTITIES: '@cached_entities',
   CACHED_TAGS: '@cached_tags',
+  CROSS_PLATFORM_SYNC: '@cross_platform_sync',
 };
 ```
 
@@ -217,12 +253,12 @@ export const spacing = {
     "name": "SnapTrack",
     "slug": "snaptrack-mobile",
     "platforms": ["ios"],
-    "version": "1.0.0",
+    "version": "1.4.0",
     "icon": "./assets/icon.png",
     "splash": { "image": "./assets/splash.png" },
     "ios": {
       "bundleIdentifier": "com.motive.snaptrack",
-      "buildNumber": "1"
+      "buildNumber": "13"
     }
   }
 }
@@ -300,13 +336,21 @@ eas submit --platform ios
 ## Known Technical Limitations
 
 ### Current Constraints
-- **iOS Only:** Android support planned for Phase 2
-- **Expo Limitations:** Google Sign-In only works in development builds
-- **Network Dependency:** OCR processing requires internet connectivity
+- **iOS Only:** Android support planned for Phase 4
+- **Network Dependency:** OCR processing and UUID authentication require internet connectivity
 - **Storage Limits:** AsyncStorage has size limitations for large image queues
+- **Cross-Platform Sync:** Real-time synchronization requires active network connection
+
+### Phase 3 Achievements
+- ✅ **UUID Authentication:** Complete cross-platform authentication system
+- ✅ **Username Collection:** Real-time validation and availability checking
+- ✅ **Email Optional Flow:** App Store compliant onboarding process
+- ✅ **Cross-Platform Coordination:** Seamless data sync with web platform
+- ✅ **Production Deployment:** App Store submission ready configuration
 
 ### Future Technical Improvements
 - **Background Processing:** iOS background app refresh for sync operations
 - **Image Processing:** On-device image optimization and compression
 - **Offline OCR:** Edge-based text extraction for immediate feedback
 - **Performance Monitoring:** Crash reporting and analytics integration
+- **Android Platform:** Cross-platform expansion to Google Play Store
