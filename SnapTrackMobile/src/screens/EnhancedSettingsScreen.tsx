@@ -376,6 +376,13 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
               <Text style={styles.copyButtonText}>Copy Email</Text>
             </TouchableOpacity>
             
+            <TouchableOpacity 
+              style={[styles.copyButton, { marginTop: 10 }]} 
+              onPress={() => navigation.navigate('UsernameSettings' as never)}
+            >
+              <Text style={styles.copyButtonText}>Manage Email & Username</Text>
+            </TouchableOpacity>
+            
             <Text style={styles.emailTip}>
               Forward receipts to this email to automatically add them to SnapTrack
             </Text>

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
+import { authService } from '../services/authService.compat';
 
 interface UsernameHistory {
   username: string;
@@ -22,6 +23,7 @@ interface UsernameHistory {
 export default function UsernameSettingsScreen() {
   const [currentUsername, setCurrentUsername] = useState<string>('');
   const [emailAddress, setEmailAddress] = useState<string>('');
+  const [loginEmail, setLoginEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [history, setHistory] = useState<UsernameHistory[]>([]);
@@ -35,6 +37,12 @@ export default function UsernameSettingsScreen() {
   const loadUsernameData = async () => {
     try {
       setIsLoading(true);
+
+      // Get current user to check their login email
+      const user = authService.getCurrentUser();
+      if (user?.email) {
+        setLoginEmail(user.email);
+      }
 
       // Load current username
       const currentResponse = await apiClient.get('/api/username/current');
@@ -132,9 +140,28 @@ export default function UsernameSettingsScreen() {
         />
       }
     >
+      {/* Login Account Section */}
+      {loginEmail && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Login Account</Text>
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Ionicons name="person-circle-outline" size={20} color={colors.textSecondary} />
+              <Text style={styles.infoText}>Signed in with: {loginEmail}</Text>
+            </View>
+            <Text style={styles.helpText}>
+              This is your Google account used to sign in to SnapTrack.
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* Current Username Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Current Username</Text>
+        <Text style={styles.sectionTitle}>Receipt Email Username</Text>
+        <Text style={styles.sectionSubtitle}>
+          Choose a username to create your unique email address for receipt forwarding
+        </Text>
         
         <View style={styles.usernameCard}>
           <View style={styles.usernameHeader}>
@@ -412,5 +439,32 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     flex: 1,
     lineHeight: 18,
+  },
+  sectionSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  infoCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  infoText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    marginLeft: spacing.sm,
+    flex: 1,
+  },
+  helpText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 });

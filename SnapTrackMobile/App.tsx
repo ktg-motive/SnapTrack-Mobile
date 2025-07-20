@@ -25,6 +25,7 @@ import OnboardingFlow from './src/screens/OnboardingFlow';
 import PaidAccountRequiredScreen from './src/screens/onboarding/PaidAccountRequiredScreen';
 import AccountCreationInProgressScreen from './src/screens/onboarding/AccountCreationInProgressScreen';
 import WelcomeBackScreen from './src/screens/onboarding/WelcomeBackScreen';
+import UsernameSettingsScreen from './src/screens/UsernameSettingsScreen';
 // New onboarding screens
 import NewWelcomeScreen from './src/screens/onboarding/NewWelcomeScreen';
 import GetStartedScreen from './src/screens/onboarding/GetStartedScreen';
@@ -467,6 +468,16 @@ export default function App() {
               component={EditProfileScreen} 
               options={{ 
                 title: 'Edit Profile',
+                headerShown: true,
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.textPrimary,
+              }} 
+            />
+            <Stack.Screen 
+              name="UsernameSettings" 
+              component={UsernameSettingsScreen} 
+              options={{ 
+                title: 'Email & Username',
                 headerShown: true,
                 headerStyle: { backgroundColor: colors.background },
                 headerTintColor: colors.textPrimary,

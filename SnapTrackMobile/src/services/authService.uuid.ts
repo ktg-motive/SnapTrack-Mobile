@@ -124,8 +124,9 @@ class UUIDAuthService {
       
       // Get user data from our backend
       console.log('📡 Fetching user profile from backend...');
+      console.log('Firebase user email:', firebaseUser.email);
       const userData = await apiClient.get('/api/user/profile');
-      console.log('✅ User profile received:', userData);
+      console.log('✅ User profile received:', JSON.stringify(userData, null, 2));
       
       // The enhanced profile now includes username fields
       this.currentUser = {
