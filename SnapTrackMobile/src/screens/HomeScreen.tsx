@@ -99,10 +99,34 @@ export default function HomeScreen() {
       // Initialize auth first
       const user = await authService.initializeAuth();
       if (user) {
-        setUserName(user.displayName || user.email?.split('@')[0] || 'User');
+        // Try to get better display name
+        let displayName = user.displayName;
         
-        // Add a small delay to ensure apiClient is properly initialized
-        await new Promise(resolve => setTimeout(resolve, 100));
+        if (!displayName && user.email) {
+          // Extract from email if available
+          displayName = user.email.split('@')[0];
+        }
+        
+        // For Apple hidden email users, try to get from backend
+        if (!displayName || displayName === 'User' || displayName.includes('privaterelay')) {
+          try {
+            // Add a small delay to ensure apiClient is properly initialized
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Try to get user profile from backend
+            const profileResponse = await apiClient.get('/api/user/profile');
+            if (profileResponse?.data?.full_name) {
+              displayName = profileResponse.data.full_name;
+            } else if (profileResponse?.data?.subdomain) {
+              // Use subdomain as fallback (it's more readable than UID)
+              displayName = profileResponse.data.subdomain.split('_')[0];
+            }
+          } catch (error) {
+            console.log('Could not fetch user profile for display name');
+          }
+        }
+        
+        setUserName(displayName || 'User');
         
         await loadDashboardData();
         await updateQueuedUploadsCount();
