@@ -200,27 +200,59 @@ class UUIDAuthService {
         throw new Error('No ID token received from Google');
       }
       
-      // Create Firebase credential
-      const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
-      
-      // Sign in to Firebase with Google credential
-      const userCredential = await signInWithCredential(this.auth, googleCredential);
-      const firebaseUser = userCredential.user;
-      console.log('🔥 Firebase sign-in successful:', firebaseUser.email);
-      
-      // Get Firebase auth token
-      const token = await firebaseUser.getIdToken();
-      
-      // Call universal auth endpoint with Google data
-      await this.authenticateWithUniversalEndpoint('google', token, {
-        google_user_id: userInfo.data.user?.id,
-        email: userInfo.data.user?.email,
-        name: userInfo.data.user?.name,
-        picture: userInfo.data.user?.photo
-      });
-      
-      // Firebase auth listener will handle the rest
-      return this.currentUser!;
+      // TEMPORARY: Use existing Supabase auth flow until backend implements /api/auth/universal
+      // This matches what the web app does
+      try {
+        // Create Firebase credential
+        const googleCredential = GoogleAuthProvider.credential(userInfo.data.idToken);
+        
+        // Sign in to Firebase with Google credential
+        const userCredential = await signInWithCredential(this.auth, googleCredential);
+        const firebaseUser = userCredential.user;
+        console.log('🔥 Firebase sign-in successful:', firebaseUser.email);
+        
+        // Get Firebase auth token
+        const token = await firebaseUser.getIdToken();
+        
+        // Store token for API requests
+        await this.storeAuthToken(token);
+        apiClient.setAuthToken(token);
+        
+        // For now, just use the Firebase user data directly
+        // When backend implements /api/auth/universal, uncomment the code below
+        this.currentUser = {
+          id: firebaseUser.uid,
+          firebase_uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          full_name: firebaseUser.displayName,
+          auth_version: 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as User;
+        
+        // Get user profile from backend if it exists
+        try {
+          const userData = await apiClient.get('/api/user/profile');
+          if (userData.user) {
+            this.currentUser = userData.user;
+          }
+        } catch (profileError) {
+          console.log('User profile not found, using Firebase data');
+        }
+        
+        // TODO: Uncomment when backend implements /api/auth/universal
+        // await this.authenticateWithUniversalEndpoint('google', token, {
+        //   google_user_id: userInfo.data.user?.id,
+        //   email: userInfo.data.user?.email,
+        //   name: userInfo.data.user?.name,
+        //   picture: userInfo.data.user?.photo
+        // });
+        
+        return this.currentUser!;
+      } catch (fallbackError) {
+        console.error('Fallback auth failed:', fallbackError);
+        throw fallbackError;
+      }
       
     } catch (error: any) {
       console.error('❌ Google sign in failed:', error);
