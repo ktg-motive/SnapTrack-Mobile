@@ -20,7 +20,7 @@ import * as Clipboard from 'expo-clipboard';
 
 import { colors, typography, spacing, borderRadius } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
-import { authService } from '../services/authService';
+import { authService } from ../services/authService.compat';
 import { iapManager } from '../services/IAPManager';
 import { apiClient } from '../services/apiClient';
 
@@ -332,6 +332,14 @@ export default function AuthScreen() {
       console.log('📱 Getting customer info...');
       const customerInfo = await iapManager.getCustomerInfo();
       
+      console.log('📱 Customer info details:', {
+        originalAppUserId: customerInfo.originalAppUserId,
+        email: customerInfo.email,
+        managementURL: customerInfo.managementURL,
+        allPurchasedProductIdentifiers: customerInfo.allPurchasedProductIdentifiers,
+        hasActiveSubscriptions: customerInfo.activeSubscriptions.length > 0
+      });
+      
       console.log('📱 Sending to backend...');
       // Send RevenueCat data to backend for processing
       const response = await apiClient.post<any>('/api/subscription/process-mobile-purchase', {
@@ -340,7 +348,8 @@ export default function AuthScreen() {
         entitlements: customerInfo.entitlements.active,
         product_id: product.productId,
         transaction_id: purchase.transactionId,
-        is_sandbox: __DEV__
+        is_sandbox: __DEV__,
+        email: customerInfo.email // Add email if RevenueCat has it
       });
       
       if ((response as any).data.success) {

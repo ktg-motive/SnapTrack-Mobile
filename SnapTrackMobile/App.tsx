@@ -31,7 +31,7 @@ import GetStartedScreen from './src/screens/onboarding/GetStartedScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import IAPWelcomeScreen from './src/screens/IAPWelcomeScreen';
 import { colors } from './src/styles/theme';
-import { authService } from './src/services/authService';
+import { authService } from './src/services/authService.compat';
 
 const Stack = createNativeStackNavigator();
 

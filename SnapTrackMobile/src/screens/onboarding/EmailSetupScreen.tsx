@@ -28,7 +28,9 @@ export default function EmailSetupScreen({ onNext, state }: EmailSetupScreenProp
 
   const handleCopyEmail = async () => {
     try {
-      await Clipboard.setString(state.userEmail);
+      // Use the new username-based email if available, otherwise fallback to legacy
+      const emailToUse = state.userEmailAddress || state.userEmail;
+      await Clipboard.setString(emailToUse);
       
       // Haptic feedback
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -69,7 +71,9 @@ export default function EmailSetupScreen({ onNext, state }: EmailSetupScreenProp
         <Card style={styles.emailCard}>
           <Card.Content style={styles.emailCardContent}>
             <View style={styles.emailDisplay}>
-              <Text style={styles.emailText}>{state.userEmail}</Text>
+              <Text style={styles.emailText}>
+                {state.userEmailAddress || state.userEmail}
+              </Text>
               <Button
                 mode="contained"
                 onPress={handleCopyEmail}

@@ -1,5 +1,8 @@
 // Core data types for SnapTrack Mobile
 
+// Export new UUID-based auth types
+export * from './auth';
+
 export interface Receipt {
   id: string;
   vendor: string;
@@ -41,7 +44,8 @@ export interface Entity {
   updated_at: string;
 }
 
-export interface User {
+// Legacy User interface - keeping for backward compatibility
+export interface LegacyUser {
   id: string;
   email: string;
   name?: string;
@@ -155,19 +159,7 @@ export interface QuickStats {
   entities: { [key: string]: number };
 }
 
-// Authentication types
-export interface AuthCredentials {
-  email: string;
-  password: string;
-}
-
-export interface AuthUser {
-  uid: string;
-  email: string;
-  displayName?: string;
-  photoURL?: string;
-  emailVerified: boolean;
-}
+// Legacy authentication types moved to auth.ts
 
 // Offline support types
 export interface OfflineAction {

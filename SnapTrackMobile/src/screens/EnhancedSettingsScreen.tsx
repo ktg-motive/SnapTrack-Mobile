@@ -21,7 +21,7 @@ import type { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
-import { authService } from '../services/authService';
+import { authService } from ../services/authService.compat';
 import { settingsService, AppSettings } from '../services/settingsService';
 import { shareService } from '../services/shareService';
 

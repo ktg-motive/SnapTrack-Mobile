@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../styles/theme';
-import { authService } from '../services/authService';
+import { authService } from ../services/authService.compat';
 import { VersionDisplay } from './VersionDisplay';
 
 interface HamburgerMenuProps {

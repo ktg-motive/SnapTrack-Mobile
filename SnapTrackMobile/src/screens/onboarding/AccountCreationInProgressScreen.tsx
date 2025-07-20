@@ -15,7 +15,7 @@ import SnapTrackLogo from '../../components/SnapTrackLogo';
 import { theme, typography } from '../../styles/theme';
 
 const colors = theme.colors;
-import { authService } from '../../services/authService';
+import { authService } from ../services/authService.compat';
 
 const CONTINUE_SIGNUP_URL = 'https://snaptrack.bot/signup?source=mobile&return=snaptrack://auth-complete';
 

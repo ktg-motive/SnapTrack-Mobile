@@ -4,10 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { theme } from '../styles/theme';
-import { authService } from '../services/authService';
+import { authService } from ../services/authService.compat';
 
 // Import onboarding screens
 import WelcomeScreen from './onboarding/WelcomeScreen';
+import UsernameSelectionScreen from './onboarding/UsernameSelectionScreen';
 import EmailSetupScreen from './onboarding/EmailSetupScreen';
 import CameraCaptureScreen from './onboarding/CameraCaptureScreen';
 import SnapTrackIntelligenceScreen from './onboarding/SnapTrackIntelligenceScreen';
@@ -25,6 +26,8 @@ interface OnboardingState {
   capturedReceiptUri?: string;
   extractedData?: any;
   userEmail: string;
+  selectedUsername?: string;
+  userEmailAddress?: string;
   selectedEntity?: string;
   selectedTags: string[];
   hasPermissions: {
@@ -34,7 +37,7 @@ interface OnboardingState {
 }
 
 const ONBOARDING_STORAGE_KEY = 'onboarding_state';
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 interface OnboardingFlowProps {
   onComplete?: () => void;
@@ -57,6 +60,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   // Screen components array
   const screens = [
     WelcomeScreen,
+    UsernameSelectionScreen,
     EmailSetupScreen,
     CameraCaptureScreen,
     SnapTrackIntelligenceScreen,
@@ -81,9 +85,16 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       // Get user email for email setup screen
       const user = await authService.getCurrentUser();
       if (user?.email) {
+        // For legacy compatibility - fallback email format
         setOnboardingState(prev => ({
           ...prev,
           userEmail: `expense@${user.email.split('@')[0]}.snaptrack.bot`
+        }));
+      } else {
+        // For email-optional users, we'll set this after username selection
+        setOnboardingState(prev => ({
+          ...prev,
+          userEmail: 'Will be set after username selection'
         }));
       }
     } catch (error) {

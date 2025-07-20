@@ -22,7 +22,7 @@ import WelcomeMessage from '../components/WelcomeMessage';
 import QuickStats from '../components/QuickStats';
 import RecentReceipts from '../components/RecentReceipts';
 import { apiClient, ApiError } from '../services/apiClient';
-import { authService } from '../services/authService';
+import { authService } from ../services/authService.compat';
 import { QuickStats as QuickStatsType, Receipt } from '../types';
 import NetInfo from '@react-native-community/netinfo';
 import { offlineStorage } from '../services/offlineStorage';

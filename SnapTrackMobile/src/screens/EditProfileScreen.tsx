@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { colors, typography, spacing } from '../styles/theme';
-import { authService } from '../services/authService';
+import { authService } from ../services/authService.compat';
 
 export default function EditProfileScreen() {
   const navigation = useNavigation();
