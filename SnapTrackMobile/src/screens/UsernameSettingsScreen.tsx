@@ -78,28 +78,89 @@ export default function UsernameSettingsScreen() {
   };
 
   const handleChangeUsername = () => {
-    Alert.alert(
+    if (!canChange) {
+      Alert.alert(
+        'Username Change Restricted',
+        `You can change your username again ${nextChangeAllowed ? `on ${formatDate(nextChangeAllowed)}` : 'in the future'}. You may only change your username once every 30 days.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.prompt(
       'Change Username',
-      'To change your username, please contact support. This feature will be available in a future update.',
+      `Enter your new username. Your current username is "${currentUsername}". This will change your email address to [username]@app.snaptrack.bot`,
       [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Contact Support',
-          onPress: () => {
-            // Navigate to contact screen or open email
-            // This would typically be handled by the navigation prop
+          text: 'Check & Change',
+          onPress: async (newUsername) => {
+            if (!newUsername || newUsername.trim().length < 3) {
+              Alert.alert('Error', 'Username must be at least 3 characters long');
+              return;
+            }
+
+            const cleanUsername = newUsername.toLowerCase().replace(/[^a-z0-9\-\.]/g, '');
+            
+            if (cleanUsername !== newUsername.toLowerCase()) {
+              Alert.alert('Error', 'Username can only contain letters, numbers, hyphens, and periods');
+              return;
+            }
+
+            try {
+              // Check availability first
+              const checkResponse = await apiClient.post('/api/username/check', {
+                username: cleanUsername
+              });
+
+              if (!checkResponse.success || !checkResponse.available) {
+                const errors = checkResponse.errors || ['Username not available'];
+                const suggestions = checkResponse.suggestions || [];
+                
+                Alert.alert(
+                  'Username Not Available',
+                  `${errors[0]}${suggestions.length > 0 ? '\n\nSuggestions: ' + suggestions.slice(0, 3).join(', ') : ''}`,
+                  [{ text: 'OK' }]
+                );
+                return;
+              }
+
+              // Assign the username
+              const assignResponse = await apiClient.post('/api/username/assign', {
+                username: cleanUsername
+              });
+
+              if (assignResponse.success) {
+                Alert.alert(
+                  'Username Changed!',
+                  `Your username has been changed to "${cleanUsername}". Your new email address is ${cleanUsername}@app.snaptrack.bot`,
+                  [{ text: 'OK' }]
+                );
+                
+                // Refresh the data
+                await loadUsernameData();
+              } else {
+                Alert.alert('Error', assignResponse.error || 'Failed to change username. Please try again.');
+              }
+            } catch (error: any) {
+              console.error('Username change error:', error);
+              Alert.alert('Error', 'Failed to change username. Please check your connection and try again.');
+            }
           }
-        },
-        { text: 'Cancel', style: 'cancel' }
-      ]
+        }
+      ],
+      'plain-text',
+      currentUsername
     );
   };
 
   const copyEmailAddress = async () => {
     try {
-      const { Clipboard } = await import('react-native');
-      await Clipboard.setString(emailAddress);
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.default.setStringAsync(emailAddress);
       Alert.alert('Copied!', 'Email address copied to clipboard');
     } catch (error) {
+      console.error('Copy error:', error);
       Alert.alert('Error', 'Failed to copy email address');
     }
   };

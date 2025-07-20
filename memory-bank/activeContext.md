@@ -1,10 +1,30 @@
 # Active Context
 
-**Last Updated:** 2025-07-19 00:30:00 - APPLE SIGN-IN & REVENUECAT FIXES - Impacts: [Authentication Flow, Payment Processing, Welcome Emails]
+**Last Updated:** 2025-07-20 13:00:00 - USERNAME MANAGEMENT FIXES - Impacts: [Username Change Functionality, Copy Email Crash Fix]
 **Previous Update:** 2025-07-18 21:00:00
 **Session Context:** Fixed loading states, updated RevenueCat endpoint, incremented build numbers, investigated welcome email issue
 
-## Current Work Focus - Session July 19, 2025 (Apple Sign-In & RevenueCat Integration)
+## Current Work Focus - Session July 20, 2025 (Username Management Fixes)
+
+- ✅ **COMPLETED:** Username Change Implementation (July 20, 2025)
+  - **ISSUE:** Mobile app only showed "contact support" alert for username changes
+  - **ROOT CAUSE:** Placeholder implementation not replaced with actual functionality
+  - **SOLUTION:** Implemented full username change flow with validation and API integration
+  - **FEATURES:** Username validation, availability checking, change restrictions (30-day limit), success feedback
+  - **RESULT:** Users can now change usernames directly in mobile app, matching web functionality
+
+- ✅ **COMPLETED:** Copy Email Crash Fix (July 20, 2025)
+  - **ISSUE:** App crashed when tapping copy username field
+  - **ROOT CAUSE:** Dynamic import of react-native Clipboard causing crash
+  - **SOLUTION:** Replaced with expo-clipboard import which is already installed and stable
+  - **RESULT:** Copy email function now works reliably without crashes
+
+- ✅ **COMPLETED:** Build Version Correction (July 20, 2025)
+  - **ISSUE:** Memory bank showed outdated build numbers (1.0.2 iOS, build 3 Android)
+  - **ACTUAL STATUS:** Current App Store build is 1.3.5 build 12 (iOS)
+  - **CORRECTION:** Updated documentation to reflect actual production status
+
+## Previous Work Focus - Session July 19, 2025 (Apple Sign-In & RevenueCat Integration)
 
 - ✅ **COMPLETED:** Apple Sign-In Loading State Fix (July 19, 2025)
   - **ISSUE:** Loading spinner appearing on wrong button during authentication
