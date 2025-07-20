@@ -70,14 +70,32 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
       
       // Load user profile first to get username data
       const profilePromise = apiClient.get('/api/user/profile').then(response => {
+        console.log('⚙️ Settings profile response:', JSON.stringify(response, null, 2));
         if (response.success && response.user) {
           const basicUser = authService.getCurrentUser();
-          setUser({
+          const fullUser = {
             ...basicUser,
             ...response.user,
             email: response.user.email || basicUser?.email,
-            displayName: response.user.full_name || basicUser?.displayName
-          });
+            displayName: response.user.full_name || basicUser?.displayName,
+            // Ensure email_address is set if we have username
+            email_address: response.user.email_address || 
+                          (response.user.email_username ? `${response.user.email_username}@app.snaptrack.bot` : null)
+          };
+          console.log('⚙️ Settings full user:', JSON.stringify(fullUser, null, 2));
+          setUser(fullUser);
+        } else if (response.user) {
+          // Handle case where success flag might be missing
+          const basicUser = authService.getCurrentUser();
+          const fullUser = {
+            ...basicUser,
+            ...response.user,
+            email: response.user.email || basicUser?.email,
+            displayName: response.user.full_name || basicUser?.displayName,
+            email_address: response.user.email_address || 
+                          (response.user.email_username ? `${response.user.email_username}@app.snaptrack.bot` : null)
+          };
+          setUser(fullUser);
         }
       }).catch(err => console.log('Profile load error:', err));
       

@@ -49,12 +49,29 @@ export default function AccountScreen() {
       
       if (profileResponse.success && profileResponse.user) {
         // Merge the profile data with basic user data
-        setUser({
+        const fullUser = {
           ...basicUser,
           ...profileResponse.user,
           email: profileResponse.user.email || basicUser?.email,
-          displayName: profileResponse.user.full_name || basicUser?.displayName
-        });
+          displayName: profileResponse.user.full_name || basicUser?.displayName,
+          // Ensure email_address is set if we have username
+          email_address: profileResponse.user.email_address || 
+                        (profileResponse.user.email_username ? `${profileResponse.user.email_username}@app.snaptrack.bot` : null)
+        };
+        console.log('👤 Full user object:', JSON.stringify(fullUser, null, 2));
+        setUser(fullUser);
+      } else if (profileResponse.user) {
+        // Handle case where success flag might be missing
+        const fullUser = {
+          ...basicUser,
+          ...profileResponse.user,
+          email: profileResponse.user.email || basicUser?.email,
+          displayName: profileResponse.user.full_name || basicUser?.displayName,
+          email_address: profileResponse.user.email_address || 
+                        (profileResponse.user.email_username ? `${profileResponse.user.email_username}@app.snaptrack.bot` : null)
+        };
+        console.log('👤 Full user object (no success flag):', JSON.stringify(fullUser, null, 2));
+        setUser(fullUser);
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);
