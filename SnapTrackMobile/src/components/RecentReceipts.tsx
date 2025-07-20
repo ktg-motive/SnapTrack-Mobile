@@ -141,9 +141,10 @@ export default function RecentReceipts({
     );
   };
 
+  // Loading state - render empty FlatList with loading header
   if (isLoading && localReceipts.length === 0) {
-    return (
-      <View style={styles.container}>
+    const LoadingHeader = () => (
+      <>
         <View style={styles.header}>
           <Text style={styles.title}>Recent Receipts</Text>
         </View>
@@ -151,13 +152,24 @@ export default function RecentReceipts({
           <ActivityIndicator size="small" color={colors.primary} />
           <Text style={styles.loadingText}>Loading receipts...</Text>
         </View>
-      </View>
+      </>
+    );
+
+    return (
+      <FlatList
+        data={[]}
+        renderItem={null}
+        ListHeaderComponent={LoadingHeader}
+        contentContainerStyle={styles.flatListContent}
+        style={styles.container}
+      />
     );
   }
 
+  // Empty state - render empty FlatList with empty state header
   if (localReceipts.length === 0) {
-    return (
-      <View style={styles.container}>
+    const EmptyHeader = () => (
+      <>
         <View style={styles.header}>
           <Text style={styles.title}>Recent Receipts</Text>
         </View>
@@ -166,35 +178,50 @@ export default function RecentReceipts({
           <Text style={styles.emptyText}>No receipts yet</Text>
           <Text style={styles.emptySubtext}>Start by capturing your first receipt!</Text>
         </View>
-      </View>
+      </>
+    );
+
+    return (
+      <FlatList
+        data={[]}
+        renderItem={null}
+        ListHeaderComponent={EmptyHeader}
+        contentContainerStyle={styles.flatListContent}
+        style={styles.container}
+        refreshControl={refreshControl}
+      />
     );
   }
 
-  return (
-    <View style={styles.container}>
+  // Combine header with search results header
+  const renderCombinedHeader = () => (
+    <>
       <View style={styles.header}>
         <Text style={styles.title}>Recent Receipts</Text>
       </View>
-      
-      <FlatList
-        data={localReceipts}
-        renderItem={renderReceiptCard}
-        keyExtractor={(item) => item.id}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
-        ListHeaderComponent={renderSearchHeader}
-        ListFooterComponent={renderFooter}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.flatListContent}
-        style={styles.flatListStyle}
-        removeClippedSubviews={Platform.OS === 'android'}
-        maxToRenderPerBatch={5}
-        windowSize={10}
-        initialNumToRender={5}
-        getItemLayout={undefined}
-        refreshControl={refreshControl}
-      />
-    </View>
+      {renderSearchHeader()}
+    </>
+  );
+
+  return (
+    <FlatList
+      data={localReceipts}
+      renderItem={renderReceiptCard}
+      keyExtractor={(item) => item.id}
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.5}
+      ListHeaderComponent={renderCombinedHeader}
+      ListFooterComponent={renderFooter}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.flatListContent}
+      style={styles.container}
+      removeClippedSubviews={Platform.OS === 'android'}
+      maxToRenderPerBatch={5}
+      windowSize={10}
+      initialNumToRender={5}
+      getItemLayout={undefined}
+      refreshControl={refreshControl}
+    />
   );
 }
 
