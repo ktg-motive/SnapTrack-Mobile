@@ -116,6 +116,11 @@ export default function HomeScreen() {
 
   const loadDashboardData = async (resetData = true) => {
     try {
+      console.log('📊 Loading dashboard data...');
+      console.log('📊 apiClient available:', !!apiClient);
+      console.log('📊 apiClient.getQuickStats type:', typeof apiClient?.getQuickStats);
+      console.log('📊 apiClient.getReceipts type:', typeof apiClient?.getReceipts);
+      
       // Load recent receipts and stats first
       const [statsPromise, receiptsPromise] = await Promise.allSettled([
         apiClient.getQuickStats(),

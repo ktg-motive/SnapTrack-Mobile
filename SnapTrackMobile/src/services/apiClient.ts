@@ -38,6 +38,7 @@ class SnapTrackApiClient {
 
   // Authentication management
   setAuthToken(token: string) {
+    console.log('🔑 Setting auth token in apiClient, length:', token?.length);
     this.token = token;
   }
 
