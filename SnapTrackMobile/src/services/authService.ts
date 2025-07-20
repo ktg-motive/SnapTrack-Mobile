@@ -314,7 +314,9 @@ class AuthService {
         hasIdentityToken: !!credential.identityToken,
         hasAuthorizationCode: !!credential.authorizationCode,
         email: credential.email,
-        realUserStatus: credential.realUserStatus
+        realUserStatus: credential.realUserStatus,
+        fullName: credential.fullName,
+        user: credential.user
       });
       
       // Create Firebase credential with raw nonce
@@ -327,7 +329,12 @@ class AuthService {
       // Sign in to Firebase with Apple credential
       const userCredential = await signInWithCredential(this.auth, firebaseCredential);
       const firebaseUser = userCredential.user;
-      console.log('🔥 Firebase Apple sign-in successful:', firebaseUser.email);
+      console.log('🔥 Firebase Apple sign-in successful:', {
+        email: firebaseUser.email,
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName,
+        providerData: firebaseUser.providerData
+      });
       
       // Get Firebase auth token
       const token = await firebaseUser.getIdToken();
@@ -344,9 +351,12 @@ class AuthService {
         }
       }
 
+      // Use Apple credential email if Firebase doesn't have it
+      const userEmail = firebaseUser.email || credential.email;
+      
       const authUser: AuthUser = {
         uid: firebaseUser.uid,
-        email: firebaseUser.email!,
+        email: userEmail!,
         displayName: displayName || undefined,
         photoURL: firebaseUser.photoURL || undefined,
         emailVerified: firebaseUser.emailVerified
