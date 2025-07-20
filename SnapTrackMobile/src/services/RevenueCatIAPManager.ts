@@ -253,6 +253,18 @@ class RevenueCatIAPManager {
       return false;
     }
   }
+
+  async getCustomerInfo(): Promise<CustomerInfo> {
+    try {
+      console.log('🧾 Getting customer info from RevenueCat...');
+      const customerInfo = await Purchases.getCustomerInfo();
+      console.log('✅ Customer info retrieved:', customerInfo.originalAppUserId);
+      return customerInfo;
+    } catch (error) {
+      console.error('❌ Error getting customer info:', error);
+      throw error;
+    }
+  }
 }
 
 export default RevenueCatIAPManager;

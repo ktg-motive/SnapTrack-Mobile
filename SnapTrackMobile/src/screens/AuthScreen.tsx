@@ -281,28 +281,59 @@ export default function AuthScreen() {
   const processPurchase = async (product: any) => {
     try {
       console.log('📱 Starting purchase process for product:', product);
-      console.log('📱 IAP Manager instance:', iapManager);
-      console.log('📱 IAP Manager purchase method:', typeof iapManager.purchase);
+      console.log('📱 Product object type:', typeof product);
+      console.log('📱 Product keys:', product ? Object.keys(product) : 'product is null/undefined');
+      
+      // Validate product object
+      if (!product || !product.productId) {
+        throw new Error('Invalid product object');
+      }
+      
+      // Check iapManager availability
+      console.log('📱 IAP Manager available:', !!iapManager);
+      console.log('📱 IAP Manager type:', typeof iapManager);
+      
+      if (!iapManager) {
+        throw new Error('IAP Manager not initialized');
+      }
+      
+      // Check purchase method availability
+      console.log('📱 IAP Manager purchase method type:', typeof iapManager.purchase);
+      console.log('📱 IAP Manager methods:', Object.keys(iapManager));
+      
+      if (typeof iapManager.purchase !== 'function') {
+        console.error('❌ iapManager.purchase is not a function!');
+        console.error('❌ Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(iapManager)));
+        throw new Error('Purchase method not available');
+      }
       
       setIsPurchaseInProgress(true);
       setIsLoading(true);
       
       // Purchase the product
+      console.log('📱 Calling iapManager.purchase...');
       const purchase = await iapManager.purchase(product.productId);
       
       if (!purchase) {
         throw new Error('Purchase cancelled');
       }
       
+      console.log('📱 Purchase result:', purchase);
+      
       // Get the receipt
+      console.log('📱 Getting receipt...');
       const receipt = await iapManager.getReceipt();
       
       if (!receipt) {
         throw new Error('No receipt found');
       }
       
-      // Send RevenueCat data to backend for processing
+      // Get customer info
+      console.log('📱 Getting customer info...');
       const customerInfo = await iapManager.getCustomerInfo();
+      
+      console.log('📱 Sending to backend...');
+      // Send RevenueCat data to backend for processing
       const response = await apiClient.post<any>('/api/subscription/process-mobile-purchase', {
         app_user_id: customerInfo.originalAppUserId,
         active_subscriptions: customerInfo.activeSubscriptions,
@@ -327,6 +358,8 @@ export default function AuthScreen() {
       }
       
     } catch (error: any) {
+      console.error('❌ Purchase error:', error);
+      console.error('❌ Error stack:', error.stack);
       
       if (error.code === 'E_USER_CANCELLED' || error.message === 'Purchase cancelled') {
         // User cancelled, sign them out
