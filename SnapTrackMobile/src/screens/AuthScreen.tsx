@@ -178,6 +178,15 @@ export default function AuthScreen() {
       
       // Step 2: Check if user already has subscription
       try {
+        console.log('🔍 Checking subscription status...');
+        console.log('🔍 apiClient available:', !!apiClient);
+        console.log('🔍 apiClient.get type:', typeof apiClient?.get);
+        
+        if (typeof apiClient?.get !== 'function') {
+          console.error('❌ apiClient.get is not a function!');
+          throw new Error('API client not properly initialized');
+        }
+        
         const statusResponse = await apiClient.get<any>('/api/subscription/status');
         
         // Check if response has the expected structure (same fix as SignUpScreen)
@@ -197,6 +206,7 @@ export default function AuthScreen() {
           return;
         }
       } catch (error) {
+        console.log('🔍 Subscription check error:', error);
         // User doesn't exist yet or no subscription, continue to purchase
       }
       

@@ -34,6 +34,39 @@ class SnapTrackApiClient {
 
   constructor() {
     this.baseUrl = CONFIG.API_BASE_URL;
+    
+    // Bind all public methods to ensure proper 'this' context
+    this.setAuthToken = this.setAuthToken.bind(this);
+    this.clearAuthToken = this.clearAuthToken.bind(this);
+    this.checkServerHealth = this.checkServerHealth.bind(this);
+    this.uploadReceipt = this.uploadReceipt.bind(this);
+    this.getReceipts = this.getReceipts.bind(this);
+    this.getReceipt = this.getReceipt.bind(this);
+    this.updateReceipt = this.updateReceipt.bind(this);
+    this.deleteReceipt = this.deleteReceipt.bind(this);
+    this.getEntities = this.getEntities.bind(this);
+    this.createEntity = this.createEntity.bind(this);
+    this.updateEntity = this.updateEntity.bind(this);
+    this.deleteEntity = this.deleteEntity.bind(this);
+    this.getUserProfile = this.getUserProfile.bind(this);
+    this.getUserSettings = this.getUserSettings.bind(this);
+    this.updateUserSettings = this.updateUserSettings.bind(this);
+    this.getQuickStats = this.getQuickStats.bind(this);
+    this.searchTags = this.searchTags.bind(this);
+    this.getTags = this.getTags.bind(this);
+    this.getAllTags = this.getAllTags.bind(this);
+    this.createTag = this.createTag.bind(this);
+    this.updateTag = this.updateTag.bind(this);
+    this.deleteTag = this.deleteTag.bind(this);
+    this.getHelpCategories = this.getHelpCategories.bind(this);
+    this.getHelpArticles = this.getHelpArticles.bind(this);
+    this.getHelpArticle = this.getHelpArticle.bind(this);
+    this.submitHelpFeedback = this.submitHelpFeedback.bind(this);
+    this.healthCheck = this.healthCheck.bind(this);
+    this.get = this.get.bind(this);
+    this.post = this.post.bind(this);
+    this.put = this.put.bind(this);
+    this.delete = this.delete.bind(this);
   }
 
   // Authentication management
@@ -1073,4 +1106,10 @@ class SnapTrackApiClient {
 
 // Export singleton instance
 export const apiClient = new SnapTrackApiClient();
+
+// Debug: Log when module loads
+console.log('🔧 apiClient module loaded');
+console.log('🔧 apiClient instance:', apiClient);
+console.log('🔧 apiClient.getQuickStats:', typeof apiClient.getQuickStats);
+
 export default apiClient;

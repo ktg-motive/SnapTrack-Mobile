@@ -100,6 +100,10 @@ export default function HomeScreen() {
       const user = await authService.initializeAuth();
       if (user) {
         setUserName(user.displayName || user.email?.split('@')[0] || 'User');
+        
+        // Add a small delay to ensure apiClient is properly initialized
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         await loadDashboardData();
         await updateQueuedUploadsCount();
       } else {
@@ -118,8 +122,18 @@ export default function HomeScreen() {
     try {
       console.log('📊 Loading dashboard data...');
       console.log('📊 apiClient available:', !!apiClient);
+      console.log('📊 apiClient object:', apiClient);
+      console.log('📊 apiClient methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(apiClient)));
       console.log('📊 apiClient.getQuickStats type:', typeof apiClient?.getQuickStats);
       console.log('📊 apiClient.getReceipts type:', typeof apiClient?.getReceipts);
+      
+      // Check if methods exist before calling
+      if (typeof apiClient?.getQuickStats !== 'function') {
+        console.error('❌ apiClient.getQuickStats is not a function!');
+        setQuickStats(null);
+        setRecentReceipts([]);
+        return;
+      }
       
       // Load recent receipts and stats first
       const [statsPromise, receiptsPromise] = await Promise.allSettled([
