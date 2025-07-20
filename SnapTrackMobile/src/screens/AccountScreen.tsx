@@ -47,31 +47,24 @@ export default function AccountScreen() {
       const profileResponse = await apiClient.get('/api/user/profile');
       console.log('👤 User profile loaded:', JSON.stringify(profileResponse, null, 2));
       
-      if (profileResponse.success && profileResponse.user) {
+      // Handle different response structures (could be response.user, response.data, or direct response)
+      const userData = profileResponse.user || profileResponse.data || profileResponse;
+      
+      if (userData && userData.id) {
         // Merge the profile data with basic user data
         const fullUser = {
           ...basicUser,
-          ...profileResponse.user,
-          email: profileResponse.user.email || basicUser?.email,
-          displayName: profileResponse.user.full_name || basicUser?.displayName,
+          ...userData,
+          email: userData.email || basicUser?.email,
+          displayName: userData.full_name || basicUser?.displayName,
           // Ensure email_address is set if we have username
-          email_address: profileResponse.user.email_address || 
-                        (profileResponse.user.email_username ? `${profileResponse.user.email_username}@app.snaptrack.bot` : null)
+          email_address: userData.email_address || 
+                        (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null)
         };
         console.log('👤 Full user object:', JSON.stringify(fullUser, null, 2));
         setUser(fullUser);
-      } else if (profileResponse.user) {
-        // Handle case where success flag might be missing
-        const fullUser = {
-          ...basicUser,
-          ...profileResponse.user,
-          email: profileResponse.user.email || basicUser?.email,
-          displayName: profileResponse.user.full_name || basicUser?.displayName,
-          email_address: profileResponse.user.email_address || 
-                        (profileResponse.user.email_username ? `${profileResponse.user.email_username}@app.snaptrack.bot` : null)
-        };
-        console.log('👤 Full user object (no success flag):', JSON.stringify(fullUser, null, 2));
-        setUser(fullUser);
+      } else {
+        console.log('👤 No valid user data in profile response');
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);

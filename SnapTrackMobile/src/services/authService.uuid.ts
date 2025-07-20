@@ -125,21 +125,24 @@ class UUIDAuthService {
       // Get user data from our backend
       console.log('📡 Fetching user profile from backend...');
       console.log('Firebase user email:', firebaseUser.email);
-      const userData = await apiClient.get('/api/user/profile');
-      console.log('✅ User profile received:', JSON.stringify(userData, null, 2));
+      const response = await apiClient.get('/api/user/profile');
+      console.log('✅ User profile received:', JSON.stringify(response, null, 2));
+      
+      // Handle different response structures
+      const userData = response.user || response.data || response;
       
       // The enhanced profile now includes username fields
       this.currentUser = {
-        id: userData.user.id || firebaseUser.uid,
-        firebase_uid: userData.user.firebase_uid || firebaseUser.uid,
-        email: userData.user.email || firebaseUser.email,
-        full_name: userData.user.full_name || firebaseUser.displayName,
-        email_username: userData.user.email_username, // NEW field
-        email_address: userData.user.email_address,   // NEW field
-        legacy_email: userData.user.legacy_email,     // For compatibility
-        auth_version: userData.user.auth_version || 2,
-        created_at: userData.user.created_at,
-        updated_at: userData.user.updated_at
+        id: userData.id || firebaseUser.uid,
+        firebase_uid: userData.firebase_uid || firebaseUser.uid,
+        email: userData.email || firebaseUser.email,
+        full_name: userData.full_name || firebaseUser.displayName,
+        email_username: userData.email_username, // NEW field
+        email_address: userData.email_address,   // NEW field
+        legacy_email: userData.legacy_email,     // For compatibility
+        auth_version: userData.auth_version || 2,
+        created_at: userData.created_at,
+        updated_at: userData.updated_at
       } as User;
       
       // If user doesn't have a username yet, they'll need to select one
@@ -546,12 +549,14 @@ class UUIDAuthService {
       
       // Refresh user data
       if (this.currentUser) {
-        const userData = await apiClient.get('/api/user/profile');
+        const response = await apiClient.get('/api/user/profile');
+        // Handle different response structures
+        const userData = response.user || response.data || response;
         this.currentUser = {
           ...this.currentUser,
-          email_username: userData.user.email_username,
-          email_address: userData.user.email_address,
-          legacy_email: userData.user.legacy_email
+          email_username: userData.email_username,
+          email_address: userData.email_address,
+          legacy_email: userData.legacy_email
         };
       }
     } catch (error) {

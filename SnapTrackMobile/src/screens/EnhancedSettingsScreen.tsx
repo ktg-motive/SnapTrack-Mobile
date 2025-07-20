@@ -71,31 +71,25 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
       // Load user profile first to get username data
       const profilePromise = apiClient.get('/api/user/profile').then(response => {
         console.log('⚙️ Settings profile response:', JSON.stringify(response, null, 2));
-        if (response.success && response.user) {
+        
+        // Handle different response structures (could be response.user, response.data, or direct response)
+        const userData = response.user || response.data || response;
+        
+        if (userData && userData.id) {
           const basicUser = authService.getCurrentUser();
           const fullUser = {
             ...basicUser,
-            ...response.user,
-            email: response.user.email || basicUser?.email,
-            displayName: response.user.full_name || basicUser?.displayName,
+            ...userData,
+            email: userData.email || basicUser?.email,
+            displayName: userData.full_name || basicUser?.displayName,
             // Ensure email_address is set if we have username
-            email_address: response.user.email_address || 
-                          (response.user.email_username ? `${response.user.email_username}@app.snaptrack.bot` : null)
+            email_address: userData.email_address || 
+                          (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null)
           };
           console.log('⚙️ Settings full user:', JSON.stringify(fullUser, null, 2));
           setUser(fullUser);
-        } else if (response.user) {
-          // Handle case where success flag might be missing
-          const basicUser = authService.getCurrentUser();
-          const fullUser = {
-            ...basicUser,
-            ...response.user,
-            email: response.user.email || basicUser?.email,
-            displayName: response.user.full_name || basicUser?.displayName,
-            email_address: response.user.email_address || 
-                          (response.user.email_username ? `${response.user.email_username}@app.snaptrack.bot` : null)
-          };
-          setUser(fullUser);
+        } else {
+          console.log('⚙️ No valid user data in settings profile response');
         }
       }).catch(err => console.log('Profile load error:', err));
       
