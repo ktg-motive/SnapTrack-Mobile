@@ -4,10 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { theme } from '../styles/theme';
-import { authService } from '../services/authService';
+import { uuidAuthService } from '../services/authService.uuid';
 
 // Import onboarding screens
 import WelcomeScreen from './onboarding/WelcomeScreen';
+import EmailCollectionScreen from './onboarding/EmailCollectionScreen';
 import EmailSetupScreen from './onboarding/EmailSetupScreen';
 import CameraCaptureScreen from './onboarding/CameraCaptureScreen';
 import SnapTrackIntelligenceScreen from './onboarding/SnapTrackIntelligenceScreen';
@@ -24,7 +25,8 @@ interface OnboardingState {
   completedSteps: boolean[];
   capturedReceiptUri?: string;
   extractedData?: any;
-  userEmail: string;
+  userEmail?: string;
+  emailCollected: boolean;
   selectedEntity?: string;
   selectedTags: string[];
   hasPermissions: {
@@ -34,7 +36,7 @@ interface OnboardingState {
 }
 
 const ONBOARDING_STORAGE_KEY = 'onboarding_state';
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7; // Added email collection step
 
 interface OnboardingFlowProps {
   onComplete?: () => void;
@@ -46,7 +48,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [onboardingState, setOnboardingState] = useState<OnboardingState>({
     currentStep: 0,
     completedSteps: new Array(TOTAL_STEPS).fill(false),
-    userEmail: '',
+    userEmail: undefined,
+    emailCollected: false,
     selectedTags: [],
     hasPermissions: {
       camera: false,
@@ -57,7 +60,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   // Screen components array
   const screens = [
     WelcomeScreen,
-    EmailSetupScreen,
+    EmailCollectionScreen, // New optional email collection
+    EmailSetupScreen,      // Only shown if email was collected
     CameraCaptureScreen,
     SnapTrackIntelligenceScreen,
     EntitySelectionScreen,
@@ -78,14 +82,30 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         setCurrentStep(parsed.currentStep);
       }
 
-      // Get user email for email setup screen
-      const user = await authService.getCurrentUser();
-      if (user?.email) {
+      // Check if user already has email
+      const user = uuidAuthService.getCurrentUser();
+      const hasEmail = uuidAuthService.hasVerifiedEmail();
+      
+      if (hasEmail) {
+        // Skip email collection for users who already have email
         setOnboardingState(prev => ({
           ...prev,
-          userEmail: `expense@${user.email.split('@')[0]}.snaptrack.bot`,
+          emailCollected: true,
+          currentStep: prev.currentStep === 1 ? 2 : prev.currentStep, // Skip email collection
         }));
+        
+        // Get email username for setup screen
+        const primaryEmail = uuidAuthService.getPrimaryEmail();
+        if (primaryEmail && user?.email_username) {
+          setOnboardingState(prev => ({
+            ...prev,
+            userEmail: `${user.email_username}@snaptrack.bot`,
+          }));
+        }
       }
+      
+      // Clear show_onboarding flag
+      await AsyncStorage.removeItem('show_onboarding');
     } catch (error) {
       console.error('Error initializing onboarding:', error);
     }
@@ -101,7 +121,24 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
   const handleNext = () => {
     console.log(`➡️ handleNext called - currentStep: ${currentStep}, TOTAL_STEPS: ${TOTAL_STEPS}`);
-    if (currentStep < TOTAL_STEPS - 1) {
+    
+    // Special handling for email collection step
+    if (currentStep === 1 && !onboardingState.emailCollected) {
+      // Skip email setup screen if no email was collected
+      const newStep = 3; // Go directly to camera capture
+      console.log(`📈 Skipping email setup, jumping to step ${newStep}`);
+      const newState = {
+        ...onboardingState,
+        currentStep: newStep,
+        completedSteps: onboardingState.completedSteps.map((completed, index) => 
+          index === currentStep || index === 2 ? true : completed
+        ),
+      };
+      
+      setCurrentStep(newStep);
+      setOnboardingState(newState);
+      saveOnboardingState(newState);
+    } else if (currentStep < TOTAL_STEPS - 1) {
       const newStep = currentStep + 1;
       console.log(`📈 Moving to step ${newStep}`);
       const newState = {
@@ -198,16 +235,30 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         />
 
         <View style={styles.screenContainer}>
-          <CurrentScreen
-            onNext={handleNext}
-            onSkip={handleSkip}
-            onComplete={completeOnboarding}
-            onReceiptCapture={handleReceiptCapture}
-            onDataExtraction={handleDataExtraction}
-            onEntitySelection={handleEntitySelection}
-            onPermissionUpdate={handlePermissionUpdate}
-            state={onboardingState}
-          />
+          {currentStep === 1 ? (
+            // Email collection screen with custom handlers
+            <EmailCollectionScreen
+              onNext={(emailAdded: boolean) => {
+                updateOnboardingState({ emailCollected: emailAdded });
+                handleNext();
+              }}
+              onSkip={() => {
+                updateOnboardingState({ emailCollected: false });
+                handleNext();
+              }}
+            />
+          ) : (
+            <CurrentScreen
+              onNext={handleNext}
+              onSkip={handleSkip}
+              onComplete={completeOnboarding}
+              onReceiptCapture={handleReceiptCapture}
+              onDataExtraction={handleDataExtraction}
+              onEntitySelection={handleEntitySelection}
+              onPermissionUpdate={handlePermissionUpdate}
+              state={onboardingState}
+            />
+          )}
         </View>
       </View>
     </OnboardingScreenLayout>

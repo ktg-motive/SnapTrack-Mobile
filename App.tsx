@@ -22,7 +22,7 @@ import EditProfileScreen from './src/screens/EditProfileScreen';
 import HelpScreen from './src/screens/HelpScreen';
 import OnboardingFlow from './src/screens/OnboardingFlow';
 import { colors } from './src/styles/theme';
-import { authService } from './src/services/authService';
+import { uuidAuthService } from './src/services/authService.uuid';
 
 const Stack = createNativeStackNavigator();
 
@@ -47,12 +47,12 @@ export default function App() {
       
       if (nextAppState === 'active') {
         // App came to foreground - refresh token if user is authenticated
-        const user = authService.getCurrentUser();
+        const user = uuidAuthService.getCurrentUser();
         if (user) {
           try {
             console.log('🔐 Refreshing token on app foreground...');
-            await authService.refreshToken();
-            console.log('✅ Token refresh successful');
+            // UUID auth service handles token refresh automatically
+            console.log('✅ Auth state checked');
             
             // Also check if onboarding should be shown (in case it was cleared)
             console.log('🔄 About to call recheckOnboardingStatus...');
@@ -85,7 +85,7 @@ export default function App() {
 
   const checkOnboardingStatus = async () => {
     try {
-      const user = authService.getCurrentUser();
+      const user = uuidAuthService.getCurrentUser();
       if (user) {
         // Check if user has completed onboarding
         const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
@@ -103,7 +103,7 @@ export default function App() {
   const recheckOnboardingStatus = async () => {
     try {
       console.log('🔍 Rechecking onboarding status...');
-      const user = authService.getCurrentUser();
+      const user = uuidAuthService.getCurrentUser();
       console.log('👤 Current user:', user ? 'authenticated' : 'not authenticated');
       if (user) {
         const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
