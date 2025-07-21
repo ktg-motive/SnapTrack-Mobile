@@ -75,7 +75,7 @@ export const getVersionWithServer = async (): Promise<VersionResponse> => {
   
   try {
     const response = await apiClient.get(`/api/app/version?platform=${platform}`);
-    const serverVersion = response.data;
+    const serverVersion = response; // API returns data directly, not wrapped
     
     // Check if local version matches server version
     const isLatest = compareVersions(localVersion.version, serverVersion.version) >= 0;
@@ -112,7 +112,7 @@ export const checkForUpdates = async (): Promise<UpdateCheckResponse> => {
   try {
     const response = await apiClient.get(`/api/app/check-update?version=${encodeURIComponent(localVersion.version)}&platform=${platform}`);
     
-    return response.data;
+    return response; // API returns data directly
   } catch (error) {
     console.log('Update check failed:', error);
     return {
@@ -133,7 +133,7 @@ export const getReleaseNotes = async (releaseNotesUrl?: string): Promise<Release
   try {
     const platform = Constants.platform?.ios ? 'ios' : 'android';
     const response = await apiClient.get(`${releaseNotesUrl}?platform=${platform}`);
-    return response.data;
+    return response; // API returns data directly
   } catch (error) {
     console.log('Failed to fetch release notes:', error);
     return null;
@@ -146,7 +146,7 @@ export const getVersionHistory = async (limit: number = 10): Promise<VersionResp
   try {
     const response = await apiClient.get(`/api/app/versions?platform=${platform}&limit=${limit}`);
     
-    return response.data.versions || [];
+    return response.versions || []; // API returns data directly
   } catch (error) {
     console.log('Failed to fetch version history:', error);
     return [];
