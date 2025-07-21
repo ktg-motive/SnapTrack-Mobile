@@ -79,7 +79,7 @@ export default function AccountScreen() {
   const loadSubscriptionStatus = async () => {
     try {
       const response = await apiClient.get<any>('/api/subscription/status');
-      setSubscriptionStatus((response as any).data);
+      setSubscriptionStatus(response); // API returns data directly
     } catch (error) {
       console.error('Failed to load subscription status:', error);
     }
@@ -174,11 +174,12 @@ export default function AccountScreen() {
   };
 
   const handleManageSubscription = () => {
-    // For iOS users with Apple subscriptions, open Settings
-    if (Platform.OS === 'ios' && subscriptionStatus?.subscription_source === 'apple') {
+    // For iOS users, always direct to Apple subscription settings
+    // This ensures compliance with Apple's IAP guidelines when using RevenueCat
+    if (Platform.OS === 'ios') {
       Alert.alert(
-        'Manage Apple Subscription',
-        'Your subscription is managed through your Apple ID. You can view or cancel it in your iPhone Settings.',
+        'Manage Subscription',
+        'Your subscription is managed through your Apple ID. You can view, change, or cancel it in your iPhone Settings.',
         [
           { text: 'Cancel', style: 'cancel' },
           { 
@@ -193,12 +194,13 @@ export default function AccountScreen() {
       return;
     }
 
-    // For web subscriptions, redirect to web portal
+    // For Android users, redirect to web portal
+    // Google Play allows external billing for business/productivity apps
     const subscriptionUrl = 'https://app.snaptrack.bot/login';
     
     Alert.alert(
       'Manage Subscription',
-      'You will be redirected to the web to manage your subscription, including updating payment methods and billing details.',
+      'Your subscription is managed through our secure web portal. You will be redirected to snaptrack.bot to view or modify your subscription.',
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -347,7 +349,8 @@ export default function AccountScreen() {
                   <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
                 </View>
               </View>
-              {subscriptionStatus.subscription_source === 'apple' && (
+              {/* Show billing source - iOS uses Apple IAP via RevenueCat */}
+              {Platform.OS === 'ios' ? (
                 <View style={styles.statusRow}>
                   <Text style={styles.statusLabel}>Billed through:</Text>
                   <View style={styles.billingContainer}>
@@ -355,7 +358,15 @@ export default function AccountScreen() {
                     <Text style={styles.billingText}>Apple</Text>
                   </View>
                 </View>
-              )}
+              ) : subscriptionStatus.subscription_source === 'stripe' ? (
+                <View style={styles.statusRow}>
+                  <Text style={styles.statusLabel}>Billed through:</Text>
+                  <View style={styles.billingContainer}>
+                    <Ionicons name="card" size={16} color={colors.textPrimary} />
+                    <Text style={styles.billingText}>Web</Text>
+                  </View>
+                </View>
+              ) : null}
             </View>
           )}
           
