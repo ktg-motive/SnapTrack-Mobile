@@ -140,7 +140,7 @@ class UUIDAuthService {
         full_name: userData.profile?.full_name || userData.full_name || firebaseUser.displayName,
         email_username: userData.email_username, // This is at root level
         email_address: userData.snaptrack_emails?.new_format || userData.email_address || 
-                       (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
+                       (userData.email_username ? `${userData.email_username}@${CONFIG.EMAIL_DOMAIN}` : null),
         legacy_email: userData.legacy_email,     // For compatibility
         auth_version: userData.auth_version || 2,
         created_at: userData.created_at,

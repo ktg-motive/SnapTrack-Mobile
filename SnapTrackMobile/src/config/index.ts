@@ -22,5 +22,8 @@ export const CONFIG = {
   
   // Offline Configuration
   SYNC_INTERVAL: 30000, // 30 seconds
-  MAX_OFFLINE_ITEMS: 100
+  MAX_OFFLINE_ITEMS: 100,
+  
+  // Email Domain Configuration
+  EMAIL_DOMAIN: 'my.snaptrack.bot', // Domain for user email addresses
 };

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { theme } from '../styles/theme';
 import { authService } from '../services/authService.compat';
+import { CONFIG } from '../config';
 
 // Import onboarding screens
 import WelcomeScreen from './onboarding/WelcomeScreen';
@@ -94,14 +95,14 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         // Generate from username
         setOnboardingState(prev => ({
           ...prev,
-          userEmail: `${user.email_username}@app.snaptrack.bot`
+          userEmail: `${user.email_username}@${CONFIG.EMAIL_DOMAIN}`
         }));
       } else if (user?.email) {
         // Legacy fallback
         const username = user.email.split('@')[0].replace(/[^a-z0-9-]/gi, '-');
         setOnboardingState(prev => ({
           ...prev,
-          userEmail: `expense@${username}.snaptrack.bot`
+          userEmail: `expense@${username}.${CONFIG.EMAIL_DOMAIN}`
         }));
       } else {
         // For email-optional users, we'll set this after username selection

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
 import { authService } from '../services/authService.compat';
+import { CONFIG } from '../config';
 
 interface UsernameHistory {
   username: string;
@@ -54,7 +55,7 @@ export default function UsernameSettingsScreen() {
         if (profileData && profileData.email_username) {
           setCurrentUsername(profileData.email_username);
           setEmailAddress(profileData.snaptrack_emails?.new_format || 
-                         `${profileData.email_username}@app.snaptrack.bot`);
+                         `${profileData.email_username}@${CONFIG.EMAIL_DOMAIN}`);
           // Check if we can change username
           setCanChange(profileData.can_change_username !== false);
           if (profileData.email_username_changed_at) {
@@ -126,7 +127,7 @@ export default function UsernameSettingsScreen() {
 
     Alert.prompt(
       'Change Username',
-      `Enter your new username. Your current username is "${currentUsername}". This will change your email address to [username]@app.snaptrack.bot`,
+      `Enter your new username. Your current username is "${currentUsername}". This will change your email address to [username]@${CONFIG.EMAIL_DOMAIN}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -170,7 +171,7 @@ export default function UsernameSettingsScreen() {
               if (assignResponse.success) {
                 Alert.alert(
                   'Username Changed!',
-                  `Your username has been changed to "${cleanUsername}". Your new email address is ${cleanUsername}@app.snaptrack.bot`,
+                  `Your username has been changed to "${cleanUsername}". Your new email address is ${cleanUsername}@${CONFIG.EMAIL_DOMAIN}`,
                   [{ text: 'OK' }]
                 );
                 

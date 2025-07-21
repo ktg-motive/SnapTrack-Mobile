@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, typography, spacing } from '../styles/theme';
 import { apiClient } from '../services/apiClient';
 import { authService } from '../services/authService';
+import { CONFIG } from '../config';
 
 interface Entity {
   id: string;
@@ -163,7 +164,9 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   };
 
   const handleCopyEmail = async () => {
-    const email = `expense@${user?.email?.split('@')[0] || 'user'}.snaptrack.bot`;
+    // Use email_username if available (v2 auth), otherwise fall back to email prefix (v1 auth)
+    const username = (user as any)?.email_username || user?.email?.split('@')[0] || 'user';
+    const email = `expense@${username}.${CONFIG.EMAIL_DOMAIN}`;
     try {
       await Clipboard.setStringAsync(email);
       
@@ -321,7 +324,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
           <View style={styles.emailConfig}>
             <Text style={styles.emailLabel}>Your SnapTrack Email:</Text>
             <Text style={styles.emailAddress}>
-              expense@{user?.email?.split('@')[0] || 'user'}.snaptrack.bot
+              expense@{(user as any)?.email_username || user?.email?.split('@')[0] || 'user'}.{CONFIG.EMAIL_DOMAIN}
             </Text>
             <TouchableOpacity style={styles.copyButton} onPress={handleCopyEmail}>
               <Text style={styles.copyButtonText}>Copy Email</Text>

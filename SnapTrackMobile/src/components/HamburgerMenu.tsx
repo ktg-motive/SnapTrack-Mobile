@@ -15,6 +15,7 @@ import { colors, typography, spacing } from '../styles/theme';
 import { authService } from '../services/authService.compat';
 import { apiClient } from '../services/apiClient';
 import { VersionDisplay } from './VersionDisplay';
+import { CONFIG } from '../config';
 
 interface HamburgerMenuProps {
   isVisible: boolean;
@@ -56,7 +57,7 @@ export default function HamburgerMenu({ isVisible, onClose, navigation }: Hambur
           email_username: userData.email_username,
           email_address: userData.snaptrack_emails?.new_format || 
                         userData.email_address || 
-                        (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
+                        (userData.email_username ? `${userData.email_username}@${CONFIG.EMAIL_DOMAIN}` : null),
           full_name: userData.profile?.full_name || userData.full_name || basicUser?.displayName
         };
         setUser(fullUser);

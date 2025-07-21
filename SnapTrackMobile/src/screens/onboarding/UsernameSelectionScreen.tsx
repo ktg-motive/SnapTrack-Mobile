@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius } from '../../styles/theme';
 import { apiClient } from '../../services/apiClient';
+import { CONFIG } from '../../config';
 
 interface UsernameSelectionScreenProps {
   onNext: () => void;
@@ -222,7 +223,7 @@ export default function UsernameSelectionScreen({ onNext, onSkip, state }: Usern
         {showEmailPreview && (
           <View style={styles.emailPreview}>
             <Text style={styles.emailPreviewLabel}>Your receipt email will be:</Text>
-            <Text style={styles.emailAddress}>{username}@app.snaptrack.bot</Text>
+            <Text style={styles.emailAddress}>{username}@{CONFIG.EMAIL_DOMAIN}</Text>
           </View>
         )}
 

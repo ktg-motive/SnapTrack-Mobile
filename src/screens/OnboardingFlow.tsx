@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { theme } from '../styles/theme';
 import { uuidAuthService } from '../services/authService.uuid';
+import { CONFIG } from '../config';
 
 // Import onboarding screens
 import WelcomeScreen from './onboarding/WelcomeScreen';
@@ -99,7 +100,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         if (primaryEmail && user?.email_username) {
           setOnboardingState(prev => ({
             ...prev,
-            userEmail: `${user.email_username}@snaptrack.bot`,
+            userEmail: `${user.email_username}@${CONFIG.EMAIL_DOMAIN}`,
           }));
         }
       }

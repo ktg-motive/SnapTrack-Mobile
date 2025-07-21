@@ -20,6 +20,7 @@ import { colors, typography, spacing } from '../styles/theme';
 import { authService } from '../services/authService.compat';
 import { iapManager } from '../services/IAPManager';
 import { apiClient } from '../services/apiClient';
+import { CONFIG } from '../config';
 
 export default function AccountScreen() {
   const navigation = useNavigation();
@@ -62,7 +63,7 @@ export default function AccountScreen() {
           // Use snaptrack_emails.new_format if available, otherwise construct it
           email_address: userData.snaptrack_emails?.new_format || 
                         userData.email_address || 
-                        (userData.email_username ? `${userData.email_username}@app.snaptrack.bot` : null),
+                        (userData.email_username ? `${userData.email_username}@${CONFIG.EMAIL_DOMAIN}` : null),
           full_name: userData.profile?.full_name || userData.full_name || basicUser?.displayName
         };
         console.log('👤 Full user object:', JSON.stringify(fullUser, null, 2));

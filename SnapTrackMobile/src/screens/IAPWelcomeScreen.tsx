@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 
 import { colors } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
+import { CONFIG } from '../config';
 
 interface RouteParams {
   receiptEmail: string;
@@ -32,7 +33,7 @@ export default function IAPWelcomeScreen() {
   const [emailCopied, setEmailCopied] = useState(false);
 
   const handleCopyEmail = async () => {
-    const email = `expense@${params.subdomain}.snaptrack.bot`;
+    const email = `expense@${params.subdomain}.${CONFIG.EMAIL_DOMAIN}`;
     await Clipboard.setStringAsync(email);
     
     // Haptic feedback
@@ -43,7 +44,7 @@ export default function IAPWelcomeScreen() {
   };
 
   const handleEmailToMe = async () => {
-    const email = `expense@${params.subdomain}.snaptrack.bot`;
+    const email = `expense@${params.subdomain}.${CONFIG.EMAIL_DOMAIN}`;
     const subject = 'Your SnapTrack Receipt Email';
     const body = `Save this email address for forwarding receipts:\n\n${email}\n\nThis is your personalized SnapTrack email address.`;
     
@@ -106,7 +107,7 @@ export default function IAPWelcomeScreen() {
           <TouchableOpacity onPress={handleCopyEmail} style={styles.emailTip}>
             <Ionicons name="mail-outline" size={16} color={colors.primary} />
             <Text style={styles.emailTipText}>
-              Tip: You can also forward receipts to expense@{params.subdomain}.snaptrack.bot
+              Tip: You can also forward receipts to expense@{params.subdomain}.{CONFIG.EMAIL_DOMAIN}
             </Text>
             <Ionicons 
               name={emailCopied ? 'checkmark' : 'copy-outline'} 
