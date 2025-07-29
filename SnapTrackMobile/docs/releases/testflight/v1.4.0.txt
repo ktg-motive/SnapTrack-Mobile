@@ -30,6 +30,7 @@ Bug Fixes:
 ▸ Clipboard Crash: Fixed app crash when tapping copy email function
 ▸ Welcome Email Delivery: Corrected endpoint integration for automated welcome emails
 ▸ Memory Management: PDF export no longer causes application crashes with large datasets
+▸ Session Persistence: Enhanced authentication state preservation across app restarts
 
 Performance:
 

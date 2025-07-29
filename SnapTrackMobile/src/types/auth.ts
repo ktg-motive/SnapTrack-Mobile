@@ -6,7 +6,7 @@ export interface User {
   firebase_uid: string;          // Firebase UID (always present)
   auth_version: number;          // 1 = legacy, 2 = UUID-based
   email_username?: string;       // Username part (e.g., 'john-doe')
-  email_address?: string;        // Full address (e.g., 'john-doe@app.snaptrack.bot')
+  email_address?: string;        // Full address (e.g., 'john-doe@my.snaptrack.bot')
   legacy_email?: string;         // Legacy format (e.g., 'expense@johndoe.snaptrack.bot')
   personal_subdomain?: string;   // Legacy subdomain (for backward compatibility)
   email?: string;                // Primary email address

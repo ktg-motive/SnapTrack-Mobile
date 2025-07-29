@@ -15,7 +15,8 @@ import {
   OAuthProvider,
   User as FirebaseUser,
   Auth,
-  updateProfile
+  updateProfile,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 // Conditional import for Google Sign-In (not available in Expo Go)
 let GoogleSignin: any = null;
@@ -43,6 +44,11 @@ import { apiClient } from './apiClient';
 class AuthService {
   private auth: Auth;
   private currentUser: AuthUser | null = null;
+  
+  // Rate limiting for password reset
+  private passwordResetAttempts = new Map<string, { count: number; lastAttempt: number }>();
+  private readonly RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+  private readonly MAX_ATTEMPTS_PER_HOUR = 3;
 
   constructor() {
     // Initialize Firebase if not already initialized
@@ -464,6 +470,92 @@ class AuthService {
     return null;
   }
 
+  /**
+   * Send password reset email with security features
+   */
+  async sendPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    const startTime = Date.now();
+    const MIN_RESPONSE_TIME = 1000; // Minimum response time in milliseconds
+    
+    try {
+      // Normalize email
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Log attempt for security monitoring
+      console.log('🔐 Password reset attempt for:', normalizedEmail.substring(0, 3) + '***');
+      
+      // Check rate limiting
+      if (!this.checkPasswordResetRateLimit(normalizedEmail)) {
+        console.warn('⚠️ Rate limit exceeded for:', normalizedEmail.substring(0, 3) + '***');
+        
+        // Ensure minimum response time
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_RESPONSE_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_RESPONSE_TIME - elapsed));
+        }
+        
+        return {
+          success: false,
+          message: 'Too many reset attempts. Please try again in an hour.'
+        };
+      }
+      
+      // Send password reset email
+      await sendPasswordResetEmail(this.auth, normalizedEmail);
+      
+      // Log successful request
+      console.log('✅ Password reset email sent successfully');
+      
+      // Ensure minimum response time to prevent timing attacks
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_RESPONSE_TIME) {
+        await new Promise(resolve => setTimeout(resolve, MIN_RESPONSE_TIME - elapsed));
+      }
+      
+      // Always return same success message regardless of whether user exists
+      return {
+        success: true,
+        message: 'If an account exists with this email, you will receive a password reset link.'
+      };
+      
+    } catch (error: any) {
+      // Log error for monitoring
+      console.error('❌ Password reset error:', {
+        code: error.code,
+        message: error.message,
+        email: normalizedEmail?.substring(0, 3) + '***'
+      });
+      
+      // Get user-friendly error message
+      const errorMessage = this.getPasswordResetErrorMessage(error.code);
+      
+      // For user-not-found, treat as success to prevent user enumeration
+      if (error.code === 'auth/user-not-found') {
+        // Ensure minimum response time
+        const elapsed = Date.now() - startTime;
+        if (elapsed < MIN_RESPONSE_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_RESPONSE_TIME - elapsed));
+        }
+        
+        return {
+          success: true,
+          message: errorMessage
+        };
+      }
+      
+      // Ensure minimum response time for all responses
+      const elapsed = Date.now() - startTime;
+      if (elapsed < MIN_RESPONSE_TIME) {
+        await new Promise(resolve => setTimeout(resolve, MIN_RESPONSE_TIME - elapsed));
+      }
+      
+      return {
+        success: false,
+        message: errorMessage
+      };
+    }
+  }
+
   // Private helper methods
 
   private async storeAuthToken(token: string): Promise<void> {
@@ -557,6 +649,60 @@ class AuthService {
       str
     );
     return digest;
+  }
+
+  /**
+   * Check rate limit for password reset attempts
+   */
+  private checkPasswordResetRateLimit(email: string): boolean {
+    const now = Date.now();
+    const attempts = this.passwordResetAttempts.get(email);
+    
+    if (!attempts) {
+      // First attempt
+      this.passwordResetAttempts.set(email, { count: 1, lastAttempt: now });
+      return true;
+    }
+    
+    // Check if outside rate limit window
+    if (now - attempts.lastAttempt > this.RATE_LIMIT_WINDOW) {
+      // Reset attempts
+      this.passwordResetAttempts.set(email, { count: 1, lastAttempt: now });
+      return true;
+    }
+    
+    // Within rate limit window
+    if (attempts.count >= this.MAX_ATTEMPTS_PER_HOUR) {
+      return false;
+    }
+    
+    // Increment attempts
+    attempts.count++;
+    attempts.lastAttempt = now;
+    this.passwordResetAttempts.set(email, attempts);
+    
+    return true;
+  }
+
+  /**
+   * Get user-friendly error message for password reset errors
+   */
+  private getPasswordResetErrorMessage(errorCode: string): string {
+    switch (errorCode) {
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address.';
+      case 'auth/user-not-found':
+        // Return generic message to prevent user enumeration
+        return 'If an account exists with this email, you will receive a password reset link.';
+      case 'auth/too-many-requests':
+        return 'Too many reset attempts. Please try again later.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection and try again.';
+      case 'auth/internal-error':
+        return 'An error occurred. Please try again later.';
+      default:
+        return 'An error occurred. Please try again later.';
+    }
   }
 }
 

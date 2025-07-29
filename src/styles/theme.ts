@@ -41,14 +41,22 @@ export const colors = {
   
   // Surfaces
   background: '#ffffff',
-  surface: '#f8f9fa',
+  surface: {
+    primary: '#f8f9fa',
+    secondary: '#f8f9fa',
+  },
   surfaceElevated: '#ffffff',    // Clean white with elevation
   card: '#ffffff',
   
   // Text
-  textPrimary: '#212529',
-  textSecondary: '#6c757d',
-  textMuted: '#adb5bd',
+  text: {
+    primary: '#212529',
+    secondary: '#6c757d',
+    tertiary: '#adb5bd',
+  },
+  textPrimary: '#212529',      // Legacy alias
+  textSecondary: '#6c757d',    // Legacy alias
+  textMuted: '#adb5bd',        // Legacy alias
   onSurface: '#212529',         // Alias for textPrimary
   onBackground: '#212529',      // Alias for textPrimary
   onSurfaceVariant: '#6c757d',  // Alias for textSecondary
@@ -69,6 +77,27 @@ export const colors = {
 };
 
 export const typography = {
+  // Font size scale
+  fontSize: {
+    xs: 11,
+    sm: 13,
+    md: 15,
+    lg: 17,
+    xl: 20,
+    xxl: 24,
+    xxxl: 28,
+  },
+  
+  // Font weights
+  fontWeight: {
+    light: '300' as const,
+    regular: '400' as const,
+    medium: '500' as const,
+    semibold: '600' as const,
+    bold: '700' as const,
+  },
+  
+  // Text styles
   title1: {
     fontSize: 28,
     fontWeight: '700' as const,

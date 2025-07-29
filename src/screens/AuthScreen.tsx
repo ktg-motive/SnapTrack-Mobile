@@ -17,10 +17,12 @@ import { colors, typography, spacing, borderRadius } from '../styles/theme';
 import SnapTrackLogo from '../components/SnapTrackLogo';
 import { uuidAuthService } from '../services/authService.uuid';
 import { Platform } from 'react-native';
+import EmailAuthModal from '../components/auth/EmailAuthModal';
 
 export default function AuthScreen() {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -97,6 +99,16 @@ export default function AuthScreen() {
     }
   };
 
+  const handleEmailAuthSuccess = async () => {
+    // Check if new user needs onboarding
+    const showOnboarding = await AsyncStorage.getItem('show_onboarding');
+    if (showOnboarding === 'true') {
+      navigation.navigate('Onboarding' as never);
+    } else {
+      navigation.navigate('Main' as never);
+    }
+  };
+
   const handleTermsPress = () => {
     navigation.navigate('TermsOfService' as never);
   };
@@ -154,6 +166,18 @@ export default function AuthScreen() {
             </TouchableOpacity>
           )}
 
+          {/* Continue with Email */}
+          <TouchableOpacity 
+            style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
+            onPress={() => setShowEmailModal(true)}
+            disabled={isLoading}
+          >
+            <View style={styles.secondaryButtonContent}>
+              <Ionicons name="mail-outline" size={20} color="#000" />
+              <Text style={styles.secondaryButtonText}>Continue with Email</Text>
+            </View>
+          </TouchableOpacity>
+
         </View>
 
         {/* Legal Footer */}
@@ -165,6 +189,13 @@ export default function AuthScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Email Auth Modal */}
+      <EmailAuthModal
+        isVisible={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onSuccess={handleEmailAuthSuccess}
+      />
     </SafeAreaView>
   );
 }

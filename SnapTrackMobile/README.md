@@ -2,6 +2,11 @@
 
 A companion mobile app for SnapTrack receipt processing system with Vegas neon design aesthetics.
 
+**⚠️ IMPORTANT PATH NOTE**: This is the CORRECT mobile app directory. If you're looking for the mobile app source code, you're in the right place! The path is:
+`/Users/Kai/Dev/Active/SnapTrack/SnapTrack-Mobile/SnapTrackMobile/`
+
+See [DIRECTORY_STRUCTURE_GUIDE.md](../../DIRECTORY_STRUCTURE_GUIDE.md) for full project structure.
+
 ## Features
 
 - **Vegas Neon Design System**: Modern UI with gradient buttons and neon color accents

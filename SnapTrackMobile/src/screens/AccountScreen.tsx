@@ -197,7 +197,7 @@ export default function AccountScreen() {
 
     // For Android users, redirect to web portal
     // Google Play allows external billing for business/productivity apps
-    const subscriptionUrl = 'https://app.snaptrack.bot/login';
+    const subscriptionUrl = 'https://my.snaptrack.bot/login';
     
     Alert.alert(
       'Manage Subscription',
@@ -214,7 +214,7 @@ export default function AccountScreen() {
               } else {
                 Alert.alert(
                   'Unable to Open',
-                  'Could not open the subscription management page. Please visit app.snaptrack.bot/login in your browser.',
+                  'Could not open the subscription management page. Please visit my.snaptrack.bot/login in your browser.',
                   [{ text: 'OK' }]
                 );
               }

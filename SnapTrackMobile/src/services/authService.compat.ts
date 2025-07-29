@@ -161,6 +161,44 @@ class AuthServiceCompatibility {
     return null;
   }
 
+  /**
+   * Send password reset email
+   */
+  async sendPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Use the Firebase JS SDK auth instance from uuidAuthService
+      const { getAuth, sendPasswordResetEmail } = await import('firebase/auth');
+      const auth = getAuth();
+      
+      await sendPasswordResetEmail(auth, email);
+      
+      return {
+        success: true,
+        message: 'Password reset email sent successfully'
+      };
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      // Handle specific Firebase errors
+      if (error.code === 'auth/user-not-found') {
+        return {
+          success: false,
+          message: 'No account found with this email address'
+        };
+      } else if (error.code === 'auth/invalid-email') {
+        return {
+          success: false,
+          message: 'Please enter a valid email address'
+        };
+      } else {
+        return {
+          success: false,
+          message: error.message || 'An error occurred. Please try again.'
+        };
+      }
+    }
+  }
+
   // Platform availability checks
   isGoogleSignInAvailable(): boolean {
     try {
