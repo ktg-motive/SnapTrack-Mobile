@@ -1,5 +1,5 @@
 # Version 1.4.0
-**Release Date: January 20, 2025**
+**Release Date: July 20, 2025**
 
 This major release introduces our new privacy-first authentication system with professional username-based email addresses, enhanced user profiles, and significant performance improvements.
 

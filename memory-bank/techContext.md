@@ -1,6 +1,6 @@
 # Technical Context
 
-**Last Updated:** 2025-07-20 18:00:00 - Phase 3 UUID Authentication Complete - Impacts: [Cross-Platform Auth, UUID Service Integration, App Store Deployment]
+**Last Updated:** 2025-09-17 14:30:00 - 30-Day Mobile Sessions Deployed - Impacts: [Authentication, User Experience, Backend Architecture]
 
 ## Technical Architecture
 
@@ -17,11 +17,21 @@
 ### Backend Integration
 - **SnapTrack API** for receipt processing and OCR functionality
 - **UUID Authentication API** for cross-platform user management and coordination
+- **30-Day Mobile Sessions** (September 2025) - Backend accepts expired tokens, auto-extends on capture
 - **Username Validation API** for real-time availability checking and registration
 - **Multipart Form Data** uploads for receipt images with progress tracking
 - **RESTful API Client** with comprehensive error handling and retry logic
 - **Offline-First Architecture** with automatic sync when network restored
 - **Cross-Platform Data Sync** with UUID-based user identification
+
+### Mobile Session Architecture (Added September 17, 2025)
+- **Session Duration:** 30 days from last activity, resets on each receipt capture
+- **Token Handling:** Backend accepts expired Firebase tokens when valid mobile session exists
+- **Device Binding:** Sessions tied to device ID (Expo Constants.installationId)
+- **Database Schema:** Mobile session fields added to `mt_users` table in Supabase
+- **Automatic Extension:** Receipt endpoints extend session by 30 days on successful capture
+- **Cleanup:** Daily automated cleanup of expired sessions
+- **No App Changes Required:** Backend-only implementation, works with existing mobile app
 
 ## Project Structure
 

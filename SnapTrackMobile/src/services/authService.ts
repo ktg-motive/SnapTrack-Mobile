@@ -199,13 +199,13 @@ class AuthService {
 
     try {
       console.log('🔐 Attempting Google sign in');
-      
+
       // Check if device supports Google Play Services
       await GoogleSignin.hasPlayServices();
-      
+
       // Sign out first to ensure clean state (fixes Android flash issue)
       await GoogleSignin.signOut();
-      
+
       // Get Google user info
       const userInfo = await GoogleSignin.signIn();
       console.log('📱 Google Sign-In userInfo received:', {
@@ -252,7 +252,7 @@ class AuthService {
         code: error.code,
         details: error
       });
-      
+
       if (error.code === 'SIGN_IN_CANCELLED') {
         throw new Error('Sign in was cancelled');
       } else if (error.code === 'IN_PROGRESS') {
@@ -262,7 +262,7 @@ class AuthService {
       } else if (error.code === '10') {
         throw new Error('Developer error: Check your Google Sign-In configuration');
       }
-      
+
       throw new Error(`Google sign in failed: ${error.message || 'Unknown error'}`);
     }
   }

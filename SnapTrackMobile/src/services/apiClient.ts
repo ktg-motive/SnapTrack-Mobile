@@ -1,4 +1,5 @@
 import { Platform, Alert } from 'react-native';
+import Constants from 'expo-constants';
 import { CONFIG } from '../config';
 import {
   Receipt,
@@ -90,9 +91,17 @@ class SnapTrackApiClient {
     // Don't set Content-Type for FormData - let the runtime set it with boundary
     const isFormData = options.body instanceof FormData;
     
+    // Get device ID for 30-day mobile session support
+    const deviceId = Constants.installationId || Constants.sessionId || 'unknown';
+    const appVersion = Constants.expoConfig?.version || Constants.manifest?.version || '1.0.0';
+
     const headers: Record<string, string> = {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(options.headers && typeof options.headers === 'object' && !(options.headers instanceof Headers) 
+      // Device identification headers for 30-day session support
+      'X-Device-ID': deviceId,
+      'X-Platform': Platform.OS,
+      'X-App-Version': appVersion,
+      ...(options.headers && typeof options.headers === 'object' && !(options.headers instanceof Headers)
         ? options.headers as Record<string, string>
         : {})
     };
@@ -103,6 +112,8 @@ class SnapTrackApiClient {
     } else {
       console.warn('⚠️ No auth token available for request');
     }
+
+    console.log('📱 Device headers:', { deviceId, platform: Platform.OS, appVersion });
 
     const config: RequestInit = {
       ...options,

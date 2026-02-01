@@ -1,10 +1,55 @@
 # Active Context
 
-**Last Updated:** 2025-07-20 18:30:00 - User Profile Display Fix - Impacts: [Username Display, Account Screen, Settings Screen]
-**Previous Update:** 2025-07-20 18:00:00
-**Session Context:** Fixed user profile data loading to properly display username and email address across screens
+**Last Updated:** 2026-02-01 16:30:00 - Device ID Headers & Subscription Fix - Impacts: [Authentication, User Experience, Mobile App]
+**Previous Update:** 2025-09-17 14:30:00
+**Session Context:** Fixed 30-day mobile sessions by adding Device ID headers; diagnosed Google Sign-In "failure" as expired subscription
 
-## Current Work Focus - Session July 20, 2025 (User Profile Display Fix)
+## Current Work Focus - Session February 1, 2026 (Device ID Headers for 30-Day Sessions)
+
+- ✅ **COMPLETED:** Device ID Headers Implementation (February 1, 2026)
+  - **ISSUE:** Users reported Google Sign-In "failing silently" - kicked back to sign-in screen after OAuth
+  - **INVESTIGATION:** Checked Firebase config, Google Cloud Console, OAuth consent screen - all correct
+  - **ROOT CAUSE DISCOVERED:** Google Sign-In was actually WORKING - the issue was expired subscriptions causing redirect to onboarding screen (looked like sign-in failure)
+  - **SECONDARY ISSUE:** 30-day mobile sessions weren't activating because mobile app wasn't sending `X-Device-ID` header
+  - **SOLUTION:**
+    - Fixed kai@motiveai.ai subscription (expired 2026-01-18, extended to 2027-02-01)
+    - Added Device ID headers to `apiClient.ts` to enable 30-day session system
+  - **IMPLEMENTATION:**
+    ```typescript
+    // Added to apiClient.ts makeRequest()
+    headers['X-Device-ID'] = Constants.installationId || Constants.sessionId || 'unknown';
+    headers['X-Platform'] = Platform.OS;
+    headers['X-App-Version'] = appVersion;
+    ```
+  - **VERSION:** Bumped to v1.4.1 (build 16)
+  - **STATUS:** Code ready, awaiting App Store submission
+  - **IMPACT:** Once deployed, 30-day sessions will work properly - users won't need to re-login frequently
+
+- ✅ **COMPLETED:** Subscription Database Fix (February 1, 2026)
+  - **ISSUE:** kai@motiveai.ai subscription expired 2026-01-18, causing "login failure" appearance
+  - **FIX:** Extended subscription to 2027-02-01 in mt_users table
+  - **VERIFIED:** All other user subscriptions are valid (expire July 2026+)
+
+## Pending: App Store Submission for v1.4.1
+- **Changes:** Device ID headers enabling 30-day mobile sessions
+- **Build Command:** `eas build --platform ios --profile production`
+- **Decision Needed:** Submit now or bundle with future features
+
+## Previous Work Focus - Session September 17, 2025 (30-Day Mobile Sessions Backend)
+
+- ✅ **COMPLETED:** 30-Day Rolling Mobile Session System (September 17, 2025, 14:30)
+  - **ISSUE:** Users logged out too frequently, causing 30-45 second delays when capturing receipts
+  - **ROOT CAUSE:** Standard Firebase token expiration (1 hour) with unreliable refresh token persistence
+  - **SOLUTION:** Backend-only implementation of 30-day rolling sessions that reset on each receipt capture
+  - **IMPLEMENTATION:**
+    - Added mobile session fields to `mt_users` table in Supabase
+    - Created middleware that accepts expired Firebase tokens when valid session exists
+    - Receipt endpoints automatically extend sessions by 30 days on capture
+    - Automated daily cleanup of expired sessions
+  - **RESULT:** Backend ready, but mobile app wasn't sending Device ID (fixed in Feb 2026 session)
+  - **DEPLOYMENT:** Live on Heroku (v246)
+
+## Previous Work Focus - Session July 20, 2025 (User Profile Display Fix)
 
 - ✅ **COMPLETED:** User Profile Display Fix (July 20, 2025, 18:30)
   - **ISSUE:** Username/email not displaying in mobile app despite being set on web

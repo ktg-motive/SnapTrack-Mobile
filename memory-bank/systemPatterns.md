@@ -1,6 +1,6 @@
 # System Patterns & Architectural Decisions
 
-**Last Updated:** 2025-07-10 19:30:00 - Receipt Preview & Image Processing Patterns - Impacts: [UX Design, Image Processing, Data Integrity]
+**Last Updated:** 2025-09-17 14:30:00 - 30-Day Mobile Session Pattern - Impacts: [Authentication, Backend Architecture, User Experience]
 
 ## Architectural Decision Records
 
@@ -698,3 +698,57 @@ try {
 - App remains functional during API outages
 - Better user experience with graceful degradation
 - Easier debugging with predictable fallbacks
+
+### ADR-012: 30-Day Rolling Mobile Session Pattern (2025-09-17)
+**Decision:** Implement backend-only 30-day rolling session system that extends on each receipt capture.
+
+**Context:** Mobile users experienced significant friction with frequent authentication timeouts, particularly when trying to capture receipts in the field (restaurants, stores). The 30-45 second login delay disrupted the primary use case of quick receipt capture.
+
+**Problem Solved:**
+- Standard Firebase tokens expire after 1 hour
+- Refresh tokens not reliably persisting in AsyncStorage
+- Users forced to re-authenticate frequently
+- Primary app function (receipt capture) interrupted by auth
+
+**Implementation Strategy:**
+```typescript
+// Backend middleware pattern
+async function verifyMobileAuth(req, res, next) {
+  // 1. Try standard Firebase verification
+  // 2. If expired, check for valid mobile session
+  // 3. Accept expired token if session valid
+  // 4. Generate new custom token transparently
+  // 5. Extend session on receipt capture
+}
+```
+
+**Database Design:**
+- Extended `mt_users` table with mobile session fields
+- Fields: mobile_device_id, mobile_session_expires, mobile_last_activity, mobile_last_capture
+- 30-day expiration from last activity
+- Automatic extension on receipt capture
+
+**Benefits:**
+- Zero friction for active users (capture monthly = never log in)
+- No mobile app changes required (no App Store resubmission)
+- Maintains security with 30-day maximum session
+- Device-specific sessions for lost phone protection
+- Transparent token refresh via response headers
+
+**Security Considerations:**
+- Sessions tied to specific device IDs
+- Maximum 30-day exposure window
+- Admin can remotely revoke sessions
+- Automated daily cleanup of expired sessions
+- Maintains Firebase security for API calls
+
+**Metrics for Success:**
+- 80% reduction in daily authentication events
+- <5% receipt capture abandonment due to auth
+- Zero forced logins for monthly active users
+- Improved app store reviews mentioning login issues
+
+**Cross-Project Application:** This pattern is applicable to any mobile app where the primary use case involves quick capture or data entry that shouldn't be interrupted by authentication.
+
+**Portfolio Impact:** Establishes best practice for mobile session management that prioritizes UX for primary app functions while maintaining reasonable security boundaries.
+
