@@ -3,7 +3,7 @@ const config = {
     name: "SnapTrack",
     slug: "snaptrack-mobile",
     scheme: "snaptrack",
-    version: "1.4.1",
+    version: "1.5.0",
     extra: {
       eas: {
         projectId: "886b28f0-e481-4ab2-aafe-bf4958623369"
@@ -29,6 +29,7 @@ const config = {
         NSCameraUsageDescription: "SnapTrack uses your camera to capture photos of receipts for expense tracking and automatic data extraction. This helps you digitize your receipts and organize your expenses.",
         NSPhotoLibraryUsageDescription: "SnapTrack needs photo library access to select receipt images for processing.",
         NSPhotoLibraryAddUsageDescription: "SnapTrack needs permission to save receipt images to your photo library when auto-save is enabled.",
+        NSFaceIDUsageDescription: "Allow SnapTrack to use Face ID to unlock the app and secure your financial data.",
         ITSAppUsesNonExemptEncryption: false
       }
     },
@@ -101,7 +102,14 @@ const config = {
           isAccessMediaLocationEnabled: true
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          faceIDPermission: "Allow SnapTrack to use Face ID to unlock the app and secure your financial data."
+        }
+      ]
     ]
   }
 };

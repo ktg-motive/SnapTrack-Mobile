@@ -1,12 +1,20 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { AppState, Platform, Linking, Alert } from 'react-native';
+import { AppState, Platform, Linking, Alert, AppStateStatus, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking as LinkingExpo } from 'react-native';
+
+// Biometric authentication imports
+import { appLockService } from './src/services/appLockService';
+import { secureStorageService } from './src/services/secureStorageService';
+import BiometricUnlockScreen from './src/screens/BiometricUnlockScreen';
+import PrivacyOverlay from './src/components/PrivacyOverlay';
+import BiometricPromptModal from './src/components/BiometricPromptModal';
+import { useBiometricPrompt } from './src/hooks/useBiometricPrompt';
 
 import TabNavigator from './src/navigation/TabNavigator';
 import ReviewScreen from './src/screens/ReviewScreen';
@@ -69,9 +77,80 @@ export default function App() {
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const navigationRef = useRef<any>(null);
 
+  // Biometric lock state
+  const [isLocked, setIsLocked] = useState(false);
+  const [showPrivacyOverlay, setShowPrivacyOverlay] = useState(false);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  // Biometric first-login prompt
+  const {
+    shouldShowPrompt: showBiometricPrompt,
+    biometricCapability,
+    enableBiometric,
+    skipBiometric,
+    dismissPrompt: dismissBiometricPrompt
+  } = useBiometricPrompt();
+
   // Remove duplicate auth check - let AuthScreen handle initial auth state
   useEffect(() => {
     setIsAuthChecked(true);
+  }, []);
+
+  // Initialize biometric lock on app start
+  useEffect(() => {
+    const initializeBiometricLock = async () => {
+      try {
+        // Migrate tokens from legacy storage
+        await secureStorageService.migrateFromAsyncStorage();
+
+        // Check if we should require biometric unlock (cold start)
+        const shouldLock = await appLockService.shouldRequireUnlock();
+        if (shouldLock) {
+          console.log('Biometric unlock required on cold start');
+          setIsLocked(true);
+        }
+
+        // Start activity monitoring
+        appLockService.startActivityMonitoring();
+      } catch (error) {
+        console.error('Error initializing biometric lock:', error);
+      }
+    };
+
+    initializeBiometricLock();
+
+    // Cleanup on unmount
+    return () => {
+      appLockService.stopActivityMonitoring();
+    };
+  }, []);
+
+  // Subscribe to lock state changes (fix: respond to timer-triggered locks)
+  useEffect(() => {
+    const unsubscribe = appLockService.addLockStateListener((newState) => {
+      if (newState === 'locked' || newState === 'require_auth') {
+        setIsLocked(true);
+      } else if (newState === 'unlocked') {
+        setIsLocked(false);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Handle biometric unlock
+  const handleBiometricUnlock = useCallback(() => {
+    setIsLocked(false);
+    appLockService.unlockApp();
+  }, []);
+
+  // Handle force logout from biometric screen
+  const handleForceLogout = useCallback(async () => {
+    setIsLocked(false);
+    await authService.signOut();
+    navigationRef.current?.navigate('Auth');
   }, []);
 
   useEffect(() => {
@@ -156,37 +235,59 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handleAppStateChange = async (nextAppState: string) => {
-      console.log('🔄 App state changed to:', nextAppState);
-      
-      if (nextAppState === 'active') {
-        // App came to foreground - just refresh token silently if user is authenticated
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      console.log('App state changed to:', nextAppState);
+
+      // Handle privacy overlay
+      if (nextAppState === 'inactive' || nextAppState === 'background') {
+        // Show privacy overlay when going to background
+        const biometricEnabled = await secureStorageService.isBiometricEnabled();
+        if (biometricEnabled) {
+          setShowPrivacyOverlay(true);
+        }
+      } else if (nextAppState === 'active') {
+        // Hide privacy overlay
+        setShowPrivacyOverlay(false);
+
+        // Handle biometric lock state
+        await appLockService.handleAppStateChange(nextAppState);
+        const shouldLock = await appLockService.shouldRequireUnlock();
+
+        if (shouldLock) {
+          setIsLocked(true);
+        }
+
+        // Refresh token if user is authenticated and not locked
+        // Note: Use shouldLock (not isLocked) since React state update is async
         const user = authService.getCurrentUser();
-        if (user) {
+        if (user && !isLocked && !shouldLock) {
           try {
-            console.log('🔐 Refreshing token on app foreground...');
+            console.log('Refreshing token on app foreground...');
             await authService.refreshToken();
-            console.log('✅ Token refresh successful');
-            
-            // DO NOT recheck onboarding or subscription status
-            // Trust the cached authentication state
+            console.log('Token refresh successful');
           } catch (error) {
-            console.error('❌ Token refresh failed on app foreground:', error);
-            // Don't immediately sign out - let individual API calls handle 401s
+            console.error('Token refresh failed on app foreground:', error);
           }
         }
       }
+
+      // Also handle background state for app lock service
+      if (nextAppState === 'background') {
+        await appLockService.handleAppStateChange(nextAppState);
+      }
+
+      appState.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
+
     // Just set loading to false - let AuthScreen handle initial navigation
     setIsLoading(false);
-    
+
     return () => {
       subscription?.remove();
     };
-  }, []);
+  }, [isLocked]);
 
   // Handle navigation when showOnboarding changes
   useEffect(() => {
@@ -195,6 +296,13 @@ export default function App() {
       navigationRef.current.navigate('Onboarding');
     }
   }, [showOnboarding, isLoading]);
+
+  // Handle touch events to record user activity (resets idle timeout)
+  // IMPORTANT: This hook must be before any early returns to maintain hook order
+  const handleTouchActivity = useCallback(() => {
+    appLockService.recordActivity();
+    return false; // Don't capture the touch, just observe it
+  }, []);
 
   const checkOnboardingStatus = async () => {
     try {
@@ -242,11 +350,38 @@ export default function App() {
     return null; // Or a loading screen
   }
 
-  console.log('📺 App render - showOnboarding:', showOnboarding);
+  console.log('App render - showOnboarding:', showOnboarding, ', isLocked:', isLocked);
 
   return (
     <SafeAreaProvider>
       <PaperProvider theme={paperTheme}>
+        {/* Biometric unlock screen as overlay - keeps NavigationContainer mounted */}
+        {isLocked && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
+            <BiometricUnlockScreen
+              onUnlock={handleBiometricUnlock}
+              onForceLogout={handleForceLogout}
+            />
+          </View>
+        )}
+
+        {/* Privacy overlay for app switcher */}
+        <PrivacyOverlay visible={showPrivacyOverlay} />
+
+        {/* Biometric prompt modal for first login */}
+        <BiometricPromptModal
+          visible={showBiometricPrompt}
+          capability={biometricCapability}
+          onEnable={enableBiometric}
+          onSkip={skipBiometric}
+          onClose={dismissBiometricPrompt}
+        />
+
+        {/* Wrap navigation in View to track user touch activity */}
+        <View
+          style={{ flex: 1 }}
+          onStartShouldSetResponderCapture={handleTouchActivity}
+        >
         <NavigationContainer 
           ref={navigationRef} 
           linking={linking}
@@ -268,6 +403,8 @@ export default function App() {
             screenListeners={{
               state: (e) => {
                 console.log('🗺️ Navigation state changed:', e.data.state.routes.map(r => r.name).join(' → '));
+                // Record user activity on navigation (resets idle timeout)
+                appLockService.recordActivity();
               }
             }}
           >
@@ -495,6 +632,7 @@ export default function App() {
             />
           </Stack.Navigator>
         </NavigationContainer>
+        </View>
       </PaperProvider>
     </SafeAreaProvider>
   );

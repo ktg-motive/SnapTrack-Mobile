@@ -43,6 +43,7 @@ import { Platform, Linking, Alert } from 'react-native';
 import * as Crypto from 'expo-crypto';
 
 import { CONFIG } from '../config';
+import { secureStorageService } from './secureStorageService';
 import { 
   User, 
   UserEmail, 
@@ -60,25 +61,45 @@ class UUIDAuthService {
   private authVersion: 1 | 2 = 2;
   private authStatePromise: Promise<void> | null = null;
   private authStateResolve: ((value: void) => void) | null = null;
+  private tokenMigrationComplete: boolean = false;
 
   constructor() {
     // Initialize Firebase if not already initialized
-    const app = getApps().length === 0 
+    const app = getApps().length === 0
       ? initializeApp(CONFIG.FIREBASE_CONFIG)
       : getApp();
-    
+
     // Initialize Auth with AsyncStorage persistence
-    this.auth = getApps().length === 0 
+    this.auth = getApps().length === 0
       ? initializeAuth(app, {
         persistence: getReactNativePersistence(AsyncStorage)
       })
       : getAuth(app);
-    
+
     // Configure Google Sign-In
     this.configureGoogleSignIn();
-    
+
     // Set up auth state listener
     this.initializeAuthListener();
+
+    // Migrate tokens from AsyncStorage to SecureStore (one-time)
+    this.migrateTokenStorage();
+  }
+
+  /**
+   * Migrate tokens from legacy AsyncStorage to SecureStore
+   * This is a one-time migration for app upgrades
+   */
+  private async migrateTokenStorage(): Promise<void> {
+    if (this.tokenMigrationComplete) return;
+
+    try {
+      await secureStorageService.migrateFromAsyncStorage();
+      this.tokenMigrationComplete = true;
+      console.log('Token migration check complete');
+    } catch (error) {
+      console.error('Token migration failed:', error);
+    }
   }
 
   private configureGoogleSignIn() {
@@ -415,6 +436,9 @@ class UUIDAuthService {
    */
   async signOut(): Promise<void> {
     try {
+      // Revoke mobile session on server first (before clearing local tokens)
+      await this.revokeMobileSession();
+
       // Sign out from Google if user signed in with Google
       if (GoogleSignin && typeof GoogleSignin.isSignedIn === 'function') {
         try {
@@ -426,22 +450,57 @@ class UUIDAuthService {
           console.log('Google sign out not needed or failed:', googleError);
         }
       }
-      
+
       await signOut(this.auth);
       await this.clearAuthToken();
+
+      // Clear all secure data
+      await secureStorageService.clearAllSecureData();
+
       this.currentUser = null;
       this.userEmails = [];
-      
+
       // Clear onboarding flags
       await AsyncStorage.multiRemove([
         'show_onboarding',
         'prompt_for_email'
       ]);
-      
-      console.log('✅ Sign out successful');
+
+      console.log('Sign out successful');
     } catch (error: any) {
-      console.error('❌ Sign out failed:', error.message);
+      console.error('Sign out failed:', error.message);
       throw new Error('Failed to sign out. Please try again.');
+    }
+  }
+
+  /**
+   * Revoke mobile session on server
+   * Clears mobile_session_token, mobile_device_id, mobile_session_expires
+   */
+  private async revokeMobileSession(): Promise<void> {
+    try {
+      const token = await this.getStoredAuthToken();
+      if (!token) {
+        console.log('No token to revoke session');
+        return;
+      }
+
+      const response = await fetch(`${CONFIG.API_BASE_URL}/api/auth/revoke-mobile-session`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        console.log('Mobile session revoked on server');
+      } else {
+        console.warn('Failed to revoke mobile session:', response.status);
+      }
+    } catch (error) {
+      // Don't fail sign out if session revocation fails
+      console.warn('Error revoking mobile session:', error);
     }
   }
 
@@ -624,25 +683,58 @@ class UUIDAuthService {
 
   private async storeAuthToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('@snaptrack_auth_token', token);
+      // Store in SecureStore (biometric-bound if enabled)
+      await secureStorageService.setAuthToken(token);
     } catch (error) {
-      console.error('❌ Failed to store auth token:', error);
+      console.error('Failed to store auth token securely:', error);
+      // Fallback to AsyncStorage if SecureStore fails
+      try {
+        await AsyncStorage.setItem('@snaptrack_auth_token', token);
+        console.log('Auth token stored in AsyncStorage as fallback');
+      } catch (fallbackError) {
+        console.error('Failed to store auth token even in fallback:', fallbackError);
+      }
     }
   }
 
   private async clearAuthToken(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('@snaptrack_auth_token');
+      // Clear from both SecureStore and AsyncStorage (for migration cleanup)
+      await Promise.all([
+        secureStorageService.clearAuthToken(),
+        AsyncStorage.removeItem('@snaptrack_auth_token'),
+      ]);
     } catch (error) {
-      console.error('❌ Failed to clear auth token:', error);
+      console.error('Failed to clear auth token:', error);
     }
   }
 
   private async getStoredAuthToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem('@snaptrack_auth_token');
-    } catch (error) {
-      console.error('❌ Failed to get stored auth token:', error);
+      // Try SecureStore first
+      const secureToken = await secureStorageService.getAuthToken();
+      if (secureToken) {
+        return secureToken;
+      }
+
+      // Fallback to AsyncStorage for legacy tokens not yet migrated
+      const legacyToken = await AsyncStorage.getItem('@snaptrack_auth_token');
+      if (legacyToken) {
+        // Migrate to SecureStore for next time
+        await secureStorageService.setAuthToken(legacyToken, false);
+        await AsyncStorage.removeItem('@snaptrack_auth_token');
+        console.log('Migrated legacy token to SecureStore');
+        return legacyToken;
+      }
+
+      return null;
+    } catch (error: any) {
+      // Handle biometric authentication requirement
+      if (error.message === 'BIOMETRIC_REQUIRED') {
+        console.log('Biometric authentication required to access token');
+        throw error;
+      }
+      console.error('Failed to get stored auth token:', error);
       return null;
     }
   }

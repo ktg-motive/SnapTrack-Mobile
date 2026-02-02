@@ -21,6 +21,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "SnapTrack needs camera access to capture receipt images for expense tracking.",
         "NSPhotoLibraryUsageDescription": "SnapTrack needs photo library access to select receipt images for processing.",
+        "NSFaceIDUsageDescription": "SnapTrack uses Face ID to securely protect your financial data and quickly unlock the app.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSExceptionDomains": {
@@ -70,7 +71,9 @@
           "iosUrlScheme": "com.googleusercontent.apps.925529316912-rgmp4c8ah10vig4at93a62kl0seipdgm"
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-secure-store",
+      "expo-local-authentication"
     ]
   }
 }

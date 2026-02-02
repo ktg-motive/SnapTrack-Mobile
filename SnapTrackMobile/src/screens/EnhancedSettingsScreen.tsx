@@ -25,6 +25,7 @@ import { authService } from '../services/authService.compat';
 import { settingsService, AppSettings } from '../services/settingsService';
 import { CONFIG } from '../config';
 import { shareService } from '../services/shareService';
+import { biometricService, BiometricCapability } from '../services/biometricService';
 
 interface Entity {
   id: string;
@@ -51,8 +52,10 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
   const [entities, setEntities] = useState<Entity[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [userSettings, setUserSettings] = useState<UserSettings>({});
-  const [appSettings, setAppSettings] = useState<AppSettings>({ autoSaveToCameraRoll: false });
+  const [appSettings, setAppSettings] = useState<AppSettings>({ autoSaveToCameraRoll: false, biometricEnabled: false });
   const [loading, setLoading] = useState(true);
+  const [biometricCapability, setBiometricCapability] = useState<BiometricCapability | null>(null);
+  const [biometricLoading, setBiometricLoading] = useState(false);
   
   // Modal states
   const [showEntityModal, setShowEntityModal] = useState(false);
@@ -63,7 +66,13 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
 
   useEffect(() => {
     loadData();
+    loadBiometricCapability();
   }, []);
+
+  const loadBiometricCapability = async () => {
+    const capability = await biometricService.checkBiometricCapability();
+    setBiometricCapability(capability);
+  };
 
   const loadData = async () => {
     try {
@@ -238,7 +247,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
       if (success) {
         setAppSettings(prev => ({ ...prev, autoSaveToCameraRoll: enabled }));
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        
+
         if (enabled) {
           Alert.alert(
             'Auto-Save Enabled',
@@ -249,8 +258,46 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
         Alert.alert('Error', 'Failed to update setting. Please try again.');
       }
     } catch (error) {
-      console.error('❌ Failed to toggle auto-save:', error);
+      console.error('Failed to toggle auto-save:', error);
       Alert.alert('Error', 'Failed to update setting. Please try again.');
+    }
+  };
+
+  const handleBiometricToggle = async (enabled: boolean) => {
+    if (!biometricCapability?.isAvailable || !biometricCapability?.isEnrolled) {
+      Alert.alert(
+        'Biometric Not Available',
+        `${biometricCapability?.biometricTypeDisplay || 'Biometric'} is not set up on this device. Please enable it in your device settings first.`
+      );
+      return;
+    }
+
+    setBiometricLoading(true);
+    try {
+      const success = await settingsService.updateSetting('biometricEnabled', enabled);
+      if (success) {
+        setAppSettings(prev => ({ ...prev, biometricEnabled: enabled }));
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        if (enabled) {
+          Alert.alert(
+            `${biometricCapability.biometricTypeDisplay} Enabled`,
+            `${biometricCapability.biometricTypeDisplay} will now be required to unlock SnapTrack.`
+          );
+        } else {
+          Alert.alert(
+            `${biometricCapability.biometricTypeDisplay} Disabled`,
+            'Biometric authentication has been disabled.'
+          );
+        }
+      } else {
+        Alert.alert('Error', 'Failed to update biometric setting. Please try again.');
+      }
+    } catch (error) {
+      console.error('Failed to toggle biometric:', error);
+      Alert.alert('Error', 'Failed to update biometric setting. Please try again.');
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -423,7 +470,7 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
         {/* App Settings Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>App Settings</Text>
-          
+
           <View style={styles.preferenceItem}>
             <View style={styles.preferenceContent}>
               <Text style={styles.preferenceTitle}>Auto-Save to Photos</Text>
@@ -438,6 +485,45 @@ export default function EnhancedSettingsScreen({ onRestartOnboarding }: Enhanced
               thumbColor={appSettings.autoSaveToCameraRoll ? colors.primary : colors.textMuted}
               ios_backgroundColor={colors.surface}
             />
+          </View>
+        </View>
+
+        {/* Security Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Security</Text>
+
+          <View style={styles.preferenceItem}>
+            <View style={styles.preferenceContent}>
+              <View style={styles.preferenceHeader}>
+                <Ionicons
+                  name={biometricCapability?.biometricType === 'face' ? 'scan-outline' : 'finger-print-outline'}
+                  size={20}
+                  color={colors.primary}
+                  style={styles.preferenceIcon}
+                />
+                <Text style={styles.preferenceTitle}>
+                  {biometricCapability?.biometricTypeDisplay || 'Biometric'} Lock
+                </Text>
+              </View>
+              <Text style={styles.preferenceDescription}>
+                {biometricCapability?.isAvailable && biometricCapability?.isEnrolled
+                  ? `Require ${biometricCapability.biometricTypeDisplay} to unlock SnapTrack and protect your financial data`
+                  : `${biometricCapability?.biometricTypeDisplay || 'Biometric'} is not set up on this device`
+                }
+              </Text>
+            </View>
+            {biometricLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Switch
+                value={appSettings.biometricEnabled}
+                onValueChange={handleBiometricToggle}
+                trackColor={{ false: colors.surface, true: colors.primary + '40' }}
+                thumbColor={appSettings.biometricEnabled ? colors.primary : colors.textMuted}
+                ios_backgroundColor={colors.surface}
+                disabled={!biometricCapability?.isAvailable || !biometricCapability?.isEnrolled}
+              />
+            )}
           </View>
         </View>
 
@@ -735,6 +821,14 @@ const styles = StyleSheet.create({
   preferenceContent: {
     flex: 1,
     marginRight: spacing.md
+  },
+  preferenceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs
+  },
+  preferenceIcon: {
+    marginRight: spacing.sm
   },
   preferenceTitle: {
     ...typography.body,

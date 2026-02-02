@@ -1,13 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { shareService } from './shareService';
+import { secureStorageService } from './secureStorageService';
+import { biometricService } from './biometricService';
 
 export interface AppSettings {
   autoSaveToCameraRoll: boolean;
+  biometricEnabled: boolean;
   // Add more settings here in the future
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  autoSaveToCameraRoll: false
+  autoSaveToCameraRoll: false,
+  biometricEnabled: false
 };
 
 const SETTINGS_STORAGE_KEY = '@snaptrack_app_settings';
@@ -22,25 +26,29 @@ export class SettingsService {
   async loadSettings(): Promise<AppSettings> {
     try {
       const storedSettings = await AsyncStorage.getItem(SETTINGS_STORAGE_KEY);
-      
+
       if (storedSettings) {
         const parsedSettings = JSON.parse(storedSettings);
         this.settings = { ...DEFAULT_SETTINGS, ...parsedSettings };
       } else {
         this.settings = DEFAULT_SETTINGS;
       }
-      
+
+      // Load biometric setting from SecureStore (source of truth)
+      const biometricEnabled = await secureStorageService.isBiometricEnabled();
+      this.settings.biometricEnabled = biometricEnabled;
+
       this.isLoaded = true;
-      
+
       // Sync with shareService
       await shareService.updateConfig({
         autoSaveToCameraRoll: this.settings.autoSaveToCameraRoll
       });
-      
-      console.log('✅ Settings loaded:', this.settings);
+
+      console.log('Settings loaded:', this.settings);
       return this.settings;
     } catch (error) {
-      console.error('❌ Failed to load settings:', error);
+      console.error('Failed to load settings:', error);
       this.settings = DEFAULT_SETTINGS;
       this.isLoaded = true;
       return this.settings;
@@ -52,19 +60,43 @@ export class SettingsService {
    */
   async saveSettings(newSettings: Partial<AppSettings>): Promise<boolean> {
     try {
-      this.settings = { ...this.settings, ...newSettings };
-      
-      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(this.settings));
-      
-      // Sync with shareService
-      await shareService.updateConfig({
-        autoSaveToCameraRoll: this.settings.autoSaveToCameraRoll
-      });
-      
-      console.log('✅ Settings saved:', this.settings);
+      // Handle biometric setting separately (stored in SecureStore)
+      if ('biometricEnabled' in newSettings) {
+        const biometricResult = newSettings.biometricEnabled
+          ? await biometricService.enableBiometric()
+          : await biometricService.disableBiometric();
+
+        if (!biometricResult.success) {
+          console.error('Failed to toggle biometric:', biometricResult.error);
+          return false;
+        }
+
+        // Update local settings after successful SecureStore update
+        this.settings.biometricEnabled = newSettings.biometricEnabled;
+
+        // Remove from newSettings so it's not stored in AsyncStorage
+        const { biometricEnabled, ...otherSettings } = newSettings;
+        newSettings = otherSettings;
+      }
+
+      // Save non-biometric settings to AsyncStorage
+      if (Object.keys(newSettings).length > 0) {
+        const { biometricEnabled, ...settingsToStore } = this.settings;
+        this.settings = { ...this.settings, ...newSettings };
+
+        const toStore = { ...settingsToStore, ...newSettings };
+        await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(toStore));
+
+        // Sync with shareService
+        await shareService.updateConfig({
+          autoSaveToCameraRoll: this.settings.autoSaveToCameraRoll
+        });
+      }
+
+      console.log('Settings saved:', this.settings);
       return true;
     } catch (error) {
-      console.error('❌ Failed to save settings:', error);
+      console.error('Failed to save settings:', error);
       return false;
     }
   }
