@@ -3,7 +3,7 @@ const config = {
     name: "SnapTrack",
     slug: "snaptrack-mobile",
     scheme: "snaptrack",
-    version: "1.5.0",
+    version: "1.6.0",
     extra: {
       eas: {
         projectId: "886b28f0-e481-4ab2-aafe-bf4958623369"
@@ -22,7 +22,7 @@ const config = {
     ios: {
       supportsTablet: false,
       bundleIdentifier: "com.snaptrack.mobile",
-      buildNumber: "16",
+      buildNumber: "17",
       googleServicesFile: "./GoogleService-Info.plist",
       associatedDomains: ["applinks:snaptrack.bot"],
       infoPlist: {
@@ -35,7 +35,7 @@ const config = {
     },
     android: {
       package: "com.snaptrack.mobile",
-      versionCode: 16,
+      versionCode: 17,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#0a0a0a"

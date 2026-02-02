@@ -1,41 +1,29 @@
-Version 1.4.0
-Release Date: January 20, 2025
+Version 1.6.0
+Release Date: February 2, 2026
 
-This major release introduces our new privacy-first authentication system with professional username-based email addresses, enhanced user profiles, and significant performance improvements.
+This release introduces biometric authentication to protect your financial data with Face ID and Touch ID support.
 
 New Features:
 
-▸ Professional Username System: Create your personalized username@app.snaptrack.bot email address for receipt forwarding
-▸ Privacy-First Authentication: New UUID-based authentication system supporting email-optional signup
-▸ Enhanced User Profiles: Complete profile management with username and email display across all screens
-▸ Cross-Platform Sync: Seamless authentication state synchronization between web and mobile platforms
-▸ Universal Login: Single authentication endpoint supporting Google, Apple, email, and anonymous sign-in methods
-▸ Apple Sign-In Enhancement: Full support for "Hide My Email" feature with automatic forwarding
-▸ Smart Onboarding Flow: Integrated username selection during account creation
-▸ Progressive Migration: Existing users receive upgrade prompts to claim their professional username
+▸ Face ID / Touch ID Lock: Secure your financial data with biometric authentication
+▸ Privacy Protection: App content hidden in app switcher when biometrics enabled
+▸ Auto-Lock: Automatic lock after 15 minutes of inactivity
+▸ Biometric Setup Prompt: First-login prompt to enable biometric security
+▸ Settings Toggle: Enable or disable Face ID Lock from Settings > Security
 
 Enhancements:
 
-▸ PDF Export Service: New microservice architecture eliminates memory crashes when exporting 50+ receipts
-▸ Authentication Speed: Optimized UUID-based lookups reduce login time by 40%
-▸ Profile Display Fix: Username and email now properly display in account menu and settings screens
-▸ Username Management: Change your username directly in the app (once every 24 hours)
-▸ Email Copy Function: Fixed crash when copying email address to clipboard
-▸ Loading State Clarity: Separate loading indicators for each authentication method
+▸ Secure Token Storage: Authentication tokens now stored in iOS Keychain with biometric protection
+▸ Session Persistence: Navigation state preserved when unlocking app
+▸ Activity Monitoring: Idle timeout resets on user interaction
 
 Bug Fixes:
 
-▸ Authentication Loading: Fixed spinner appearing on wrong button during sign-in
-▸ Profile Data Loading: Resolved issue where username wasn't displaying despite being set
-▸ Clipboard Crash: Fixed app crash when tapping copy email function
-▸ Welcome Email Delivery: Corrected endpoint integration for automated welcome emails
-▸ Memory Management: PDF export no longer causes application crashes with large datasets
+▸ React Hooks Order: Fixed hooks violation that could cause rendering errors
+▸ Navigation Reset: App no longer resets to welcome screen after biometric unlock
 
-Performance:
+Security:
 
-▸ Authentication Flow: 40% faster login times with optimized UUID lookups
-▸ Profile Loading: Instant profile data display with improved caching
-▸ Username Validation: Real-time availability checking with sub-second response
-▸ Database Queries: Optimized indexes for 3x faster user data retrieval
-
-This release represents a major milestone in SnapTrack's evolution, introducing a modern authentication architecture that prioritizes user privacy while maintaining backward compatibility. All existing users can continue using their current email addresses or upgrade to the new username-based system at their convenience.
+▸ Biometric-Only Authentication: No passcode fallback option for stronger security
+▸ Hardware-Backed Storage: Tokens protected by Secure Enclave on supported devices
+▸ Force Re-Login: After 3 failed biometric attempts, requires full re-authentication
